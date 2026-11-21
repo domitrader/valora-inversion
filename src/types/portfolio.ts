@@ -100,6 +100,20 @@ export interface PortfolioMeta {
   isDefault?: boolean;
 }
 
+export interface TradingAnalytics {
+  totalTrades: number;
+  totalFeesPaid: number;
+  totalRealizedPnl: number;
+  startDate: string;
+  endDate: string;
+  tradedProductsCount: number;
+  totalDeposited?: number;
+  totalWithdrawn?: number;
+  netCashFlow?: number;
+  totalDividendsReceived?: number;
+  currentCashBalance?: number;
+}
+
 export interface PortfolioState {
   cash: number;
   goalAmount: number;
@@ -112,6 +126,7 @@ export interface PortfolioState {
   positions: PositionItem[];
   watchlist: WatchlistItem[];
   events: FinancialEvent[];
+  tradingAnalytics?: TradingAnalytics;
 }
 
 export interface NewsItem {

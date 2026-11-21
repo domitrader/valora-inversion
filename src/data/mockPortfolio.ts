@@ -616,6 +616,19 @@ export const INITIAL_PORTFOLIO_STATE: PortfolioState = {
   positions: INITIAL_POSITIONS,
   watchlist: INITIAL_WATCHLIST,
   events: INITIAL_EVENTS,
+  tradingAnalytics: {
+    totalTrades: 2847,
+    totalFeesPaid: 3234.95,
+    totalRealizedPnl: 28145.97,
+    startDate: '09-03-2018',
+    endDate: '20-11-2026',
+    tradedProductsCount: 123,
+    totalDeposited: 3651806.63,
+    totalWithdrawn: 3683497.41,
+    netCashFlow: 31690.78,
+    totalDividendsReceived: 533.22,
+    currentCashBalance: 419.92,
+  },
 };
 
 export const initialPortfolioState = INITIAL_PORTFOLIO_STATE;

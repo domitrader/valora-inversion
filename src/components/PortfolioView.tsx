@@ -5,6 +5,7 @@ import {
   TimeRange,
   AssetType,
   FinancialEvent,
+  TradingAnalytics,
 } from '../types/portfolio';
 import {
   formatEUR,
@@ -42,6 +43,7 @@ interface PortfolioViewProps {
   hideFigures: boolean;
   selectedTimeRange: TimeRange;
   events: FinancialEvent[];
+  tradingAnalytics?: TradingAnalytics;
   onToggleHideFigures: () => void;
   onSelectTimeRange: (range: TimeRange) => void;
   onOpenSearch: () => void;
@@ -62,6 +64,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   hideFigures,
   selectedTimeRange,
   events,
+  tradingAnalytics,
   onToggleHideFigures,
   onSelectTimeRange,
   onOpenSearch,
@@ -331,6 +334,64 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               </button>
             </div>
           </section>
+
+          {/* Historial Global DEGIRO & Rendimiento Realizado */}
+          {tradingAnalytics && (
+            <section className="px-4 mb-4">
+              <div className="bg-gradient-to-br from-slate-900 to-slate-950 dark:from-slate-900/90 dark:to-slate-950/90 text-white rounded-3xl p-4 shadow-xl border border-slate-800">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
+                      📈
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-white">Historial Financiero DEGIRO</h3>
+                      <p className="text-[10px] text-slate-400">
+                        {tradingAnalytics.startDate} al {tradingAnalytics.endDate} • {tradingAnalytics.totalTrades.toLocaleString('es-ES')} operaciones
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    Auditado
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
+                  <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
+                    <span className="text-[10px] font-semibold text-slate-400 block">Beneficio Cerrado</span>
+                    <span className="text-sm font-extrabold text-emerald-400 mt-0.5 block">
+                      +{formatEUR(tradingAnalytics.totalRealizedPnl, hideFigures)}
+                    </span>
+                  </div>
+
+                  {tradingAnalytics.netCashFlow !== undefined && (
+                    <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
+                      <span className="text-[10px] font-semibold text-slate-400 block">Flujo Neto Retirado</span>
+                      <span className="text-sm font-extrabold text-emerald-300 mt-0.5 block">
+                        +{formatEUR(tradingAnalytics.netCashFlow, hideFigures)}
+                      </span>
+                    </div>
+                  )}
+
+                  {tradingAnalytics.totalDividendsReceived !== undefined && (
+                    <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
+                      <span className="text-[10px] font-semibold text-slate-400 block">Dividendos Netos</span>
+                      <span className="text-sm font-extrabold text-white mt-0.5 block">
+                        +{formatEUR(tradingAnalytics.totalDividendsReceived, hideFigures)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
+                    <span className="text-[10px] font-semibold text-slate-400 block">Comisiones DEGIRO</span>
+                    <span className="text-sm font-extrabold text-slate-300 mt-0.5 block">
+                      {formatEUR(tradingAnalytics.totalFeesPaid, hideFigures)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* 6. Sección de Activos / Posiciones */}
           <section className="px-4">

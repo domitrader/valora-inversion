@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PositionItem } from '../types/portfolio';
+import { PositionItem, TradingAnalytics } from '../types/portfolio';
 import { parseBrokerExport, BrokerImportResult } from '../utils/brokerParsers';
 import { formatEUR } from '../utils/calculations';
 import {
@@ -12,12 +12,20 @@ import {
   Check,
   Trash2,
   Sparkles,
+  TrendingUp,
+  Receipt,
+  History,
 } from 'lucide-react';
 
 interface ImportPortfolioModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportPositions: (positions: PositionItem[], replaceAll: boolean, detectedCash?: number) => void;
+  onImportPositions: (
+    positions: PositionItem[],
+    replaceAll: boolean,
+    detectedCash?: number,
+    analytics?: TradingAnalytics
+  ) => void;
 }
 
 // Ejemplo real de exportación de cartera de DEGIRO
@@ -97,16 +105,16 @@ export const ImportPortfolioModal: React.FC<ImportPortfolioModalProps> = ({
     if (selectedIds.size === importResult.parsedPositions.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(importResult.parsedPositions.map(p => p.id)));
+      setSelectedIds(new Set(importResult.parsedPositions.map((p: PositionItem) => p.id)));
     }
   };
 
-    const handleConfirm = () => {
+  const handleConfirm = () => {
     if (!importResult) return;
-    const itemsToImport = importResult.parsedPositions.filter(p => selectedIds.has(p.id));
+    const itemsToImport = importResult.parsedPositions.filter((p: PositionItem) => selectedIds.has(p.id));
     if (itemsToImport.length === 0) return;
 
-    onImportPositions(itemsToImport, replaceAll, importResult.detectedCash);
+    onImportPositions(itemsToImport, replaceAll, importResult.detectedCash, importResult.analytics);
     onClose();
   };
 
@@ -192,14 +200,43 @@ export const ImportPortfolioModal: React.FC<ImportPortfolioModalProps> = ({
                   <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-900 text-white">
                     {importResult.detectedBroker}
                   </span>
+                  {importResult.isTransactionsExport && (
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Historial Operaciones
+                    </span>
+                  )}
                   <span className="text-xs font-bold text-slate-700">
-                    {importResult.parsedPositions.length} activos detectados
+                    {importResult.parsedPositions.length} activos abiertos
                   </span>
                 </div>
                 <div className="text-xs text-slate-500">
                   Total: <strong className="text-slate-900">{formatEUR(importResult.summary.totalValue)}</strong>
                 </div>
               </div>
+
+              {/* Métricas del historial de trading si es un Transactions.csv */}
+              {importResult.isTransactionsExport && importResult.analytics && (
+                <div className="grid grid-cols-3 gap-2 bg-emerald-50/70 border border-emerald-200/80 rounded-xl p-2.5 text-xs">
+                  <div>
+                    <span className="text-[10px] font-semibold text-emerald-700 block">Beneficio Cerrado</span>
+                    <span className="font-extrabold text-emerald-900 text-xs">
+                      +{formatEUR(importResult.analytics.totalRealizedPnl)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-semibold text-emerald-700 block">Comisiones DEGIRO</span>
+                    <span className="font-extrabold text-slate-800 text-xs">
+                      {formatEUR(importResult.analytics.totalFeesPaid)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-semibold text-emerald-700 block">Operaciones</span>
+                    <span className="font-extrabold text-slate-800 text-xs">
+                      {importResult.analytics.totalTrades.toLocaleString('es-ES')} trades
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Botón seleccionar todos / deseleccionar */}
               <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200">
@@ -219,7 +256,7 @@ export const ImportPortfolioModal: React.FC<ImportPortfolioModalProps> = ({
 
               {/* Lista interactiva de filas parseadas */}
               <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
-                {importResult.parsedPositions.map(pos => {
+                {importResult.parsedPositions.map((pos: PositionItem) => {
                   const isChecked = selectedIds.has(pos.id);
                   return (
                     <div

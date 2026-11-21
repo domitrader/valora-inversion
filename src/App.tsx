@@ -6,6 +6,7 @@ import {
   PositionItem,
   WatchlistItem,
   TimeRange,
+  TradingAnalytics,
 } from './types/portfolio';
 import { INITIAL_PORTFOLIO_STATE } from './data/mockPortfolio';
 import { SupabaseService } from './services/supabaseService';
@@ -217,9 +218,16 @@ export const App: React.FC = () => {
   };
 
   // Import positions (DEGIRO CSV, MyInvestor or manual)
-  const handleImportPositions = (newPositions: PositionItem[], replaceAll: boolean = false) => {
+  const handleImportPositions = (
+    newPositions: PositionItem[],
+    replaceAll: boolean = false,
+    detectedCash?: number,
+    analytics?: TradingAnalytics
+  ) => {
     setPortfolioState((prev) => ({
       ...prev,
+      cash: detectedCash !== undefined ? detectedCash : prev.cash,
+      tradingAnalytics: analytics || prev.tradingAnalytics,
       positions: replaceAll ? newPositions : [...newPositions, ...prev.positions],
     }));
   };
@@ -300,6 +308,7 @@ export const App: React.FC = () => {
               hideFigures={portfolioState.hideFigures}
               selectedTimeRange={portfolioState.selectedTimeRange}
               events={portfolioState.events}
+              tradingAnalytics={portfolioState.tradingAnalytics}
               onToggleHideFigures={handleToggleHideFigures}
               onSelectTimeRange={handleSelectTimeRange}
               onOpenSearch={() => handleOpenSearch()}
