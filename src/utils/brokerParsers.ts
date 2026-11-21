@@ -152,9 +152,21 @@ export function inferAssetType(name: string, ticker: string, isin?: string): Ass
 }
 
 /**
- * Asigna una bandera de país según el ISIN
+ * Asigna una bandera de país según el ISIN, o el símbolo de Bitcoin/Cripto si es un criptoactivo.
  */
-export function inferCountryFlagFromIsin(isin?: string): string {
+export function inferCountryFlagFromIsin(isin?: string, assetType?: AssetType, name?: string): string {
+  const upper = `${name || ''} ${isin || ''}`.toUpperCase();
+  if (
+    assetType === 'Cripto' ||
+    upper.includes('BITCOIN') ||
+    upper.includes('BTC') ||
+    upper.includes('ETHEREUM') ||
+    upper.includes('21SHARES') ||
+    upper.includes('VANECK BIT')
+  ) {
+    return '₿';
+  }
+
   if (!isin || isin.length < 2) return '🌐';
   const prefix = isin.slice(0, 2).toUpperCase();
   const flagMap: Record<string, string> = {
@@ -285,7 +297,7 @@ export function parseDegiroTransactions(lines: string[], delimiter: string): Bro
       else ticker = isin ? isin.slice(0, 6) : item.name.slice(0, 4).toUpperCase();
 
       const type = inferAssetType(item.name, ticker, isin);
-      const countryFlag = inferCountryFlagFromIsin(isin);
+      const countryFlag = inferCountryFlagFromIsin(isin, type, item.name);
       const currentPrice = item.lastPrice > 0 ? item.lastPrice : item.costBasis;
       const totalValue = Number((item.shares * currentPrice).toFixed(2));
       const totalCost = Number((item.shares * item.costBasis).toFixed(2));
@@ -610,7 +622,7 @@ export function parseBrokerExport(rawText: string): BrokerImportResult {
         }
 
         type = inferAssetType(name, ticker, isin);
-        const countryFlag = inferCountryFlagFromIsin(isin);
+        const countryFlag = inferCountryFlagFromIsin(isin, type, name);
 
         const totalValue = Number((shares * currentPrice).toFixed(2));
         const totalCost = Number((shares * avgPrice).toFixed(2));

@@ -18,6 +18,8 @@ import {
   Sun,
   Moon,
   Laptop,
+  Lock,
+  KeyRound,
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -29,6 +31,10 @@ interface ProfileViewProps {
   onOpenImport: () => void;
   onResetDemo: () => void;
   onRestoreState: (state: PortfolioState) => void;
+  hasPin?: boolean;
+  onStartSetPin?: () => void;
+  onDisablePin?: () => void;
+  onLockNow?: () => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -40,6 +46,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onOpenImport,
   onResetDemo,
   onRestoreState,
+  hasPin = false,
+  onStartSetPin,
+  onDisablePin,
+  onLockNow,
 }) => {
   const [newPortName, setNewPortName] = useState('');
   const [showAddPort, setShowAddPort] = useState(false);
@@ -227,6 +237,65 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
             );
           })}
         </div>
+      </div>
+
+      {/* 4.5. Seguridad & Clave PIN Familiar */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-emerald-600" />
+            <h3 className="font-extrabold text-slate-900 text-sm">Clave de Acceso Seguro</h3>
+          </div>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              hasPin
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-slate-100 text-slate-600 border border-slate-200'
+            }`}
+          >
+            {hasPin ? 'PIN Activado' : 'Sin Protección'}
+          </span>
+        </div>
+
+        <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+          Protege el acceso a tu cartera familiar en el móvil mediante un código numérico privado de 4 dígitos.
+        </p>
+
+        {hasPin ? (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onLockNow}
+              className="flex-1 py-2 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Lock className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Bloquear Ahora</span>
+            </button>
+            <button
+              type="button"
+              onClick={onStartSetPin}
+              className="py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"
+            >
+              Cambiar
+            </button>
+            <button
+              type="button"
+              onClick={onDisablePin}
+              className="py-2 px-3 rounded-xl border border-rose-200 hover:bg-rose-50 text-xs font-bold text-rose-600 transition-colors"
+            >
+              Desactivar
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onStartSetPin}
+            className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Configurar Clave PIN (4 dígitos)</span>
+          </button>
+        )}
       </div>
 
       {/* 5. Herramientas de Importación y Respaldo */}

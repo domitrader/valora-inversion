@@ -18,6 +18,7 @@ import { WatchlistView } from './components/WatchlistView';
 import { ProfileView } from './components/ProfileView';
 import { SearchModalView } from './components/SearchModalView';
 import { ImportPortfolioModal } from './components/ImportPortfolioModal';
+import { PinLockScreen } from './components/PinLockScreen';
 import { liveQuotesService } from './services/liveQuotesService';
 
 export const App: React.FC = () => {
@@ -27,10 +28,56 @@ export const App: React.FC = () => {
   const [isRefreshingLive, setIsRefreshingLive] = useState<boolean>(false);
   const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('');
 
-  // Modals state
+  // Modals & Security state
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [searchInitialCategory, setSearchInitialCategory] = useState<AssetType | undefined>(undefined);
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
+
+  // Security PIN lock state
+  const [pinCode, setPinCode] = useState<string>(() => {
+    try {
+      return localStorage.getItem('valora_pin_code') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    try {
+      return !!localStorage.getItem('valora_pin_code');
+    } catch {
+      return false;
+    }
+  });
+  const [isSettingPin, setIsSettingPin] = useState<boolean>(false);
+
+  const handleSetPin = (newPin: string) => {
+    try {
+      localStorage.setItem('valora_pin_code', newPin);
+    } catch (e) {
+      console.warn(e);
+    }
+    setPinCode(newPin);
+    setIsSettingPin(false);
+    setIsLocked(false);
+  };
+
+  const handleDisablePin = () => {
+    if (confirm('¿Seguro que deseas desactivar la clave PIN de acceso?')) {
+      try {
+        localStorage.removeItem('valora_pin_code');
+      } catch (e) {
+        console.warn(e);
+      }
+      setPinCode('');
+      setIsLocked(false);
+    }
+  };
+
+  const handleLockNow = () => {
+    if (pinCode) {
+      setIsLocked(true);
+    }
+  };
 
   // Initial load from storage / service
   useEffect(() => {
@@ -358,6 +405,10 @@ export const App: React.FC = () => {
               onOpenImport={() => setIsImportOpen(true)}
               onResetDemo={handleResetDemo}
               onRestoreState={setPortfolioState}
+              hasPin={!!pinCode}
+              onStartSetPin={() => setIsSettingPin(true)}
+              onDisablePin={handleDisablePin}
+              onLockNow={handleLockNow}
             />
           )}
         </main>
@@ -385,6 +436,25 @@ export const App: React.FC = () => {
           onClose={() => setIsImportOpen(false)}
           onImportPositions={handleImportPositions}
         />
+
+        {/* Pin Lock Screen (Locked) */}
+        {isLocked && pinCode && (
+          <PinLockScreen
+            storedPin={pinCode}
+            onUnlock={() => setIsLocked(false)}
+          />
+        )}
+
+        {/* Pin Setup Screen */}
+        {isSettingPin && (
+          <PinLockScreen
+            storedPin=""
+            isSettingPin={true}
+            onSetPin={handleSetPin}
+            onCancelSetup={() => setIsSettingPin(false)}
+            onUnlock={() => {}}
+          />
+        )}
       </div>
     </div>
   );

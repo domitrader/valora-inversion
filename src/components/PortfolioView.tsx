@@ -16,6 +16,7 @@ import {
 import { MOCK_CHART_DATA } from '../data/mockPortfolio';
 import { Sparkline } from './Sparkline';
 import { InteractiveChart } from './InteractiveChart';
+import { HistoricalAssetModal } from './HistoricalAssetModal';
 import {
   Search,
   Eye,
@@ -86,6 +87,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [cashInput, setCashInput] = useState(cash.toString());
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
+  const [showHistoricalModal, setShowHistoricalModal] = useState(false);
 
   // Métricas calculadas
   const metrics = calculatePortfolioMetrics(positions, cash);
@@ -104,6 +106,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       if (positionSort === 'change-asc') return a.dailyChangePct - b.dailyChangePct;
       return 0;
     });
+
+  // Separación explícita solicitada por el usuario: Acciones ARRIBA, ETFs ABAJO
+  const stockPositions = filteredPositions.filter(p => p.type === 'Acciones');
+  const etfAndCryptoPositions = filteredPositions.filter(p => p.type === 'ETFs' || p.type === 'Cripto');
 
   // Cálculo de distribución por tipo
   const totalPosValue = positions.reduce((acc, p) => acc + p.totalValue, 0) || 1;
@@ -389,17 +395,26 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     </span>
                   </div>
                 </div>
+
+                {/* Botón para ver desglose de beneficio por activo (117 activos) */}
+                <button
+                  onClick={() => setShowHistoricalModal(true)}
+                  className="w-full mt-3 py-2 px-3 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                >
+                  <span>📊</span>
+                  <span>Ver Beneficio Histórico por Acción & ETF (117 activos)</span>
+                </button>
               </div>
             </section>
           )}
 
-          {/* 6. Sección de Activos / Posiciones */}
+          {/* 6. Sección de Activos / Posiciones: Separación solicitada (Acciones ARRIBA, ETFs ABAJO) */}
           <section className="px-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white">Acciones</h2>
+                <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white">Cartera</h2>
                 <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {filteredPositions.length}
+                  {filteredPositions.length} activos
                 </span>
               </div>
 
@@ -449,7 +464,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               </div>
             </div>
 
-            {/* Chips de filtro rápido por tipo (Todos, Acciones, ETFs, Cripto) */}
+            {/* Chips de filtro rápido por tipo */}
             <div className="flex items-center gap-1.5 mb-3 overflow-x-auto no-scrollbar">
               {(['Todos', 'Acciones', 'ETFs', 'Cripto'] as const).map(f => (
                 <button
@@ -466,57 +481,138 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               ))}
             </div>
 
-            {/* Listado de posiciones con densidad idéntica a la captura */}
-            <div className="space-y-1">
-              {filteredPositions.map(pos => {
-                const isLoss = pos.dailyChangePct < 0;
-                return (
-                  <div
-                    key={pos.id}
-                    onClick={() => setSelectedPosition(pos)}
-                    className="flex items-center justify-between py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors active:scale-[0.99]"
-                  >
-                    {/* Logo + Nombre y títulos */}
-                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0 ${pos.logoBg || 'bg-slate-800'}`}
-                      >
-                        {pos.logoText || pos.ticker.slice(0, 2)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1">
-                          <span>{pos.name}</span>
-                          {pos.countryFlag && <span className="text-xs">{pos.countryFlag}</span>}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                          {pos.shares} • {formatEUR(pos.avgPrice, hideFigures)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sparkline central sutil */}
-                    <div className="hidden sm:block shrink-0 px-2">
-                      <Sparkline data={pos.sparkline} width={64} height={20} isPositive={!isLoss} />
-                    </div>
-
-                    {/* Valor total a la derecha y variación en rojo o verde */}
-                    <div className="text-right shrink-0">
-                      <div className="font-bold text-slate-900 dark:text-white text-sm">
-                        {formatEUR(pos.totalValue, hideFigures)}
-                      </div>
-                      <div
-                        className={`text-xs font-semibold flex items-center justify-end gap-1 ${
-                          isLoss ? 'text-rose-500' : 'text-emerald-500'
-                        }`}
-                      >
-                        <span>{formatEUR(pos.dailyChangeValue, hideFigures)}</span>
-                        <span>{formatPercent(pos.dailyChangePct)}</span>
-                      </div>
-                    </div>
+            {/* 1. SECCIÓN: ACCIONES (ARRIBA) */}
+            {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'Acciones') && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                      🏢 Acciones ({stockPositions.length})
+                    </span>
                   </div>
-                );
-              })}
-            </div>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                    {formatEUR(accionesVal, hideFigures)}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {stockPositions.length > 0 ? (
+                    stockPositions.map(pos => {
+                      const isLoss = pos.dailyChangePct < 0;
+                      return (
+                        <div
+                          key={pos.id}
+                          onClick={() => setSelectedPosition(pos)}
+                          className="flex items-center justify-between py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors active:scale-[0.99]"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 pr-2">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0 ${pos.logoBg || 'bg-slate-800'}`}>
+                              {pos.logoText || pos.ticker.slice(0, 2)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1">
+                                <span>{pos.name}</span>
+                                {pos.countryFlag && <span className="text-xs">{pos.countryFlag}</span>}
+                              </div>
+                              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                {pos.shares} títulos • {formatEUR(pos.avgPrice, hideFigures)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="hidden sm:block shrink-0 px-2">
+                            <Sparkline data={pos.sparkline} width={64} height={20} isPositive={!isLoss} />
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-bold text-slate-900 dark:text-white text-sm">
+                              {formatEUR(pos.totalValue, hideFigures)}
+                            </div>
+                            <div className={`text-xs font-semibold flex items-center justify-end gap-1 ${isLoss ? 'text-rose-500' : 'text-emerald-500'}`}>
+                              <span>{formatEUR(pos.dailyChangeValue, hideFigures)}</span>
+                              <span>{formatPercent(pos.dailyChangePct)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 py-2 italic text-center">No hay acciones en cartera</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 2. SECCIÓN: ETFS & CRIPTOACTIVOS (ABAJO) */}
+            {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'ETFs' || selectedAssetFilter === 'Cripto') && (
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
+                      📈 ETFs & Cripto ({etfAndCryptoPositions.length})
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                    {formatEUR(etfsVal + criptoVal, hideFigures)}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {etfAndCryptoPositions.length > 0 ? (
+                    etfAndCryptoPositions.map(pos => {
+                      const isLoss = pos.dailyChangePct < 0;
+                      const isBitcoin = pos.type === 'Cripto' || pos.name.toUpperCase().includes('BITCOIN');
+                      const displayFlag = isBitcoin ? '₿' : pos.countryFlag;
+                      const isConsolidated = pos.shares > 100 || pos.ticker.includes('3GOL') || pos.ticker.includes('QQQ3');
+
+                      return (
+                        <div
+                          key={pos.id}
+                          onClick={() => setSelectedPosition(pos)}
+                          className="flex items-center justify-between py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors active:scale-[0.99]"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 pr-2">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0 ${isBitcoin ? 'bg-amber-600' : pos.logoBg || 'bg-blue-700'}`}>
+                              {isBitcoin ? '₿' : pos.logoText || pos.ticker.slice(0, 3)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1.5">
+                                <span>{pos.name}</span>
+                                {displayFlag && (
+                                  <span className={`text-xs ${isBitcoin ? 'font-black text-amber-500' : ''}`}>
+                                    {displayFlag}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                  {pos.shares} títulos • {formatEUR(pos.avgPrice, hideFigures)}
+                                </span>
+                                {isConsolidated && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    Consolidado
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="hidden sm:block shrink-0 px-2">
+                            <Sparkline data={pos.sparkline} width={64} height={20} isPositive={!isLoss} />
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="font-bold text-slate-900 dark:text-white text-sm">
+                              {formatEUR(pos.totalValue, hideFigures)}
+                            </div>
+                            <div className={`text-xs font-semibold flex items-center justify-end gap-1 ${isLoss ? 'text-rose-500' : 'text-emerald-500'}`}>
+                              <span>{formatEUR(pos.dailyChangeValue, hideFigures)}</span>
+                              <span>{formatPercent(pos.dailyChangePct)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="text-xs text-slate-400 py-2 italic text-center">No hay ETFs en cartera</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Botón inferior para importar más posiciones */}
             <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2.5">
@@ -815,6 +911,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* MODAL BENEFICIO HISTÓRICO POR ACCIÓN O ETF (117 ACTIVOS) */}
+      <HistoricalAssetModal
+        isOpen={showHistoricalModal}
+        onClose={() => setShowHistoricalModal(false)}
+        hideFigures={hideFigures}
+      />
     </div>
   );
 };

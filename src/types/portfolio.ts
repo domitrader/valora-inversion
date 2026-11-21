@@ -114,6 +114,24 @@ export interface TradingAnalytics {
   currentCashBalance?: number;
 }
 
+export interface HistoricalAssetStat {
+  isin: string;
+  name: string;
+  type: AssetType;
+  shares: number;
+  cost_basis: number;
+  total_bought_qty: number;
+  total_sold_qty: number;
+  total_bought_val: number;
+  total_sold_val: number;
+  realized_pnl: number;
+  total_fees: number;
+  trades_count: number;
+  first_trade: string;
+  last_trade: string;
+  status: 'Abierta' | 'Cerrada';
+}
+
 export interface PortfolioState {
   cash: number;
   goalAmount: number;
@@ -127,6 +145,7 @@ export interface PortfolioState {
   watchlist: WatchlistItem[];
   events: FinancialEvent[];
   tradingAnalytics?: TradingAnalytics;
+  historicalAssetStats?: HistoricalAssetStat[];
 }
 
 export interface NewsItem {
