@@ -1,0 +1,301 @@
+import React, { useState } from 'react';
+import { PortfolioState } from '../types/portfolio';
+import { portfolioService } from '../services/portfolioService';
+import {
+  User,
+  Shield,
+  Coins,
+  Briefcase,
+  Upload,
+  Download,
+  RotateCcw,
+  Plus,
+  Check,
+  ChevronRight,
+  Database,
+  CloudCheck,
+  Info,
+  Sun,
+  Moon,
+  Laptop,
+} from 'lucide-react';
+
+interface ProfileViewProps {
+  portfolioState: PortfolioState;
+  onUpdateCurrency: (currency: 'EUR' | 'USD' | 'GBP') => void;
+  onUpdateTheme: (theme: 'light' | 'dark' | 'system') => void;
+  onSwitchPortfolio: (portfolioId: string) => void;
+  onAddPortfolio: (name: string) => void;
+  onOpenImport: () => void;
+  onResetDemo: () => void;
+  onRestoreState: (state: PortfolioState) => void;
+}
+
+export const ProfileView: React.FC<ProfileViewProps> = ({
+  portfolioState,
+  onUpdateCurrency,
+  onUpdateTheme,
+  onSwitchPortfolio,
+  onAddPortfolio,
+  onOpenImport,
+  onResetDemo,
+  onRestoreState,
+}) => {
+  const [newPortName, setNewPortName] = useState('');
+  const [showAddPort, setShowAddPort] = useState(false);
+
+  const handleExportBackup = () => {
+    portfolioService.exportToJson(portfolioState);
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const content = ev.target?.result as string;
+        const restored = portfolioService.importFromJson(content);
+        onRestoreState(restored);
+        alert('Copia de seguridad restaurada correctamente.');
+      } catch (err: any) {
+        alert('Error al restaurar: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  return (
+    <div className="pb-28 pt-2 px-4 max-w-md mx-auto">
+      {/* 1. Cabecera */}
+      <header className="pt-1 pb-4">
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950">Perfil & Ajustes</h1>
+        <p className="text-xs text-slate-500 font-medium">Configuración de cuenta, carteras y sincronización</p>
+      </header>
+
+      {/* 2. Tarjeta de Usuario */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs flex items-center gap-3.5">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-slate-900 to-slate-700 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
+          CM
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="font-extrabold text-slate-900 text-base">Carlos Moreno</h2>
+            <span className="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
+              Privada / Familiar
+            </span>
+          </div>
+          <span className="text-xs text-slate-400">carlos.moreno@inversor.es</span>
+        </div>
+      </div>
+
+      {/* 2.5 Selector de Tema Visual (Claro / Oscuro AMOLED / Sistema) */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs">
+        <div className="flex items-center gap-2 mb-3">
+          <Moon className="w-4 h-4 text-indigo-600" />
+          <h3 className="font-extrabold text-slate-900 text-sm">Tema Visual</h3>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => onUpdateTheme('light')}
+            className={`py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+              (portfolioState.theme || 'light') === 'light'
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-900 shadow-2xs'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Sun className="w-3.5 h-3.5 text-amber-500" />
+            <span>Claro</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onUpdateTheme('dark')}
+            className={`py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+              portfolioState.theme === 'dark'
+                ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Moon className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Oscuro</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onUpdateTheme('system')}
+            className={`py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+              portfolioState.theme === 'system'
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-900 shadow-2xs'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Laptop className="w-3.5 h-3.5 text-slate-500" />
+            <span>Auto</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 3. Selector de Divisa Base */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs">
+        <div className="flex items-center gap-2 mb-3">
+          <Coins className="w-4 h-4 text-emerald-600" />
+          <h3 className="font-extrabold text-slate-900 text-sm">Divisa Base</h3>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {(['EUR', 'USD', 'GBP'] as const).map(cur => (
+            <button
+              key={cur}
+              onClick={() => onUpdateCurrency(cur)}
+              className={`py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 ${
+                portfolioState.currency === cur
+                  ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <span>{cur === 'EUR' ? '€ EUR' : cur === 'USD' ? '$ USD' : '£ GBP'}</span>
+              {portfolioState.currency === cur && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 4. Gestión de Carteras */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Briefcase className="w-4 h-4 text-blue-600" />
+            <h3 className="font-extrabold text-slate-900 text-sm">Tus Carteras</h3>
+          </div>
+          <button
+            onClick={() => setShowAddPort(!showAddPort)}
+            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1"
+          >
+            <Plus className="w-3.5 h-3.5" /> Nueva
+          </button>
+        </div>
+
+        {showAddPort && (
+          <div className="mb-3 p-3 bg-slate-50 rounded-2xl flex gap-2">
+            <input
+              type="text"
+              value={newPortName}
+              onChange={e => setNewPortName(e.target.value)}
+              placeholder="Nombre de la nueva cartera..."
+              className="flex-1 text-xs border border-slate-300 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+            <button
+              onClick={() => {
+                if (newPortName.trim()) {
+                  onAddPortfolio(newPortName.trim());
+                  setNewPortName('');
+                  setShowAddPort(false);
+                }
+              }}
+              className="bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl hover:bg-emerald-700"
+            >
+              Crear
+            </button>
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          {portfolioState.portfolios.map(port => {
+            const isSelected = portfolioState.activePortfolioId === port.id;
+            return (
+              <button
+                key={port.id}
+                onClick={() => onSwitchPortfolio(port.id)}
+                className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                  isSelected
+                    ? 'border-slate-900 bg-slate-900 text-white shadow-xs'
+                    : 'border-slate-200 text-slate-800 hover:bg-slate-50'
+                }`}
+              >
+                <div>
+                  <div className="font-bold text-xs">{port.name}</div>
+                  <div className={`text-[10px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>
+                    Divisa: {port.currency} • Creada {port.createdAt}
+                  </div>
+                </div>
+                {isSelected && <Check className="w-4 h-4 text-emerald-400" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 5. Herramientas de Importación y Respaldo */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs space-y-2">
+        <h3 className="font-extrabold text-slate-900 text-sm mb-2">Datos y Sincronización</h3>
+
+        <button
+          onClick={onOpenImport}
+          className="w-full text-left py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors flex items-center justify-between text-xs font-bold text-slate-800"
+        >
+          <div className="flex items-center gap-2.5">
+            <Upload className="w-4 h-4 text-emerald-600" />
+            <span>Importador DEGIRO / MyInvestor / CSV</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={handleExportBackup}
+          className="w-full text-left py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors flex items-center justify-between text-xs font-bold text-slate-800"
+        >
+          <div className="flex items-center gap-2.5">
+            <Download className="w-4 h-4 text-slate-500" />
+            <span>Descargar copia de seguridad (JSON)</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <label className="w-full text-left py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors flex items-center justify-between text-xs font-bold text-slate-800 cursor-pointer">
+          <div className="flex items-center gap-2.5">
+            <Database className="w-4 h-4 text-slate-500" />
+            <span>Restaurar copia de seguridad (JSON)</span>
+          </div>
+          <input type="file" accept=".json" onChange={handleImportBackup} className="hidden" />
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </label>
+
+        <button
+          onClick={() => {
+            if (confirm('¿Restablecer los datos demo originales? Se perderán las modificaciones locales no exportadas.')) {
+              onResetDemo();
+            }
+          }}
+          className="w-full text-left py-2.5 px-3 rounded-2xl hover:bg-rose-50 transition-colors flex items-center justify-between text-xs font-bold text-rose-600"
+        >
+          <div className="flex items-center gap-2.5">
+            <RotateCcw className="w-4 h-4" />
+            <span>Restaurar datos de prueba iniciales</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-rose-400" />
+        </button>
+      </div>
+
+      {/* 6. Arquitectura Supabase & Vercel */}
+      <div className="bg-slate-900 text-white rounded-3xl p-4 mb-4 shadow-sm text-xs space-y-2">
+        <div className="flex items-center gap-2 text-emerald-400 font-bold">
+          <Shield className="w-4 h-4" />
+          <span>Arquitectura Segura y Multiusuario</span>
+        </div>
+        <p className="text-slate-300 text-[11px] leading-relaxed">
+          Esta aplicación está equipada con una capa desacoplada en <code>src/services/portfolioService.ts</code> lista para conectar tu proyecto de <strong>Supabase</strong> (autenticación OAuth/correo y Row Level Security) para aislar los datos de cada usuario con cifrado en reposo y despliegue continuo en <strong>Vercel</strong>.
+        </p>
+      </div>
+
+      {/* 7. Aviso legal */}
+      <div className="text-[11px] text-slate-400 text-center leading-relaxed px-2">
+        <p>Valora Inversión no constituye asesoramiento financiero ni recomendación de inversión. Las cotizaciones pueden sufrir ligeros retrasos según la bolsa de negociación.</p>
+        <p className="mt-1 font-semibold text-slate-500">Versión 1.0.0 • Mobile-first PWA</p>
+      </div>
+    </div>
+  );
+};

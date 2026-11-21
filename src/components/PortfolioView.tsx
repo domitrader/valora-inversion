@@ -1,0 +1,759 @@
+import React, { useState } from 'react';
+import {
+  PositionItem,
+  InicioSubTab,
+  TimeRange,
+  AssetType,
+  FinancialEvent,
+} from '../types/portfolio';
+import {
+  formatEUR,
+  formatHeaderEUR,
+  formatPercent,
+  calculatePortfolioMetrics,
+} from '../utils/calculations';
+import { MOCK_CHART_DATA } from '../data/mockPortfolio';
+import { Sparkline } from './Sparkline';
+import { InteractiveChart } from './InteractiveChart';
+import {
+  Search,
+  Eye,
+  EyeOff,
+  SlidersHorizontal,
+  ArrowDownRight,
+  ArrowUpRight,
+  Plus,
+  Trash2,
+  X,
+  Target,
+  Wallet,
+  PieChart,
+  Calendar,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+  RefreshCw,
+} from 'lucide-react';
+
+interface PortfolioViewProps {
+  positions: PositionItem[];
+  cash: number;
+  goalAmount: number;
+  hideFigures: boolean;
+  selectedTimeRange: TimeRange;
+  events: FinancialEvent[];
+  onToggleHideFigures: () => void;
+  onSelectTimeRange: (range: TimeRange) => void;
+  onOpenSearch: () => void;
+  onGoToProfile: () => void;
+  onUpdateCash: (newCash: number) => void;
+  onUpdatePosition: (position: PositionItem) => void;
+  onDeletePosition: (id: string) => void;
+  onOpenImport: () => void;
+  onRefreshLiveQuotes?: () => void;
+  isRefreshingLive?: boolean;
+  lastUpdatedTime?: string;
+}
+
+export const PortfolioView: React.FC<PortfolioViewProps> = ({
+  positions,
+  cash,
+  goalAmount,
+  hideFigures,
+  selectedTimeRange,
+  events,
+  onToggleHideFigures,
+  onSelectTimeRange,
+  onOpenSearch,
+  onGoToProfile,
+  onUpdateCash,
+  onUpdatePosition,
+  onDeletePosition,
+  onOpenImport,
+  onRefreshLiveQuotes,
+  isRefreshingLive = false,
+  lastUpdatedTime,
+}) => {
+  const [activeSubTab, setActiveSubTab] = useState<InicioSubTab>('portafolio');
+  const [selectedAssetFilter, setSelectedAssetFilter] = useState<'Todos' | AssetType>('Todos');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [positionSort, setPositionSort] = useState<'value-desc' | 'change-asc' | 'change-desc' | 'name-asc'>('value-desc');
+  const [selectedPosition, setSelectedPosition] = useState<PositionItem | null>(null);
+  const [showCashModal, setShowCashModal] = useState(false);
+  const [cashInput, setCashInput] = useState(cash.toString());
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showChartModal, setShowChartModal] = useState(false);
+
+  // Métricas calculadas
+  const metrics = calculatePortfolioMetrics(positions, cash);
+  const chartPoints = MOCK_CHART_DATA[selectedTimeRange] || MOCK_CHART_DATA['1D'];
+
+  // Formato cabecera idéntico al de la captura de pantalla (€15.046,85)
+  const headerFormatted = formatHeaderEUR(metrics.totalMarketValue, hideFigures);
+
+  // Filtrado y ordenación de posiciones
+  const filteredPositions = positions
+    .filter(pos => selectedAssetFilter === 'Todos' || pos.type === selectedAssetFilter)
+    .sort((a, b) => {
+      if (positionSort === 'value-desc') return b.totalValue - a.totalValue;
+      if (positionSort === 'name-asc') return a.name.localeCompare(b.name);
+      if (positionSort === 'change-desc') return b.dailyChangePct - a.dailyChangePct;
+      if (positionSort === 'change-asc') return a.dailyChangePct - b.dailyChangePct;
+      return 0;
+    });
+
+  // Cálculo de distribución por tipo
+  const totalPosValue = positions.reduce((acc, p) => acc + p.totalValue, 0) || 1;
+  const accionesVal = positions.filter(p => p.type === 'Acciones').reduce((a, b) => a + b.totalValue, 0);
+  const etfsVal = positions.filter(p => p.type === 'ETFs').reduce((a, b) => a + b.totalValue, 0);
+  const criptoVal = positions.filter(p => p.type === 'Cripto').reduce((a, b) => a + b.totalValue, 0);
+
+  const accionesPct = Math.round((accionesVal / totalPosValue) * 100);
+  const etfsPct = Math.round((etfsVal / totalPosValue) * 100);
+  const criptoPct = Math.max(0, 100 - accionesPct - etfsPct);
+
+  // Meta de inversión calculada
+  const goalProgress = Math.min(100, Math.round((metrics.totalMarketValue / goalAmount) * 100));
+
+  // Próximos dividendos
+  const upcomingDividends = events.filter(e => e.type === 'pago-dividendo' || e.type === 'ex-dividend');
+
+  return (
+    <div className="pb-24 pt-2">
+      {/* 1. Cabecera idéntica a la captura de pantalla: "Inicio" + Lupa + Avatar */}
+      <header className="flex items-center justify-between px-4 pt-1 pb-3">
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">Inicio</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenSearch}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Buscar activos"
+          >
+            <Search className="w-5 h-5 stroke-[2.2]" />
+          </button>
+          <button
+            onClick={onGoToProfile}
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-xs"
+            title="Perfil de usuario"
+          >
+            SE
+          </button>
+        </div>
+      </header>
+
+      {/* 2. Pestañas superiores: "Para ti" | "Portafolio" | "Dividendos" */}
+      <div className="flex items-center gap-1 px-4 mb-4">
+        {(['para-ti', 'portafolio', 'dividendos'] as InicioSubTab[]).map(tab => {
+          const isActive = activeSubTab === tab;
+          const label = tab === 'para-ti' ? 'Para ti' : tab === 'portafolio' ? 'Portafolio' : 'Dividendos';
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveSubTab(tab)}
+              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                isActive
+                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* CONTENIDO SEGÚN LA SUB-PESTAÑA ACTIVA */}
+      {activeSubTab === 'portafolio' && (
+        <>
+          {/* 3. Bloque "VALOR DE MERCADO" con ojo, variación diaria y P/G abierto */}
+          <section className="text-center px-4 pt-1 pb-2">
+            <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase mb-0.5">
+              <span>VALOR DE MERCADO</span>
+              <button
+                onClick={onToggleHideFigures}
+                className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 p-0.5 transition-colors"
+                title={hideFigures ? 'Mostrar cifras' : 'Ocultar cifras'}
+              >
+                {hideFigures ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+
+            {/* Cifra grande principal formateada: €15.046,85 */}
+            <div className="flex items-baseline justify-center tracking-tight text-slate-950 dark:text-white font-black text-4xl sm:text-5xl my-0.5">
+              <span className="text-2xl sm:text-3xl font-bold mr-0.5">€</span>
+              <span>{headerFormatted.integerPart}</span>
+              <span className="text-2xl sm:text-3xl font-bold">,{headerFormatted.decimalPart}</span>
+            </div>
+
+            {/* Variación Diaria: ↓ 1.607,10 €  -9,65 % */}
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold mt-1">
+              <span className={`inline-flex items-center gap-0.5 ${metrics.dailyChangeValue >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {metrics.dailyChangeValue >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+                {formatEUR(metrics.dailyChangeValue, hideFigures)}
+              </span>
+              <span className={`font-bold ${metrics.dailyChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {formatPercent(metrics.dailyChangePct)}
+              </span>
+            </div>
+
+            {/* P/G Abierto: P/G abierto ↓ 7.789,01 €  -34,11 % */}
+            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <span>P/G abierto</span>
+              <span className={`inline-flex items-center gap-0.5 font-medium ${metrics.unrealizedGainLoss >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>
+                {metrics.unrealizedGainLoss >= 0 ? '↑' : '↓'}
+                {formatEUR(metrics.unrealizedGainLoss, hideFigures)}
+              </span>
+              <span className={`font-semibold ${metrics.unrealizedGainLossPct >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>
+                {formatPercent(metrics.unrealizedGainLossPct)}
+              </span>
+            </div>
+
+            {/* Indicador de actualización de cotizaciones en tiempo real */}
+            {onRefreshLiveQuotes && (
+              <div className="flex items-center justify-center gap-2 mt-2">
+                <button
+                  onClick={onRefreshLiveQuotes}
+                  disabled={isRefreshingLive}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200/80 dark:border-slate-700/80 shadow-2xs disabled:opacity-60"
+                  title="Actualizar cotizaciones en vivo con Yahoo Finance y CoinGecko"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>{isRefreshingLive ? 'Actualizando...' : 'Cotizaciones en vivo'}</span>
+                  <RefreshCw className={`w-3 h-3 ${isRefreshingLive ? 'animate-spin text-emerald-500' : 'text-slate-400'}`} />
+                </button>
+                {lastUpdatedTime && (
+                  <span className="text-[10px] text-slate-400">
+                    {lastUpdatedTime}
+                  </span>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* 4. Gráfico interactivo con selector de rango */}
+          <section className="mt-2 mb-4">
+            <InteractiveChart
+              data={chartPoints}
+              selectedRange={selectedTimeRange}
+              onRangeChange={onSelectTimeRange}
+              onExpand={() => setShowChartModal(true)}
+              hideFigures={hideFigures}
+            />
+          </section>
+
+          {/* 5. Tarjetas horizontales ("Analíticas", "Efectivo", "Meta") */}
+          <section className="px-4 mb-5">
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Tarjeta 1: Analíticas con gráfico circular tipo donut */}
+              <button
+                onClick={() => setShowAnalyticsModal(true)}
+                className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs flex flex-col justify-between h-24"
+              >
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Analíticas</span>
+                <div className="flex items-center justify-between">
+                  {/* Donut mini SVG */}
+                  <svg className="w-8 h-8 -rotate-90" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4" className="dark:stroke-slate-800" />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="14"
+                      fill="none"
+                      stroke="#3B82F6"
+                      strokeWidth="4"
+                      strokeDasharray={`${accionesPct} 100`}
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="14"
+                      fill="none"
+                      stroke="#EAB308"
+                      strokeWidth="4"
+                      strokeDasharray={`${etfsPct} 100`}
+                      strokeDashoffset={`-${accionesPct}`}
+                    />
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="14"
+                      fill="none"
+                      stroke="#A855F7"
+                      strokeWidth="4"
+                      strokeDasharray={`${criptoPct} 100`}
+                      strokeDashoffset={`-${accionesPct + etfsPct}`}
+                    />
+                  </svg>
+                  <span className="text-[10px] text-slate-400 font-medium">Ver</span>
+                </div>
+              </button>
+
+              {/* Tarjeta 2: Efectivo */}
+              <button
+                onClick={() => setShowCashModal(true)}
+                className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs flex flex-col justify-between h-24"
+              >
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Efectivo</span>
+                <div>
+                  <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    {formatEUR(cash, hideFigures)}
+                  </div>
+                  <span className="text-[10px] text-emerald-500 font-semibold">+ Ajustar</span>
+                </div>
+              </button>
+
+              {/* Tarjeta 3: Meta de inversión */}
+              <button
+                onClick={() => alert(`Meta de ahorro e inversión: ${goalProgress}% alcanzado de ${formatEUR(goalAmount, hideFigures)}`)}
+                className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs flex flex-col justify-between h-24"
+              >
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Meta</span>
+                <div className="flex items-center justify-between">
+                  {/* Circular progress */}
+                  <div className="relative w-7 h-7 flex items-center justify-center">
+                    <svg className="w-7 h-7 -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="14" fill="none" stroke="#F1F5F9" strokeWidth="4" className="dark:stroke-slate-800" />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="14"
+                        fill="none"
+                        stroke="#F97316"
+                        strokeWidth="4"
+                        strokeDasharray={`${goalProgress} 100`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="text-[9px] font-extrabold text-slate-700 dark:text-slate-200">{goalProgress}%</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">{formatEUR(goalAmount, true)}</span>
+                </div>
+              </button>
+            </div>
+          </section>
+
+          {/* 6. Sección de Activos / Posiciones */}
+          <section className="px-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white">Acciones</h2>
+                <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                  {filteredPositions.length}
+                </span>
+              </div>
+
+              {/* Botón de orden/filtro con icono de deslizadores */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs"
+                  title="Ordenar posiciones"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                </button>
+
+                {showSortMenu && (
+                  <div className="absolute right-0 top-11 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 w-52 text-xs">
+                    <div className="px-3 py-1 font-bold text-slate-400 uppercase text-[10px]">Ordenar por</div>
+                    <button
+                      onClick={() => { setPositionSort('value-desc'); setShowSortMenu(false); }}
+                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'value-desc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      <span>Mayor valor total</span>
+                      {positionSort === 'value-desc' && <span>✓</span>}
+                    </button>
+                    <button
+                      onClick={() => { setPositionSort('change-desc'); setShowSortMenu(false); }}
+                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'change-desc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      <span>Mayor rentabilidad</span>
+                      {positionSort === 'change-desc' && <span>✓</span>}
+                    </button>
+                    <button
+                      onClick={() => { setPositionSort('change-asc'); setShowSortMenu(false); }}
+                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'change-asc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      <span>Mayor caída</span>
+                      {positionSort === 'change-asc' && <span>✓</span>}
+                    </button>
+                    <button
+                      onClick={() => { setPositionSort('name-asc'); setShowSortMenu(false); }}
+                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'name-asc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                    >
+                      <span>Nombre alfabético</span>
+                      {positionSort === 'name-asc' && <span>✓</span>}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Chips de filtro rápido por tipo (Todos, Acciones, ETFs, Cripto) */}
+            <div className="flex items-center gap-1.5 mb-3 overflow-x-auto no-scrollbar">
+              {(['Todos', 'Acciones', 'ETFs', 'Cripto'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setSelectedAssetFilter(f)}
+                  className={`text-xs px-3 py-1 rounded-full font-semibold transition-colors ${
+                    selectedAssetFilter === f
+                      ? 'bg-slate-900 dark:bg-emerald-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {/* Listado de posiciones con densidad idéntica a la captura */}
+            <div className="space-y-1">
+              {filteredPositions.map(pos => {
+                const isLoss = pos.dailyChangePct < 0;
+                return (
+                  <div
+                    key={pos.id}
+                    onClick={() => setSelectedPosition(pos)}
+                    className="flex items-center justify-between py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors active:scale-[0.99]"
+                  >
+                    {/* Logo + Nombre y títulos */}
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0 ${pos.logoBg || 'bg-slate-800'}`}
+                      >
+                        {pos.logoText || pos.ticker.slice(0, 2)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1">
+                          <span>{pos.name}</span>
+                          {pos.countryFlag && <span className="text-xs">{pos.countryFlag}</span>}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                          {pos.shares} • {formatEUR(pos.avgPrice, hideFigures)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sparkline central sutil */}
+                    <div className="hidden sm:block shrink-0 px-2">
+                      <Sparkline data={pos.sparkline} width={64} height={20} isPositive={!isLoss} />
+                    </div>
+
+                    {/* Valor total a la derecha y variación en rojo o verde */}
+                    <div className="text-right shrink-0">
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">
+                        {formatEUR(pos.totalValue, hideFigures)}
+                      </div>
+                      <div
+                        className={`text-xs font-semibold flex items-center justify-end gap-1 ${
+                          isLoss ? 'text-rose-500' : 'text-emerald-500'
+                        }`}
+                      >
+                        <span>{formatEUR(pos.dailyChangeValue, hideFigures)}</span>
+                        <span>{formatPercent(pos.dailyChangePct)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Botón inferior para importar más posiciones */}
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center gap-2.5">
+              <button
+                onClick={onOpenImport}
+                className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 px-4 py-2.5 rounded-full flex items-center gap-1.5 transition-all shadow-2xs"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Subir DEGIRO / MyInvestor</span>
+              </button>
+              <button
+                onClick={onOpenSearch}
+                className="text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2.5 rounded-full flex items-center gap-1.5 transition-colors"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Añadir manual</span>
+              </button>
+            </div>
+          </section>
+        </>
+      )}
+
+      {/* PESTAÑA: DIVIDENDOS */}
+      {activeSubTab === 'dividendos' && (
+        <section className="px-4">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 mb-5 shadow-lg">
+            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+              Ingresos Anuales Estimados
+            </span>
+            <div className="text-3xl font-black mt-1 mb-2">
+              {formatEUR(metrics.annualProjectedDividends, hideFigures)}
+            </div>
+            <div className="flex items-center justify-between text-xs text-slate-300 pt-3 border-t border-slate-700/60">
+              <div>
+                <span className="text-slate-400">Media mensual:</span>{' '}
+                <span className="font-bold text-white">{formatEUR(metrics.monthlyAverageDividends, hideFigures)} / mes</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Yield medio:</span>{' '}
+                <span className="font-bold text-emerald-400">{formatPercent(metrics.dividendYieldPct, false)}</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 className="font-extrabold text-lg text-slate-900 mb-3">Próximos cobros en cartera</h3>
+          <div className="space-y-2 mb-6">
+            {upcomingDividends.map(ev => (
+              <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ${ev.logoBg || 'bg-slate-700'}`}>
+                    {ev.logoText || ev.ticker.slice(0, 2)}
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">{ev.assetName}</div>
+                    <div className="text-xs text-slate-500">{ev.date} • {ev.description}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold text-emerald-600 text-sm">
+                    +{formatEUR(ev.estimatedAmount || 0, hideFigures)}
+                  </div>
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    {ev.confirmed ? 'Confirmado' : 'Estimado'}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* PESTAÑA: PARA TI */}
+      {activeSubTab === 'para-ti' && (
+        <section className="px-4 space-y-4">
+          {/* Briefing IA diario */}
+          <div className="bg-emerald-50/70 border border-emerald-100 rounded-3xl p-4">
+            <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs mb-1">
+              <Sparkles className="w-4 h-4 text-emerald-600" />
+              <span>Resumen patrimonial del día</span>
+            </div>
+            <p className="text-xs text-slate-700 leading-relaxed">
+              Tu cartera experimenta hoy una corrección del <strong>9,65%</strong> impulsada principalmente por la toma de beneficios en activos de tecnología y ETPs cripto. Tus activos defensivos como <em>Realty Income (+0,82%)</em> proporcionan estabilidad al flujo de rentas.
+            </p>
+          </div>
+
+          {/* Mayor subida y mayor bajada */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-xs">
+              <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs mb-1">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>Mayor subida</span>
+              </div>
+              <div className="font-bold text-slate-900 text-sm">Realty Income</div>
+              <div className="text-xs font-semibold text-emerald-600 mt-0.5">+0,82 % (+14,95 €)</div>
+            </div>
+
+            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-xs">
+              <div className="flex items-center gap-1.5 text-rose-500 font-bold text-xs mb-1">
+                <TrendingDown className="w-3.5 h-3.5" />
+                <span>Mayor corrección</span>
+              </div>
+              <div className="font-bold text-slate-900 text-sm truncate">WisdomTree Battery</div>
+              <div className="text-xs font-semibold text-rose-500 mt-0.5">-15,74 % (-176,08 €)</div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* MODAL DETALLE DE POSICIÓN */}
+      {selectedPosition && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${selectedPosition.logoBg || 'bg-slate-800'}`}>
+                  {selectedPosition.logoText || selectedPosition.ticker.slice(0, 2)}
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 text-base">{selectedPosition.name}</h3>
+                  <div className="text-xs text-slate-500">{selectedPosition.ticker} • {selectedPosition.type}</div>
+                </div>
+              </div>
+              <button onClick={() => setSelectedPosition(null)} className="p-1 rounded-full text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 my-4">
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <span className="text-[11px] text-slate-500">Títulos en posesión</span>
+                <div className="text-base font-bold text-slate-900">{selectedPosition.shares}</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <span className="text-[11px] text-slate-500">Precio de compra medio</span>
+                <div className="text-base font-bold text-slate-900">{formatEUR(selectedPosition.avgPrice)}</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <span className="text-[11px] text-slate-500">Cotización actual</span>
+                <div className="text-base font-bold text-slate-900">{formatEUR(selectedPosition.currentPrice)}</div>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl">
+                <span className="text-[11px] text-slate-500">Valor de posición</span>
+                <div className="text-base font-bold text-slate-900">{formatEUR(selectedPosition.totalValue)}</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => {
+                  const newShares = prompt('Modificar número de títulos:', selectedPosition.shares.toString());
+                  if (newShares && !isNaN(Number(newShares))) {
+                    const sharesNum = Number(newShares);
+                    onUpdatePosition({
+                      ...selectedPosition,
+                      shares: sharesNum,
+                      totalValue: Number((sharesNum * selectedPosition.currentPrice).toFixed(2)),
+                    });
+                    setSelectedPosition(null);
+                  }
+                }}
+                className="flex-1 bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs hover:bg-slate-800 transition-colors"
+              >
+                Editar títulos
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm(`¿Eliminar ${selectedPosition.name} de la cartera?`)) {
+                    onDeletePosition(selectedPosition.id);
+                    setSelectedPosition(null);
+                  }
+                }}
+                className="w-10 h-10 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 flex items-center justify-center transition-colors"
+                title="Eliminar posición"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDITAR EFECTIVO */}
+      {showCashModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+            <h3 className="font-bold text-slate-900 text-base mb-1">Efectivo disponible</h3>
+            <p className="text-xs text-slate-500 mb-4">Indica la liquidez sin invertir en tu cuenta broker.</p>
+            <input
+              type="number"
+              step="any"
+              value={cashInput}
+              onChange={e => setCashInput(e.target.value)}
+              className="w-full text-2xl font-bold text-slate-900 border border-slate-300 rounded-xl px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-emerald-500 mb-4"
+              placeholder="0,00"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCashModal(false)}
+                className="flex-1 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  const val = parseFloat(cashInput) || 0;
+                  onUpdateCash(val);
+                  setShowCashModal(false);
+                }}
+                className="flex-1 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ANALÍTICAS DE DISTRIBUCIÓN */}
+      {showAnalyticsModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900 text-base">Distribución de activos</h3>
+              <button onClick={() => setShowAnalyticsModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>Acciones</span>
+                  <span>{accionesPct}% ({formatEUR(accionesVal, hideFigures)})</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${accionesPct}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>ETFs</span>
+                  <span>{etfsPct}% ({formatEUR(etfsVal, hideFigures)})</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full" style={{ width: `${etfsPct}%` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>Cripto</span>
+                  <span>{criptoPct}% ({formatEUR(criptoVal, hideFigures)})</span>
+                </div>
+                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-500 rounded-full" style={{ width: `${criptoPct}%` }}></div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowAnalyticsModal(false)}
+              className="w-full mt-6 bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GRÁFICO AMPLIADO */}
+      {showChartModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col p-4 animate-fadeIn">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <span className="text-xs text-slate-400">VALOR EN TIEMPO REAL</span>
+              <div className="text-2xl font-black">{formatEUR(metrics.totalMarketValue, hideFigures)}</div>
+            </div>
+            <button
+              onClick={() => setShowChartModal(false)}
+              className="w-9 h-9 rounded-full bg-slate-800 text-white flex items-center justify-center"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center">
+            <InteractiveChart
+              data={chartPoints}
+              selectedRange={selectedTimeRange}
+              onRangeChange={onSelectTimeRange}
+              hideFigures={hideFigures}
+            />
+          </div>
+          <div className="text-center text-xs text-slate-400 pb-4">
+            Toca o desliza sobre el gráfico para consultar los puntos horarios
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

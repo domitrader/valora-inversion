@@ -1,0 +1,17 @@
+{
+  "name": "Valora — Control Patrimonial & Eventos Financieros",
+  "short_name": "Valora",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#0F172A",
+  "orientation": "portrait",
+  "description": "Seguimiento integral de carteras, acciones, ETFs, cripto, dividendos y eventos financieros",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

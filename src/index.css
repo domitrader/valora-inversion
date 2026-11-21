@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: #F1F5F9;
+    color: #0F172A;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom subtle scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Sparkline animation */
+@keyframes dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-dash {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: dash 1.5s ease-out forwards;
+}
