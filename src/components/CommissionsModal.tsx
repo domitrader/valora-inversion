@@ -1,7 +1,25 @@
 import React, { useState, useMemo } from 'react';
-import { X, Search, Receipt, Filter, ArrowUpRight, DollarSign, Globe, Layers, Percent } from 'lucide-react';
+import {
+  X,
+  Search,
+  Receipt,
+  Filter,
+  ArrowUpRight,
+  ArrowDownRight,
+  DollarSign,
+  Globe,
+  Layers,
+  Percent,
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Maximize2,
+  Minimize2,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { formatEUR } from '../utils/calculations';
 import degiroDataRaw from '../data/degiroPositionsData.json';
+import historicalAssetsRaw from '../data/historicalAssetStats.json';
 
 interface CommissionsModalProps {
   isOpen: boolean;
@@ -15,164 +33,369 @@ export const CommissionsModal: React.FC<CommissionsModalProps> = ({
   hideFigures = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<'Todas' | 'Corretaje' | 'Conectividad' | 'Apalancamiento' | 'AutoFX'>('Todas');
+  const [statusFilter, setStatusFilter] = useState<'Todos' | 'Abierta' | 'Cerrada'>('Todos');
+  const [typeFilter, setTypeFilter] = useState<'Todos' | 'Acciones' | 'ETFs' | 'Cripto'>('Todos');
+  const [sortBy, setSortBy] = useState<'fees-desc' | 'net-desc' | 'net-asc' | 'trades-desc' | 'name-asc'>('fees-desc');
+  const [isExpandedView, setIsExpandedView] = useState(false);
 
   const summary = (degiroDataRaw as any).accountSummary || {};
   const totalFees = summary.totalComisiones || 3234.95;
   const totalTrades = summary.totalTrades || 2847;
-  const closedPositions = (degiroDataRaw as any).closedPositions || [];
+  const grossRealizedPnl = summary.historicoCerradoPnl || 28145.97;
+  const netRealizedPnl = grossRealizedPnl - totalFees; // 24.911,02 €
 
-  // Ranked assets by fees paid
-  const assetsByFees = useMemo(() => {
-    return [...closedPositions]
-      .filter((a: any) => a.total_fees > 0)
-      .sort((a: any, b: any) => (b.total_fees || 0) - (a.total_fees || 0));
-  }, [closedPositions]);
+  // Unificar y deduplicar activos desde historicalAssetStats.json
+  const allAssets = useMemo(() => {
+    const rawList = Array.isArray(historicalAssetsRaw) ? historicalAssetsRaw : [];
+    const map = new Map<string, any>();
 
-  const filteredAssets = useMemo(() => {
-    return assetsByFees.filter((a: any) => {
-      const matchesSearch =
-        a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.isin.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
+    rawList.forEach((item: any) => {
+      const isin = (item.isin || '').trim().toUpperCase();
+      const key = isin || item.name;
+
+      // Asignar bandera según país
+      let flag = '📄';
+      if (isin.startsWith('US')) flag = '🇺🇸';
+      else if (isin.startsWith('ES')) flag = '🇪🇸';
+      else if (isin.startsWith('IE')) flag = '🇮🇪';
+      else if (isin.startsWith('DE')) flag = '🇩🇪';
+      else if (isin.startsWith('FR')) flag = '🇫🇷';
+      else if (isin.startsWith('NL')) flag = '🇳🇱';
+      else if (isin.startsWith('CH')) flag = '🇨🇭';
+      else if (isin.startsWith('SE')) flag = '🇸🇪';
+      else if (isin.startsWith('GB')) flag = '🇬🇧';
+      else if (isin.startsWith('LU')) flag = '🇱🇺';
+      if (item.name?.toUpperCase().includes('BITCOIN') || item.type === 'Cripto') flag = '₿';
+
+      const fees = Number(item.total_fees || 0);
+      const pnl = Number(item.realized_pnl || 0);
+      const net = pnl - fees;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          isin,
+          name: item.name || 'Activo',
+          type: item.type || 'Acciones',
+          status: item.status || (item.shares > 0 ? 'Abierta' : 'Cerrada'),
+          shares: item.shares || 0,
+          trades_count: item.trades_count || 1,
+          total_fees: fees,
+          realized_pnl: pnl,
+          net_pnl: net,
+          flag,
+        });
+      } else {
+        // Si hay duplicado (como Taiwan Semi), combinar cifras
+        const existing = map.get(key);
+        existing.total_fees += fees;
+        existing.realized_pnl += pnl;
+        existing.net_pnl = existing.realized_pnl - existing.total_fees;
+        existing.trades_count += item.trades_count || 0;
+        if (item.status === 'Abierta') existing.status = 'Abierta';
+      }
     });
-  }, [assetsByFees, searchTerm]);
+
+    return Array.from(map.values());
+  }, []);
+
+  // Filtrado y ordenación
+  const filteredAssets = useMemo(() => {
+    return allAssets
+      .filter((a: any) => {
+        const matchesSearch =
+          a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          a.isin.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'Todos' || a.status === statusFilter;
+        const matchesType = typeFilter === 'Todos' || a.type === typeFilter;
+        return matchesSearch && matchesStatus && matchesType;
+      })
+      .sort((a: any, b: any) => {
+        if (sortBy === 'fees-desc') return b.total_fees - a.total_fees;
+        if (sortBy === 'net-desc') return b.net_pnl - a.net_pnl;
+        if (sortBy === 'net-asc') return a.net_pnl - b.net_pnl;
+        if (sortBy === 'trades-desc') return b.trades_count - a.trades_count;
+        if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+        return 0;
+      });
+  }, [allAssets, searchTerm, statusFilter, typeFilter, sortBy]);
+
+  // Totales de la selección actual
+  const currentFilteredFees = useMemo(() => {
+    return filteredAssets.reduce((sum, a) => sum + a.total_fees, 0);
+  }, [filteredAssets]);
+
+  const currentFilteredNet = useMemo(() => {
+    return filteredAssets.reduce((sum, a) => sum + a.net_pnl, 0);
+  }, [filteredAssets]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#0B0F19] w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800">
-        
-        {/* Cabecera */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200">
+      <div
+        className={`bg-white dark:bg-[#0B0F19] w-full max-w-xl rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 transition-all ${
+          isExpandedView ? 'h-[96vh]' : 'max-h-[92vh]'
+        }`}
+      >
+        {/* 1. Cabecera Fija */}
+        <div className="p-4 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-500 flex items-center justify-center font-bold">
               <Receipt size={20} />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
-                Comisiones y Gastos DEGIRO
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white">
+                  Comisiones y Beneficio Neto
+                </h2>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                  DEGIRO
+                </span>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 09-03-2018 al 20-11-2026 • {totalTrades.toLocaleString('es-ES')} operaciones
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
-          >
-            <X size={18} />
-          </button>
-        </div>
 
-        {/* Resumen Total */}
-        <div className="py-3">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-2xl p-4 shadow-sm border border-slate-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">
-                  Total Comisiones Pagadas
-                </span>
-                <span className="text-2xl font-black text-amber-400 mt-0.5 block">
-                  {formatEUR(totalFees, hideFigures)}
-                </span>
-              </div>
-              <div className="text-right">
-                <span className="text-[11px] text-slate-400 block">Coste medio</span>
-                <span className="text-xs font-extrabold text-white bg-slate-800 px-2.5 py-1 rounded-lg inline-block mt-0.5">
-                  {(totalFees / totalTrades).toFixed(2)} € / operación
-                </span>
-              </div>
-            </div>
-
-            {/* Categorías de costes */}
-            <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800/80 text-xs">
-              <div className="bg-slate-800/50 rounded-xl p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block font-medium">Corretaje Acciones / ETFs</span>
-                <span className="font-extrabold text-white text-xs">
-                  {formatEUR(1842.50, hideFigures)} <span className="text-[10px] text-slate-400 font-normal">(56,9%)</span>
-                </span>
-              </div>
-              <div className="bg-slate-800/50 rounded-xl p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block font-medium">Costes ETP Apalancados 3x</span>
-                <span className="font-extrabold text-white text-xs">
-                  {formatEUR(845.30, hideFigures)} <span className="text-[10px] text-slate-400 font-normal">(26,1%)</span>
-                </span>
-              </div>
-              <div className="bg-slate-800/50 rounded-xl p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block font-medium">Cambio Divisa (AutoFX 0,25%)</span>
-                <span className="font-extrabold text-white text-xs">
-                  {formatEUR(434.65, hideFigures)} <span className="text-[10px] text-slate-400 font-normal">(13,4%)</span>
-                </span>
-              </div>
-              <div className="bg-slate-800/50 rounded-xl p-2 border border-slate-700/50">
-                <span className="text-[10px] text-slate-400 block font-medium">Conectividad Bolsas (2,50€/año)</span>
-                <span className="font-extrabold text-white text-xs">
-                  {formatEUR(112.50, hideFigures)} <span className="text-[10px] text-slate-400 font-normal">(3,6%)</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Buscador de comisiones por activo */}
-        <div className="relative my-2">
-          <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar por activo, símbolo o ISIN..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-          />
-        </div>
-
-        {/* Listado de comisiones por activo */}
-        <div className="flex-1 overflow-y-auto pr-1 space-y-2 mt-2">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
-            Comisiones acumuladas por producto ({filteredAssets.length})
-          </div>
-
-          {filteredAssets.map((asset: any) => (
-            <div
-              key={asset.id}
-              className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl p-3 flex items-center justify-between"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsExpandedView(!isExpandedView)}
+              className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+              title={isExpandedView ? 'Vista compacta' : 'Desplegar pantalla completa'}
             >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                  {asset.flag || '📄'}
+              {isExpandedView ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Tarjeta Resumen: P/G Bruto - Comisiones = Beneficio Neto Real */}
+        {!isExpandedView && (
+          <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 shrink-0">
+            <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 text-white rounded-2xl p-4 shadow-sm border border-slate-800">
+              {/* Tarjeta destacada de la resta final */}
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div>
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block">
+                    ★ BENEFICIO NETO FINAL (LIMPIO)
+                  </span>
+                  <div className="text-2xl font-black text-emerald-400 mt-0.5">
+                    +{formatEUR(netRealizedPnl, hideFigures)}
+                  </div>
+                  <span className="text-[10px] text-slate-400">
+                    Resultado neto real tras descontar todas las comisiones
+                  </span>
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-[190px]">
-                    {asset.name}
-                  </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {asset.exchangeName || asset.exchange} • {asset.trades_count} operaciones
-                  </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] font-semibold text-slate-400 block uppercase">Comisiones Totales</span>
+                  <span className="text-base font-extrabold text-amber-400 block">
+                    -{formatEUR(totalFees, hideFigures)}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {(totalFees / totalTrades).toFixed(2)} € / op.
+                  </span>
                 </div>
               </div>
 
-              <div className="text-right flex-shrink-0">
-                <div className="text-xs font-black text-amber-500">
-                  {formatEUR(asset.total_fees, hideFigures)}
+              {/* Ecuación de la resta visual */}
+              <div className="grid grid-cols-3 gap-2 pt-3 text-center text-xs">
+                <div className="bg-slate-800/60 rounded-xl p-2 border border-slate-700/40">
+                  <span className="text-[10px] text-slate-400 block">1. Ganancia Bruta</span>
+                  <span className="font-extrabold text-emerald-400 text-xs">
+                    +{formatEUR(grossRealizedPnl, hideFigures)}
+                  </span>
                 </div>
-                <div className="text-[10px] text-slate-400">
-                  P/G: <span className={asset.realized_pnl >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>
-                    {asset.realized_pnl >= 0 ? '+' : ''}{formatEUR(asset.realized_pnl, hideFigures)}
+                <div className="bg-slate-800/60 rounded-xl p-2 border border-slate-700/40">
+                  <span className="text-[10px] text-slate-400 block">2. Menos Gastos</span>
+                  <span className="font-extrabold text-amber-400 text-xs">
+                    -{formatEUR(totalFees, hideFigures)}
+                  </span>
+                </div>
+                <div className="bg-emerald-950/60 rounded-xl p-2 border border-emerald-500/40">
+                  <span className="text-[10px] text-emerald-300 block font-bold">3. Beneficio Real</span>
+                  <span className="font-extrabold text-emerald-300 text-xs">
+                    +{formatEUR(netRealizedPnl, hideFigures)}
                   </span>
                 </div>
               </div>
             </div>
-          ))}
+          </div>
+        )}
+
+        {/* 3. Controles: Filtros, Buscador y Ordenación */}
+        <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 space-y-2 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar activo, símbolo o ISIN..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+
+            <button
+              onClick={() => setIsExpandedView(!isExpandedView)}
+              className="text-xs px-3 py-1.5 rounded-xl font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 shrink-0 flex items-center gap-1"
+            >
+              {isExpandedView ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              <span>{isExpandedView ? 'Ver Resumen' : 'Expandir'}</span>
+            </button>
+          </div>
+
+          {/* Filtros tipo chips */}
+          <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
+            <div className="flex items-center gap-1">
+              {(['Todos', 'Abierta', 'Cerrada'] as const).map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setStatusFilter(st)}
+                  className={`text-[11px] px-2.5 py-1 rounded-lg font-bold transition whitespace-nowrap ${
+                    statusFilter === st
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  {st === 'Todos' ? `Todos (${allAssets.length})` : st === 'Abierta' ? 'Abiertas (5)' : 'Cerradas (112)'}
+                </button>
+              ))}
+            </div>
+
+            {/* Selector de ordenación */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 focus:outline-none shrink-0"
+            >
+              <option value="fees-desc">Mayor Comisión Pagada ↓</option>
+              <option value="net-desc">Mayor Beneficio Neto ↓</option>
+              <option value="net-asc">Menor Beneficio / Pérdida ↑</option>
+              <option value="trades-desc">Más Operaciones Realizadas ↓</option>
+              <option value="name-asc">Nombre Alfabético A-Z</option>
+            </select>
+          </div>
         </div>
 
-        {/* Footer */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 mt-2">
+        {/* 4. Listado Desplegado Hacia Abajo (Scroll fluido completo) */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 divide-y divide-slate-100 dark:divide-slate-800/40">
+          <div className="flex items-center justify-between px-1 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <span>Listado Completo ({filteredAssets.length} activos)</span>
+            <span className="text-[10px] font-semibold text-slate-500">
+              P/G Bruto − Comisión = Neto
+            </span>
+          </div>
+
+          {filteredAssets.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 text-xs">
+              <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
+              <p>No se encontraron activos con los filtros indicados.</p>
+            </div>
+          ) : (
+            filteredAssets.map((asset: any) => {
+              const isPositiveNet = asset.net_pnl >= 0;
+              const isPositiveGross = asset.realized_pnl >= 0;
+
+              return (
+                <div
+                  key={asset.id}
+                  className="pt-2.5 bg-white dark:bg-slate-900/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition"
+                >
+                  {/* Fila Superior: Logo, Nombre, ISIN y Estado */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
+                        {asset.flag}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-[200px]">
+                            {asset.name}
+                          </span>
+                          <span
+                            className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                              asset.status === 'Abierta'
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            }`}
+                          >
+                            {asset.status}
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-medium">
+                          {asset.isin ? `${asset.isin} • ` : ''}{asset.type} • {asset.trades_count} operaciones
+                          {asset.shares > 0 ? ` (${asset.shares} títulos)` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Beneficio Neto Destacado */}
+                    <div className="text-right shrink-0">
+                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Beneficio Neto</span>
+                      <span
+                        className={`text-sm font-black ${
+                          isPositiveNet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                        }`}
+                      >
+                        {isPositiveNet ? '+' : ''}{formatEUR(asset.net_pnl, hideFigures)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Fila Inferior: Desglose de la resta (Bruto - Comisión = Neto) */}
+                  <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 grid grid-cols-3 gap-1.5 text-center text-[11px]">
+                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-1.5">
+                      <span className="text-[9px] text-slate-400 block font-medium">P/G Bruto</span>
+                      <span className={`font-bold ${isPositiveGross ? 'text-slate-900 dark:text-white' : 'text-rose-500'}`}>
+                        {isPositiveGross ? '+' : ''}{formatEUR(asset.realized_pnl, hideFigures)}
+                      </span>
+                    </div>
+
+                    <div className="bg-amber-50/60 dark:bg-amber-950/20 rounded-lg p-1.5 border border-amber-200/40 dark:border-amber-800/30">
+                      <span className="text-[9px] text-amber-700 dark:text-amber-400 block font-medium">Comisión Pagada</span>
+                      <span className="font-extrabold text-amber-600 dark:text-amber-400">
+                        -{formatEUR(asset.total_fees, hideFigures)}
+                      </span>
+                    </div>
+
+                    <div className={`rounded-lg p-1.5 border ${
+                      isPositiveNet
+                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200/50 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-rose-50/70 dark:bg-rose-950/40 border-rose-200/50 dark:border-rose-800/40 text-rose-600'
+                    }`}>
+                      <span className="text-[9px] block font-bold uppercase tracking-wider">Neto Real</span>
+                      <span className="font-black text-xs">
+                        {isPositiveNet ? '+' : ''}{formatEUR(asset.net_pnl, hideFigures)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* 5. Pie de Página Fijo con Totales */}
+        <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shrink-0 flex items-center justify-between gap-3">
+          <div className="text-xs">
+            <span className="text-slate-400 text-[10px] block">Total Selección ({filteredAssets.length} activos)</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">
+              Comisiones: <strong className="text-amber-500">{formatEUR(currentFilteredFees, hideFigures)}</strong> • Neto: <strong className={currentFilteredNet >= 0 ? 'text-emerald-500' : 'text-rose-500'}>{formatEUR(currentFilteredNet, hideFigures)}</strong>
+            </span>
+          </div>
+
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-slate-900 dark:bg-slate-800 text-white rounded-xl text-xs font-extrabold hover:bg-slate-800 transition"
+            className="py-2.5 px-6 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-xl text-xs font-extrabold hover:bg-slate-800 transition shrink-0"
           >
             Cerrar
           </button>
