@@ -141,6 +141,16 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               </button>
 
               <button
+                onClick={() => onSelectCategory('Fondos')}
+                className="flex items-center gap-2.5 w-full text-left text-xs font-bold text-slate-800 hover:text-emerald-600 transition-colors group"
+              >
+                <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                </div>
+                <span>Fondos MyInvestor</span>
+              </button>
+
+              <button
                 onClick={() => onSelectCategory('Cripto')}
                 className="flex items-center gap-2.5 w-full text-left text-xs font-bold text-slate-800 hover:text-purple-600 transition-colors group"
               >

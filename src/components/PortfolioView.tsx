@@ -21,6 +21,7 @@ import { DividendAuditView } from './DividendAuditView';
 import { CommissionsModal } from './CommissionsModal';
 import { NetCashFlowModal } from './NetCashFlowModal';
 import { ClosedProfitsModal } from './ClosedProfitsModal';
+import { formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import degiroData from '../data/degiroPositionsData.json';
 import {
   Search,
@@ -39,6 +40,7 @@ import {
   RefreshCw,
   ChevronDown,
   Check,
+  TrendingUp,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -138,20 +140,24 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
   // Separación explícita solicitada por el usuario: Acciones ARRIBA, ETFs ABAJO
   const stockPositions = filteredPositions.filter(p => p.type === 'Acciones');
+  const fondosPositions = filteredPositions.filter(p => p.type === 'Fondos');
   const etfAndCryptoPositions = filteredPositions.filter(p => p.type === 'ETFs' || p.type === 'Cripto');
 
   const closedStocks = filteredClosedPositions.filter(p => p.type === 'Acciones');
+  const closedFondos = filteredClosedPositions.filter(p => p.type === 'Fondos');
   const closedEtfsAndCrypto = filteredClosedPositions.filter(p => p.type === 'ETFs' || p.type === 'Cripto');
 
   // Cálculo de distribución por tipo
   const totalPosValue = positions.reduce((acc, p) => acc + p.totalValue, 0) || 1;
   const accionesVal = positions.filter(p => p.type === 'Acciones').reduce((a, b) => a + b.totalValue, 0);
   const etfsVal = positions.filter(p => p.type === 'ETFs').reduce((a, b) => a + b.totalValue, 0);
+  const fondosVal = positions.filter(p => p.type === 'Fondos').reduce((a, b) => a + b.totalValue, 0);
   const criptoVal = positions.filter(p => p.type === 'Cripto').reduce((a, b) => a + b.totalValue, 0);
 
   const accionesPct = Math.round((accionesVal / totalPosValue) * 100);
   const etfsPct = Math.round((etfsVal / totalPosValue) * 100);
-  const criptoPct = Math.max(0, 100 - accionesPct - etfsPct);
+  const fondosPct = Math.round((fondosVal / totalPosValue) * 100);
+  const criptoPct = Math.max(0, 100 - accionesPct - etfsPct - fondosPct);
 
   // Meta de inversión calculada
   const goalProgress = Math.min(100, Math.round((metrics.totalMarketValue / goalAmount) * 100));
@@ -609,7 +615,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
             {/* Chips de filtro rápido por tipo */}
             <div className="flex items-center gap-1.5 mb-3 overflow-x-auto no-scrollbar">
-              {(['Todos', 'Acciones', 'ETFs', 'Cripto'] as const).map(f => (
+              {(['Todos', 'Acciones', 'ETFs', 'Fondos', 'Cripto'] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => setSelectedAssetFilter(f)}
@@ -686,7 +692,57 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   </div>
                 )}
 
-                {/* 2. SECCIÓN: TRACKERS (ETFS) Y CRIPTO (ABAJO) */}
+                {/* 2. SECCIÓN: FONDOS DE INVERSIÓN (MYINVESTOR / INDEXADOS) */}
+                {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'Fondos') && fondosPositions.length > 0 && (
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Fondos de Inversión ({fondosPositions.length})</span>
+                      </span>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                        {formatEUR(fondosVal, hideFigures)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {fondosPositions.map(pos => {
+                        return (
+                          <div
+                            key={pos.id}
+                            onClick={() => setSelectedPosition(pos)}
+                            className="flex items-center justify-between py-2.5 px-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0 ${pos.logoBg || 'bg-emerald-700'}`}>
+                                {pos.logoText || pos.ticker.slice(0, 3)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 dark:text-white text-xs truncate flex items-center gap-1.5">
+                                  <span>{pos.name}</span>
+                                  {pos.countryFlag && <span className="text-xs">{pos.countryFlag}</span>}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                                  {pos.market || 'MyInvestor'} | € {pos.currentPrice} × {pos.shares} part.
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className="font-extrabold text-slate-900 dark:text-white text-xs">
+                                {formatEUR(pos.totalValue, hideFigures)}
+                              </div>
+                              <div className="text-[11px] font-semibold text-emerald-500">
+                                {pos.purchaseDate ? formatDateToSpanish(pos.purchaseDate) : 'Fondo Indexado'}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. SECCIÓN: TRACKERS (ETFS) Y CRIPTO (ABAJO) */}
                 {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'ETFs' || selectedAssetFilter === 'Cripto') && (
                   <div className="mb-5">
                     <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
@@ -915,6 +971,18 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {selectedPosition.purchaseDate && (
+              <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 p-2.5 rounded-2xl my-3 flex items-center justify-between text-xs">
+                <span className="text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Fecha de compra:</span>
+                </span>
+                <span className="font-extrabold text-emerald-900 dark:text-emerald-200">
+                  {formatDateToSpanish(selectedPosition.purchaseDate)}
+                </span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 my-4">
               <div className="bg-slate-50 p-3 rounded-xl">

@@ -2,7 +2,7 @@ export type MainTab = 'inicio' | 'eventos' | 'explorar' | 'seguimiento' | 'perfi
 
 export type InicioSubTab = 'portafolio' | 'dividendos';
 
-export type AssetType = 'Acciones' | 'ETFs' | 'Cripto';
+export type AssetType = 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto';
 
 export type TimeRange = '1D' | '1S' | '1M' | '3M' | 'YTD' | '1A' | '5A';
 
@@ -46,6 +46,7 @@ export interface PositionItem {
   avgPrice: number;
   currentPrice: number;
   currency: string;
+  purchaseDate?: string;
   market?: string;
   exchange?: string;
   exchangeName?: string;
