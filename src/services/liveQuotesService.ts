@@ -55,12 +55,18 @@ export const liveQuotesService = {
       if (catalogMatch?.yahooSymbol) {
         cleanSymbol = catalogMatch.yahooSymbol;
       } else {
-        // Mapeos comunes de respaldo
-        if (cleanSymbol === 'ENG') cleanSymbol = 'ENG.MC';
-        if (cleanSymbol === 'SAN') cleanSymbol = 'SAN.MC';
-        if (cleanSymbol === 'ITX') cleanSymbol = 'ITX.MC';
-        if (cleanSymbol === 'LOG') cleanSymbol = 'LOG.MC';
-        if (cleanSymbol === 'VUSA') cleanSymbol = 'VUSA.AS';
+        // Mapeos comunes de respaldo (DEGIRO + MyInvestor BME/Xetra/Euronext)
+        const fallbackMap: Record<string, string> = {
+          ENG: 'ENG.MC', SAN: 'SAN.MC', ITX: 'ITX.MC', LOG: 'LOG.MC',
+          MVC: 'MVC.MC', IBE: 'IBE.MC', SAB: 'SAB.MC', VIS: 'VIS.MC',
+          MAP: 'MAP.MC', RED: 'RED.MC',
+          SELD: 'SELD.DE', ISPA: 'ISPA.DE', '8PSG': '8PSG.DE', IQQD: 'IQQD.DE',
+          VDIV: 'VDIV.DE', SPYW: 'SPYW.DE', XEON: 'XEON.DE', ZPRR: 'ZPRR.DE',
+          VUSA: 'VUSA.AS', VHYL: 'VHYL.AS', ERNE: 'ERNE.AS',
+        };
+        if (fallbackMap[cleanSymbol]) {
+          cleanSymbol = fallbackMap[cleanSymbol];
+        }
       }
 
       // 1. Intentar a través del proxy local de Vite
@@ -113,6 +119,88 @@ export const liveQuotesService = {
   },
 
   /**
+   * Consulta en lote vía TradingView Global Scanner (CORS nativo, 0€ gratis, ultra rápido)
+   */
+  async fetchBatchTradingViewQuotes(positions: PositionItem[]): Promise<Record<string, { priceEUR: number; changePct: number }>> {
+    const tvSymbols: string[] = [];
+    const tvToPosId: Record<string, string[]> = {};
+
+    const exchMap: Record<string, string> = {
+      BMA: 'BME', BME: 'BME',
+      XETR: 'XETR', XETRA: 'XETR', TDG: 'XETR', FRA: 'XETR',
+      AEX: 'EURONEXT', EAM: 'EURONEXT', EPA: 'EURONEXT', EURONEXT: 'EURONEXT',
+      MIL: 'MIL', NSY: 'NYSE', NYSE: 'NYSE', NDQ: 'NASDAQ', NASDAQ: 'NASDAQ',
+      LSE: 'LSE',
+    };
+
+    for (const pos of positions) {
+      if (pos.type === 'Fondos' || pos.broker === 'Urbanitae') continue;
+      const baseTicker = pos.ticker.split(/[\s./|]/)[0].trim().toUpperCase();
+      const exchUpper = (pos.exchange || '').toUpperCase();
+      let tvExch = exchMap[exchUpper];
+
+      if (!tvExch) {
+        if (pos.ticker.endsWith('.MC')) tvExch = 'BME';
+        else if (pos.ticker.endsWith('.DE')) tvExch = 'XETR';
+        else if (pos.ticker.endsWith('.AS') || pos.ticker.endsWith('.PA')) tvExch = 'EURONEXT';
+        else if (pos.ticker.endsWith('.MI')) tvExch = 'MIL';
+        else if (pos.ticker.endsWith('.L')) tvExch = 'LSE';
+        else if (baseTicker === 'V') tvExch = 'NYSE';
+      }
+
+      if (tvExch && baseTicker) {
+        const tvKey = `${tvExch}:${baseTicker}`;
+        if (!tvToPosId[tvKey]) {
+          tvToPosId[tvKey] = [];
+          tvSymbols.push(tvKey);
+        }
+        tvToPosId[tvKey].push(pos.id);
+      }
+    }
+
+    if (tvSymbols.length === 0) return {};
+
+    try {
+      const res = await fetch('https://scanner.tradingview.com/global/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          symbols: { tickers: tvSymbols },
+          columns: ['name', 'close', 'change', 'currency'],
+        }),
+      });
+      if (!res.ok) return {};
+      const data = await res.json();
+      const out: Record<string, { priceEUR: number; changePct: number }> = {};
+      for (const row of data?.data || []) {
+        const tvKey = String(row.s || '');
+        const d = row.d;
+        if (!tvKey || !Array.isArray(d)) continue;
+        const rawPrice = Number(d[1] || 0);
+        const changePct = Number(d[2] || 0);
+        const cur = String(d[3] || 'EUR');
+        if (rawPrice <= 0) continue;
+
+        let priceEUR = rawPrice;
+        if (cur === 'USD') priceEUR = rawPrice / this.eurUsdRate;
+        else if (cur === 'GBX' || cur === 'GBp') priceEUR = (rawPrice / 100) / this.eurGbpRate;
+        else if (cur === 'GBP') priceEUR = rawPrice / this.eurGbpRate;
+
+        const posIds = tvToPosId[tvKey] || [];
+        for (const pid of posIds) {
+          out[pid] = {
+            priceEUR: Number(priceEUR.toFixed(3)),
+            changePct: Number(changePct.toFixed(2)),
+          };
+        }
+      }
+      return out;
+    } catch {
+      return {};
+    }
+  },
+
+  /**
    * Obtiene cotizaciones de criptoactivos desde CoinGecko en EUR
    */
   async fetchCryptoQuotes(): Promise<Record<string, { priceEUR: number; changePct: number }>> {
@@ -144,25 +232,38 @@ export const liveQuotesService = {
     timestamp: string;
   }> {
     await this.getLiveEurUsdRate();
-    const cryptoData = await this.fetchCryptoQuotes();
+    const [cryptoData, tvBatchQuotes] = await Promise.all([
+      this.fetchCryptoQuotes(),
+      this.fetchBatchTradingViewQuotes(positions),
+    ]);
 
     let successCount = 0;
     const updatedPositions: PositionItem[] = [];
 
     for (const pos of positions) {
+      // Fondos de inversión y proyectos Urbanitae mantienen su valor liquidativo/inversión sin sobrescribir
+      if (pos.type === 'Fondos' || pos.broker === 'Urbanitae') {
+        updatedPositions.push(pos);
+        continue;
+      }
+
       let livePrice = pos.currentPrice;
       let liveChangePct = pos.dailyChangePct;
 
       const tickerUpper = pos.ticker.toUpperCase();
       const isCrypto = pos.type === 'Cripto' || tickerUpper.includes('BTC') || tickerUpper.includes('ETH');
 
-      if (isCrypto && (cryptoData[tickerUpper] || cryptoData['BTC'])) {
+      if (tvBatchQuotes[pos.id]) {
+        livePrice = tvBatchQuotes[pos.id].priceEUR;
+        liveChangePct = tvBatchQuotes[pos.id].changePct;
+        successCount++;
+      } else if (isCrypto && (cryptoData[tickerUpper] || cryptoData['BTC'])) {
         const c = cryptoData[tickerUpper] || cryptoData['2BTC.F'] || cryptoData['BTC'];
         livePrice = c.priceEUR;
         liveChangePct = c.changePct;
         successCount++;
       } else {
-        // Intentar consultar Yahoo Finance
+        // Respaldo Yahoo Finance
         const stockQuote = await this.fetchStockQuote(pos.ticker);
         if (stockQuote && stockQuote.priceEUR > 0) {
           livePrice = stockQuote.priceEUR;
