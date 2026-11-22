@@ -17,6 +17,7 @@ import { MOCK_CHART_DATA } from '../data/mockPortfolio';
 import { Sparkline } from './Sparkline';
 import { InteractiveChart } from './InteractiveChart';
 import { HistoricalAssetModal } from './HistoricalAssetModal';
+import degiroData from '../data/degiroPositionsData.json';
 import {
   Search,
   Eye,
@@ -35,6 +36,8 @@ import {
   TrendingDown,
   TrendingUp,
   RefreshCw,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -89,14 +92,30 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [showChartModal, setShowChartModal] = useState(false);
   const [showHistoricalModal, setShowHistoricalModal] = useState(false);
 
+  // Selector estilo DEGIRO: Posiciones abiertas / Posiciones cerradas / Todas las posiciones
+  const [positionViewMode, setPositionViewMode] = useState<'abiertas' | 'cerradas' | 'todas'>('abiertas');
+  const [showViewDropdown, setShowViewDropdown] = useState(false);
+
+  const closedPositions = (degiroData.closedPositions || []) as any[];
+  const accountSummary = degiroData.accountSummary || {
+    cuentaCompleta: 15604.96,
+    cartera: 15185.04,
+    efectivoEur: 419.92,
+    margenLibre: 812.74,
+    diaBp: 0.09,
+    diaBpPct: 0.00,
+    totalBpDegiro: 13553.62,
+    historicoCerradoPnl: 28145.97,
+  };
+
   // Métricas calculadas
   const metrics = calculatePortfolioMetrics(positions, cash);
   const chartPoints = MOCK_CHART_DATA[selectedTimeRange] || MOCK_CHART_DATA['1D'];
 
-  // Formato cabecera idéntico al de la captura de pantalla (€15.046,85)
-  const headerFormatted = formatHeaderEUR(metrics.totalMarketValue, hideFigures);
+  // Formato cabecera idéntico al de la captura de pantalla (€15.604,96)
+  const headerFormatted = formatHeaderEUR(accountSummary.cuentaCompleta, hideFigures);
 
-  // Filtrado y ordenación de posiciones
+  // Filtrado y ordenación de posiciones abiertas
   const filteredPositions = positions
     .filter(pos => selectedAssetFilter === 'Todos' || pos.type === selectedAssetFilter)
     .sort((a, b) => {
@@ -107,9 +126,17 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       return 0;
     });
 
+  // Filtrado de posiciones cerradas
+  const filteredClosedPositions = closedPositions
+    .filter(pos => selectedAssetFilter === 'Todos' || pos.type === selectedAssetFilter)
+    .sort((a, b) => b.realized_pnl - a.realized_pnl);
+
   // Separación explícita solicitada por el usuario: Acciones ARRIBA, ETFs ABAJO
   const stockPositions = filteredPositions.filter(p => p.type === 'Acciones');
   const etfAndCryptoPositions = filteredPositions.filter(p => p.type === 'ETFs' || p.type === 'Cripto');
+
+  const closedStocks = filteredClosedPositions.filter(p => p.type === 'Acciones');
+  const closedEtfsAndCrypto = filteredClosedPositions.filter(p => p.type === 'ETFs' || p.type === 'Cripto');
 
   // Cálculo de distribución por tipo
   const totalPosValue = positions.reduce((acc, p) => acc + p.totalValue, 0) || 1;
@@ -194,27 +221,26 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               <span className="text-2xl sm:text-3xl font-bold">,{headerFormatted.decimalPart}</span>
             </div>
 
-            {/* Variación Diaria: ↓ 1.607,10 €  -9,65 % */}
-            <div className="flex items-center justify-center gap-2 text-xs font-semibold mt-1">
-              <span className={`inline-flex items-center gap-0.5 ${metrics.dailyChangeValue >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {metrics.dailyChangeValue >= 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-                {formatEUR(metrics.dailyChangeValue, hideFigures)}
+            {/* Métricas Oficiales DEGIRO (Screenshot 1 & 2) */}
+            <div className="flex items-center justify-center gap-3 text-xs font-semibold mt-1.5">
+              <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
+                <span>Día B/P:</span>
+                <span>+{formatEUR(accountSummary.diaBp, hideFigures)} (+{accountSummary.diaBpPct.toFixed(2)}%)</span>
               </span>
-              <span className={`font-bold ${metrics.dailyChangePct >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {formatPercent(metrics.dailyChangePct)}
+              <span className="text-slate-300 dark:text-slate-700">•</span>
+              <span className="inline-flex items-center gap-1 text-emerald-500 font-extrabold">
+                <span>Total B/P (DEGIRO):</span>
+                <span>+{formatEUR(accountSummary.totalBpDegiro, hideFigures)}</span>
               </span>
             </div>
 
-            {/* P/G Abierto: P/G abierto ↓ 7.789,01 €  -34,11 % */}
-            <div className="flex items-center justify-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-1">
-              <span>P/G abierto</span>
-              <span className={`inline-flex items-center gap-0.5 font-medium ${metrics.unrealizedGainLoss >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>
-                {metrics.unrealizedGainLoss >= 0 ? '↑' : '↓'}
-                {formatEUR(metrics.unrealizedGainLoss, hideFigures)}
-              </span>
-              <span className={`font-semibold ${metrics.unrealizedGainLossPct >= 0 ? 'text-emerald-500' : 'text-rose-400'}`}>
-                {formatPercent(metrics.unrealizedGainLossPct)}
-              </span>
+            {/* Fila de desglose DEGIRO: Cartera + EUR + Margen Libre */}
+            <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+              <span>Cartera: <strong className="text-slate-800 dark:text-slate-200">{formatEUR(accountSummary.cartera, hideFigures)}</strong></span>
+              <span>•</span>
+              <span>EUR: <strong className="text-emerald-500">{formatEUR(accountSummary.efectivoEur, hideFigures)}</strong></span>
+              <span>•</span>
+              <span>Margen libre: <strong className="text-slate-700 dark:text-slate-300">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong></span>
             </div>
 
             {/* Indicador de actualización de cotizaciones en tiempo real */}
@@ -408,59 +434,132 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </section>
           )}
 
-          {/* 6. Sección de Activos / Posiciones: Separación solicitada (Acciones ARRIBA, ETFs ABAJO) */}
+          {/* 6. Sección de Activos / Posiciones: Selector DEGIRO (Abiertas / Cerradas / Todas) */}
           <section className="px-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-extrabold text-slate-950 dark:text-white">Cartera</h2>
-                <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
-                  {filteredPositions.length} activos
-                </span>
-              </div>
-
-              {/* Botón de orden/filtro con icono de deslizadores */}
+              {/* Botón selector idéntico al de DEGIRO */}
               <div className="relative">
                 <button
-                  onClick={() => setShowSortMenu(!showSortMenu)}
-                  className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs"
-                  title="Ordenar posiciones"
+                  type="button"
+                  onClick={() => setShowViewDropdown(!showViewDropdown)}
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-black text-slate-900 dark:text-white shadow-2xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-95"
                 >
-                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>
+                    {positionViewMode === 'abiertas'
+                      ? 'Posiciones abiertas'
+                      : positionViewMode === 'cerradas'
+                      ? 'Posiciones cerradas'
+                      : 'Todas las posiciones'}
+                  </span>
+                  <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${showViewDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
-                {showSortMenu && (
-                  <div className="absolute right-0 top-11 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 w-52 text-xs">
-                    <div className="px-3 py-1 font-bold text-slate-400 uppercase text-[10px]">Ordenar por</div>
+                {showViewDropdown && (
+                  <div className="absolute left-0 top-10 z-40 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 py-1.5 w-64 text-xs">
                     <button
-                      onClick={() => { setPositionSort('value-desc'); setShowSortMenu(false); }}
-                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'value-desc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      type="button"
+                      onClick={() => { setPositionViewMode('abiertas'); setShowViewDropdown(false); }}
+                      className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between transition-colors ${
+                        positionViewMode === 'abiertas'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
                     >
-                      <span>Mayor valor total</span>
-                      {positionSort === 'value-desc' && <span>✓</span>}
+                      <div>
+                        <div className="font-extrabold text-xs">Posiciones abiertas</div>
+                        <div className="text-[10px] text-slate-400">7 activos en cartera (Alemania y Milán)</div>
+                      </div>
+                      {positionViewMode === 'abiertas' && <Check className="w-4 h-4 text-emerald-500" />}
                     </button>
+
                     <button
-                      onClick={() => { setPositionSort('change-desc'); setShowSortMenu(false); }}
-                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'change-desc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      type="button"
+                      onClick={() => { setPositionViewMode('cerradas'); setShowViewDropdown(false); }}
+                      className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between transition-colors ${
+                        positionViewMode === 'cerradas'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
                     >
-                      <span>Mayor rentabilidad</span>
-                      {positionSort === 'change-desc' && <span>✓</span>}
+                      <div>
+                        <div className="font-extrabold text-xs">Posiciones cerradas</div>
+                        <div className="text-[10px] text-slate-400">116 activos cerrados (+28.145,97 € B/P)</div>
+                      </div>
+                      {positionViewMode === 'cerradas' && <Check className="w-4 h-4 text-emerald-500" />}
                     </button>
+
                     <button
-                      onClick={() => { setPositionSort('change-asc'); setShowSortMenu(false); }}
-                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'change-asc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      type="button"
+                      onClick={() => { setPositionViewMode('todas'); setShowViewDropdown(false); }}
+                      className={`w-full text-left px-3.5 py-2.5 flex items-center justify-between transition-colors ${
+                        positionViewMode === 'todas'
+                          ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
                     >
-                      <span>Mayor caída</span>
-                      {positionSort === 'change-asc' && <span>✓</span>}
-                    </button>
-                    <button
-                      onClick={() => { setPositionSort('name-asc'); setShowSortMenu(false); }}
-                      className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'name-asc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                    >
-                      <span>Nombre alfabético</span>
-                      {positionSort === 'name-asc' && <span>✓</span>}
+                      <div>
+                        <div className="font-extrabold text-xs">Todas las posiciones</div>
+                        <div className="text-[10px] text-slate-400">123 activos totales (abiertas + cerradas)</div>
+                      </div>
+                      {positionViewMode === 'todas' && <Check className="w-4 h-4 text-emerald-500" />}
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Botón de orden/filtro con icono de deslizadores */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-0.5 rounded-full">
+                  {positionViewMode === 'abiertas'
+                    ? `${filteredPositions.length} abiertas`
+                    : positionViewMode === 'cerradas'
+                    ? `${filteredClosedPositions.length} cerradas`
+                    : `${filteredPositions.length + filteredClosedPositions.length} total`}
+                </span>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSortMenu(!showSortMenu)}
+                    className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs"
+                    title="Ordenar posiciones"
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5" />
+                  </button>
+
+                  {showSortMenu && (
+                    <div className="absolute right-0 top-10 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 py-1.5 w-52 text-xs">
+                      <div className="px-3 py-1 font-bold text-slate-400 uppercase text-[10px]">Ordenar por</div>
+                      <button
+                        onClick={() => { setPositionSort('value-desc'); setShowSortMenu(false); }}
+                        className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'value-desc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <span>Mayor valor / beneficio</span>
+                        {positionSort === 'value-desc' && <span>✓</span>}
+                      </button>
+                      <button
+                        onClick={() => { setPositionSort('change-desc'); setShowSortMenu(false); }}
+                        className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'change-desc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <span>Mayor rentabilidad</span>
+                        {positionSort === 'change-desc' && <span>✓</span>}
+                      </button>
+                      <button
+                        onClick={() => { setPositionSort('change-asc'); setShowSortMenu(false); }}
+                        className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'change-asc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <span>Mayor caída</span>
+                        {positionSort === 'change-asc' && <span>✓</span>}
+                      </button>
+                      <button
+                        onClick={() => { setPositionSort('name-asc'); setShowSortMenu(false); }}
+                        className={`w-full text-left px-3 py-2 flex items-center justify-between ${positionSort === 'name-asc' ? 'bg-slate-100 dark:bg-slate-800 font-bold text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      >
+                        <span>Nombre alfabético</span>
+                        {positionSort === 'name-asc' && <span>✓</span>}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -481,136 +580,246 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               ))}
             </div>
 
-            {/* 1. SECCIÓN: ACCIONES (ARRIBA) */}
-            {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'Acciones') && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                      🏢 Acciones ({stockPositions.length})
-                    </span>
+            {/* VISTA 1: POSICIONES ABIERTAS (O TODAS) */}
+            {(positionViewMode === 'abiertas' || positionViewMode === 'todas') && (
+              <>
+                {/* 1. SECCIÓN: ACCIONES (ARRIBA) */}
+                {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'Acciones') && (
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                        Acciones ({stockPositions.length})
+                      </span>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                        {formatEUR(accionesVal, hideFigures)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {stockPositions.length > 0 ? (
+                        stockPositions.map(pos => {
+                          const isLoss = pos.dailyChangePct < 0;
+                          return (
+                            <div
+                              key={pos.id}
+                              onClick={() => setSelectedPosition(pos)}
+                              className="flex items-center justify-between py-2.5 px-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 active:scale-[0.99]"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0 ${pos.logoBg || 'bg-slate-800'}`}>
+                                  {pos.logoText || pos.ticker.slice(0, 2)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 dark:text-white text-xs truncate flex items-center gap-1.5">
+                                    <span>{pos.name}</span>
+                                    {pos.countryFlag && <span className="text-xs">{pos.countryFlag}</span>}
+                                    {positionViewMode === 'todas' && (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                        Abierta
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                                    {pos.exchange || 'NDQ'} | ${pos.currentPrice} × {pos.shares}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="font-extrabold text-slate-900 dark:text-white text-xs">
+                                  {formatEUR(pos.totalValue, hideFigures)}
+                                </div>
+                                <div className={`text-[11px] font-bold ${isLoss ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                  +{formatEUR(pos.dailyChangeValue, hideFigures)} (+{pos.dailyChangePct.toFixed(2)}%)
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-xs text-slate-400 py-2 italic text-center">No hay acciones abiertas</p>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                    {formatEUR(accionesVal, hideFigures)}
-                  </span>
-                </div>
-                <div className="space-y-1">
-                  {stockPositions.length > 0 ? (
-                    stockPositions.map(pos => {
-                      const isLoss = pos.dailyChangePct < 0;
-                      return (
-                        <div
-                          key={pos.id}
-                          onClick={() => setSelectedPosition(pos)}
-                          className="flex items-center justify-between py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors active:scale-[0.99]"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0 ${pos.logoBg || 'bg-slate-800'}`}>
-                              {pos.logoText || pos.ticker.slice(0, 2)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1">
-                                <span>{pos.name}</span>
-                                {pos.countryFlag && <span className="text-xs">{pos.countryFlag}</span>}
+                )}
+
+                {/* 2. SECCIÓN: TRACKERS (ETFS) Y CRIPTO (ABAJO) */}
+                {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'ETFs' || selectedAssetFilter === 'Cripto') && (
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                        Trackers (ETFs) ({etfAndCryptoPositions.length})
+                      </span>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
+                        {formatEUR(etfsVal + criptoVal, hideFigures)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {etfAndCryptoPositions.length > 0 ? (
+                        etfAndCryptoPositions.map(pos => {
+                          const isBitcoin = pos.type === 'Cripto' || pos.name.toUpperCase().includes('BITCOIN');
+                          const displayFlag = isBitcoin ? '₿' : pos.countryFlag;
+
+                          return (
+                            <div
+                              key={pos.id}
+                              onClick={() => setSelectedPosition(pos)}
+                              className="flex items-center justify-between py-2.5 px-2.5 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 active:scale-[0.99]"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-black shadow-xs shrink-0 ${isBitcoin ? 'bg-amber-600' : pos.logoBg || 'bg-blue-700'}`}>
+                                  {isBitcoin ? '₿' : pos.logoText || pos.ticker.slice(0, 3)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 dark:text-white text-xs truncate flex items-center gap-1.5">
+                                    <span>{pos.name}</span>
+                                    {displayFlag && (
+                                      <span className={`text-xs ${isBitcoin ? 'font-black text-amber-500' : ''}`}>
+                                        {displayFlag}
+                                      </span>
+                                    )}
+                                    {positionViewMode === 'todas' && (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                        Abierta
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                                    {pos.exchange || 'MIL'} | € {pos.currentPrice} × {pos.shares}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                {pos.shares} títulos • {formatEUR(pos.avgPrice, hideFigures)}
+                              <div className="text-right shrink-0">
+                                <div className="font-extrabold text-slate-900 dark:text-white text-xs">
+                                  {formatEUR(pos.totalValue, hideFigures)}
+                                </div>
+                                <div className="text-[11px] font-semibold text-slate-400">
+                                  0,00 (0,00%)
+                                </div>
                               </div>
                             </div>
-                          </div>
-                          <div className="hidden sm:block shrink-0 px-2">
-                            <Sparkline data={pos.sparkline} width={64} height={20} isPositive={!isLoss} />
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="font-bold text-slate-900 dark:text-white text-sm">
-                              {formatEUR(pos.totalValue, hideFigures)}
-                            </div>
-                            <div className={`text-xs font-semibold flex items-center justify-end gap-1 ${isLoss ? 'text-rose-500' : 'text-emerald-500'}`}>
-                              <span>{formatEUR(pos.dailyChangeValue, hideFigures)}</span>
-                              <span>{formatPercent(pos.dailyChangePct)}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-xs text-slate-400 py-2 italic text-center">No hay acciones en cartera</p>
-                  )}
-                </div>
-              </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-xs text-slate-400 py-2 italic text-center">No hay ETFs abiertos</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* 2. SECCIÓN: ETFS & CRIPTOACTIVOS (ABAJO) */}
-            {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'ETFs' || selectedAssetFilter === 'Cripto') && (
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold text-slate-900 dark:text-white uppercase tracking-wider">
-                      📈 ETFs & Cripto ({etfAndCryptoPositions.length})
-                    </span>
+            {/* VISTA 2: POSICIONES CERRADAS (O TODAS) */}
+            {(positionViewMode === 'cerradas' || positionViewMode === 'todas') && (
+              <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <div className="bg-slate-900 text-white rounded-2xl p-3 mb-4 shadow-sm flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold">Total Beneficio Cerrado</span>
+                    <span className="text-base font-black text-emerald-400">+{formatEUR(accountSummary.historicoCerradoPnl, hideFigures)}</span>
                   </div>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">
-                    {formatEUR(etfsVal + criptoVal, hideFigures)}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-[10px] text-slate-400 block font-semibold">Total Operaciones</span>
+                    <span className="text-xs font-bold text-slate-200">{accountSummary.totalTrades} trades (2018–2026)</span>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  {etfAndCryptoPositions.length > 0 ? (
-                    etfAndCryptoPositions.map(pos => {
-                      const isLoss = pos.dailyChangePct < 0;
-                      const isBitcoin = pos.type === 'Cripto' || pos.name.toUpperCase().includes('BITCOIN');
-                      const displayFlag = isBitcoin ? '₿' : pos.countryFlag;
-                      const isConsolidated = pos.shares > 100 || pos.ticker.includes('3GOL') || pos.ticker.includes('QQQ3');
 
-                      return (
-                        <div
-                          key={pos.id}
-                          onClick={() => setSelectedPosition(pos)}
-                          className="flex items-center justify-between py-2.5 px-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors active:scale-[0.99]"
-                        >
-                          <div className="flex items-center gap-3 min-w-0 pr-2">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs shrink-0 ${isBitcoin ? 'bg-amber-600' : pos.logoBg || 'bg-blue-700'}`}>
-                              {isBitcoin ? '₿' : pos.logoText || pos.ticker.slice(0, 3)}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="font-bold text-slate-900 dark:text-white text-sm truncate flex items-center gap-1.5">
-                                <span>{pos.name}</span>
-                                {displayFlag && (
-                                  <span className={`text-xs ${isBitcoin ? 'font-black text-amber-500' : ''}`}>
-                                    {displayFlag}
-                                  </span>
-                                )}
+                {/* Acciones Cerradas */}
+                {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'Acciones') && (
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                        🏢 Acciones Cerradas ({closedStocks.length})
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {closedStocks.map(pos => {
+                        const isPos = pos.realized_pnl >= 0;
+                        return (
+                          <div
+                            key={pos.id}
+                            className="flex items-center justify-between py-2.5 px-2.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                              <div className="w-9 h-9 rounded-xl bg-slate-800 text-white text-xs font-black flex items-center justify-center shrink-0">
+                                {pos.name.slice(0, 2)}
                               </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                                  {pos.shares} títulos • {formatEUR(pos.avgPrice, hideFigures)}
-                                </span>
-                                {isConsolidated && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                    Consolidado
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 dark:text-white text-xs truncate flex items-center gap-1.5">
+                                  <span>{pos.name}</span>
+                                  <span className="text-xs">{pos.flag}</span>
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                    Cerrada
                                   </span>
-                                )}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  {pos.exchange} • {pos.trades_count} trades • {pos.first_trade} → {pos.last_trade}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <div className={`font-black text-xs ${isPos ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {isPos ? '+' : ''}{formatEUR(pos.realized_pnl, hideFigures)}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Com: {pos.total_fees.toFixed(2)} €
                               </div>
                             </div>
                           </div>
-                          <div className="hidden sm:block shrink-0 px-2">
-                            <Sparkline data={pos.sparkline} width={64} height={20} isPositive={!isLoss} />
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="font-bold text-slate-900 dark:text-white text-sm">
-                              {formatEUR(pos.totalValue, hideFigures)}
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ETFs Cerrados */}
+                {(selectedAssetFilter === 'Todos' || selectedAssetFilter === 'ETFs' || selectedAssetFilter === 'Cripto') && (
+                  <div className="mb-5">
+                    <div className="flex items-center justify-between mb-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                      <span className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                        📈 Trackers (ETFs) Cerrados ({closedEtfsAndCrypto.length})
+                      </span>
+                    </div>
+
+                    <div className="space-y-1">
+                      {closedEtfsAndCrypto.map(pos => {
+                        const isPos = pos.realized_pnl >= 0;
+                        return (
+                          <div
+                            key={pos.id}
+                            className="flex items-center justify-between py-2.5 px-2.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                              <div className="w-9 h-9 rounded-xl bg-blue-800 text-white text-xs font-black flex items-center justify-center shrink-0">
+                                {pos.name.slice(0, 3)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-900 dark:text-white text-xs truncate flex items-center gap-1.5">
+                                  <span>{pos.name}</span>
+                                  <span className="text-xs">{pos.flag}</span>
+                                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500">
+                                    Cerrada
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-0.5">
+                                  {pos.exchange} • {pos.trades_count} trades • {pos.first_trade} → {pos.last_trade}
+                                </div>
+                              </div>
                             </div>
-                            <div className={`text-xs font-semibold flex items-center justify-end gap-1 ${isLoss ? 'text-rose-500' : 'text-emerald-500'}`}>
-                              <span>{formatEUR(pos.dailyChangeValue, hideFigures)}</span>
-                              <span>{formatPercent(pos.dailyChangePct)}</span>
+                            <div className="text-right shrink-0">
+                              <div className={`font-black text-xs ${isPos ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                {isPos ? '+' : ''}{formatEUR(pos.realized_pnl, hideFigures)}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Com: {pos.total_fees.toFixed(2)} €
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-xs text-slate-400 py-2 italic text-center">No hay ETFs en cartera</p>
-                  )}
-                </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

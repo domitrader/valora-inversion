@@ -16,6 +16,26 @@ export interface ChartDataPoint {
   changePct?: number;
 }
 
+export type PositionViewFilter = 'abiertas' | 'cerradas' | 'todas';
+
+export interface ClosedPositionItem {
+  id: string;
+  name: string;
+  isin: string;
+  exchange: string;
+  exchangeName: string;
+  flag: string;
+  type: AssetType;
+  realized_pnl: number;
+  total_fees: number;
+  trades_count: number;
+  total_bought_val: number;
+  total_sold_val: number;
+  first_trade: string;
+  last_trade: string;
+  status: 'Cerrada';
+}
+
 export interface PositionItem {
   id: string;
   name: string;
@@ -27,6 +47,8 @@ export interface PositionItem {
   currentPrice: number;
   currency: string;
   market?: string;
+  exchange?: string;
+  exchangeName?: string;
   countryFlag?: string;
   logoBg?: string;
   logoText?: string;
@@ -40,6 +62,7 @@ export interface PositionItem {
   annualDividendPerShare?: number;
   nextDividendDate?: string;
   nextEarningsDate?: string;
+  status?: 'Abierta' | 'Cerrada';
 }
 
 export interface WatchlistItem {
