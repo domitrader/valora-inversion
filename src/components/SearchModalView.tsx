@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { AssetType, PositionItem, WatchlistItem } from '../types/portfolio';
 import { COMPREHENSIVE_CATALOG, CatalogAsset } from '../data/comprehensiveAssetCatalog';
 import { estimateHistoricalPrice, formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import { formatEUR } from '../utils/calculations';
+import { liveQuotesService } from '../services/liveQuotesService';
 import {
   ArrowLeft,
   Search,
@@ -18,7 +19,9 @@ import {
   Sparkles,
   HelpCircle,
   Clock,
-  Layers
+  Layers,
+  Globe,
+  Loader2,
 } from 'lucide-react';
 
 interface SearchModalViewProps {
@@ -57,7 +60,64 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   const [customCountryFlag, setCustomCountryFlag] = useState('🇪🇸');
   const [customPrice, setCustomPrice] = useState('10.00');
 
-  // Filtrado de activos reactivo y veloz
+  // Búsqueda global online en tiempo real (Yahoo Finance - todas las bolsas del mundo: .MI, .DE, .L, .PA, .MC, NYSE, NASDAQ)
+  const [onlineResults, setOnlineResults] = useState<CatalogAsset[]>([]);
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false);
+
+  useEffect(() => {
+    const clean = searchTerm.trim();
+    if (clean.length < 2) {
+      setOnlineResults([]);
+      setIsSearchingOnline(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSearchingOnline(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const remote = await liveQuotesService.searchGlobalMarketAssets(clean);
+        if (cancelled) return;
+
+        // Excluir duplicados exactos que ya están en el catálogo local
+        const localSymbols = new Set(
+          COMPREHENSIVE_CATALOG.map(c => (c.yahooSymbol || c.ticker).toUpperCase())
+        );
+
+        const mapped: CatalogAsset[] = remote
+          .filter(r => !localSymbols.has(r.symbol.toUpperCase()))
+          .map(r => ({
+            name: r.name,
+            ticker: r.symbol,
+            yahooSymbol: r.symbol,
+            isin: '',
+            type: r.assetType,
+            countryFlag: r.countryFlag,
+            market: r.exchange,
+            price: 0, // Se obtendrá en vivo al tocar '+'
+            currency: 'EUR',
+            dailyChangePct: 0,
+            logoBg: r.assetType === 'ETFs' ? 'bg-amber-600' : r.assetType === 'Fondos' ? 'bg-emerald-700' : 'bg-blue-700',
+            logoText: r.symbol.split('.')[0].slice(0, 4),
+            zeroDoubleTax: r.symbol.endsWith('.L') || r.symbol.endsWith('.MC'),
+          }));
+
+        setOnlineResults(mapped);
+      } catch {
+        if (!cancelled) setOnlineResults([]);
+      } finally {
+        if (!cancelled) setIsSearchingOnline(false);
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
+
+  // Filtrado de activos reactivo y veloz (Catálogo Local)
   const filteredAssets = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     return COMPREHENSIVE_CATALOG.filter(asset => {
@@ -78,6 +138,11 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     });
   }, [searchTerm, selectedFilter, onlyZeroDoubleTax, onlyDegiroCore]);
 
+  // Filtrado de resultados online según la pestaña seleccionada
+  const filteredOnlineResults = useMemo(() => {
+    return onlineResults.filter(a => selectedFilter === 'Todos' || a.type === selectedFilter);
+  }, [onlineResults, selectedFilter]);
+
   // Agrupación para la vista de inicio vacía
   const accionesList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'Acciones'), []);
   const etfsList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'ETFs'), []);
@@ -90,14 +155,23 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     return estimateHistoricalPrice(quickAddAsset, purchaseDate);
   }, [quickAddAsset, purchaseDate]);
 
-  // Abrir diálogo de añadir activo
-  const handleOpenAddDialog = (asset: CatalogAsset) => {
+  // Abrir diálogo de añadir activo (y consultar cotización en vivo si es online o si está disponible)
+  const handleOpenAddDialog = async (asset: CatalogAsset) => {
     setQuickAddAsset(asset);
     const today = new Date().toISOString().split('T')[0];
     setPurchaseDate(today);
-    setPriceInput(asset.price.toString());
+    setPriceInput(asset.price > 0 ? asset.price.toString() : '');
     setSharesInput(asset.type === 'Fondos' ? '1.000' : '10');
     setAddMode('portfolio');
+
+    // Si es resultado online (o cualquier ticker con símbolo de Yahoo), intentar traer su precio actual en vivo
+    if (asset.price === 0 || asset.yahooSymbol) {
+      const live = await liveQuotesService.fetchStockQuote(asset.yahooSymbol || asset.ticker);
+      if (live && live.priceEUR > 0) {
+        setQuickAddAsset(prev => prev ? { ...prev, price: live.priceEUR, dailyChangePct: live.changePct } : prev);
+        setPriceInput(prev => (!prev || prev === '0' || prev === asset.price.toString() ? live.priceEUR.toString() : prev));
+      }
+    }
   };
 
   // Aplicar fecha rápida (ej: 01/01/2025) y su precio estimado correspondiente
@@ -241,17 +315,26 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
 
       <div className="flex items-center gap-2 shrink-0">
         <div className="text-right">
-          <div className="text-xs font-black text-slate-900">
-            {formatEUR(asset.price)}
-          </div>
-          <div
-            className={`text-[10px] font-bold ${
-              asset.dailyChangePct >= 0 ? 'text-emerald-600' : 'text-rose-500'
-            }`}
-          >
-            {asset.dailyChangePct >= 0 ? '+' : ''}
-            {asset.dailyChangePct.toFixed(2)}%
-          </div>
+          {asset.price > 0 ? (
+            <>
+              <div className="text-xs font-black text-slate-900">
+                {formatEUR(asset.price)}
+              </div>
+              <div
+                className={`text-[10px] font-bold ${
+                  asset.dailyChangePct >= 0 ? 'text-emerald-600' : 'text-rose-500'
+                }`}
+              >
+                {asset.dailyChangePct >= 0 ? '+' : ''}
+                {asset.dailyChangePct.toFixed(2)}%
+              </div>
+            </>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+              <Globe className="w-2.5 h-2.5" />
+              <span>En vivo</span>
+            </span>
+          )}
         </div>
 
         {/* Botón "+" en círculo verde menta */}
@@ -492,10 +575,40 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
             </div>
           </>
         ) : (
-          <div className="space-y-0.5">
-            {filteredAssets.length > 0 ? (
-              filteredAssets.map(renderAssetRow)
-            ) : (
+          <div className="space-y-2">
+            {filteredAssets.length > 0 && (
+              <div className="space-y-0.5">
+                {filteredAssets.map(renderAssetRow)}
+              </div>
+            )}
+
+            {/* Resultados globales en directo de Yahoo Finance (todas las bolsas del mundo) */}
+            {searchTerm.trim().length >= 2 && (
+              <div className="pt-2">
+                {isSearchingOnline && (
+                  <div className="flex items-center justify-center gap-2 py-3 text-xs text-slate-500 font-semibold">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                    <span>Buscando más bolsas mundiales (Milán, Frankfurt, Londres, NYSE...)</span>
+                  </div>
+                )}
+
+                {!isSearchingOnline && filteredOnlineResults.length > 0 && (
+                  <div className="mt-1">
+                    <div className="px-3 py-1.5 flex items-center justify-between border-t border-slate-100">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 flex items-center gap-1">
+                        <Globe className="w-3 h-3" />
+                        <span>Otras Bolsas Mundiales ({filteredOnlineResults.length})</span>
+                      </span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {filteredOnlineResults.map(renderAssetRow)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {filteredAssets.length === 0 && !isSearchingOnline && filteredOnlineResults.length === 0 && (
               <div className="py-12 text-center text-slate-400 text-xs space-y-3">
                 <div>No se encontraron activos para &quot;{searchTerm}&quot;</div>
                 <button
