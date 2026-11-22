@@ -286,17 +286,17 @@ export const CommissionsModal: React.FC<CommissionsModalProps> = ({
           </div>
         </div>
 
-        {/* 4. Listado Desplegado Hacia Abajo (Scroll fluido completo) */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2.5 divide-y divide-slate-100 dark:divide-slate-800/40">
-          <div className="flex items-center justify-between px-1 pb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+        {/* 4. Listado Desplegado Hacia Abajo (Scroll fluido con tarjetas bien separadas y coloreadas) */}
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 bg-slate-100/70 dark:bg-[#070A11] rounded-2xl mx-2">
+          <div className="flex items-center justify-between px-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
             <span>Listado Completo ({filteredAssets.length} activos)</span>
             <span className="text-[10px] font-semibold text-slate-500">
-              P/G Bruto − Comisión = Neto
+              🟢 Ganancia neta • 🔴 Pérdida neta
             </span>
           </div>
 
           {filteredAssets.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs">
+            <div className="text-center py-12 text-slate-400 text-xs bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800">
               <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40 text-slate-400" />
               <p>No se encontraron activos con los filtros indicados.</p>
             </div>
@@ -305,45 +305,72 @@ export const CommissionsModal: React.FC<CommissionsModalProps> = ({
               const isPositiveNet = asset.net_pnl >= 0;
               const isPositiveGross = asset.realized_pnl >= 0;
 
+              // Color por tipo de activo
+              const typeBadgeColor =
+                asset.type === 'ETFs'
+                  ? 'bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                  : asset.type === 'Cripto'
+                  ? 'bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                  : 'bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800';
+
+              // Borde y acento según si el resultado neto es positivo o negativo
+              const cardBorder = isPositiveNet
+                ? 'border-emerald-300 dark:border-emerald-800/80 shadow-xs hover:border-emerald-500'
+                : 'border-rose-300 dark:border-rose-800/80 shadow-xs hover:border-rose-500';
+
+              const accentBarColor = isPositiveNet ? 'bg-emerald-500' : 'bg-rose-500';
+
               return (
                 <div
                   key={asset.id}
-                  className="pt-2.5 bg-white dark:bg-slate-900/50 rounded-2xl p-3 border border-slate-100 dark:border-slate-800/80 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition"
+                  className={`relative overflow-hidden bg-white dark:bg-slate-900 rounded-2xl p-3.5 pl-4 border ${cardBorder} shadow-sm transition-all hover:shadow-md`}
                 >
-                  {/* Fila Superior: Logo, Nombre, ISIN y Estado */}
-                  <div className="flex items-start justify-between gap-2">
+                  {/* Barra lateral de color para separar visualmente */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${accentBarColor}`} />
+
+                  {/* Fila Superior: Logo, Nombre, ISIN, Tipo y Estado */}
+                  <div className="flex items-start justify-between gap-2.5">
                     <div className="flex items-start gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-sm font-bold shrink-0 mt-0.5">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-base font-bold shrink-0 mt-0.5 shadow-2xs">
                         {asset.flag}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-[200px]">
+                          <h4 className="text-xs font-black text-slate-900 dark:text-white truncate max-w-[190px]">
                             {asset.name}
+                          </h4>
+                        </div>
+
+                        {/* Badges distintivos de Tipo y Estado */}
+                        <div className="flex items-center gap-1.5 text-[10px] mt-1 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-md font-bold border ${typeBadgeColor}`}>
+                            {asset.type}
                           </span>
                           <span
-                            className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-full ${
+                            className={`px-2 py-0.5 rounded-md font-bold ${
                               asset.status === 'Abierta'
-                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                             }`}
                           >
                             {asset.status}
                           </span>
-                        </div>
-                        <div className="text-[10px] text-slate-400 font-medium">
-                          {asset.isin ? `${asset.isin} • ` : ''}{asset.type} • {asset.trades_count} operaciones
-                          {asset.shares > 0 ? ` (${asset.shares} títulos)` : ''}
+                          <span className="text-slate-400 font-medium">
+                            {asset.trades_count} ops.
+                            {asset.shares > 0 ? ` • ${asset.shares} títulos` : ''}
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Beneficio Neto Destacado */}
                     <div className="text-right shrink-0">
-                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Beneficio Neto</span>
+                      <span className="text-[9px] font-extrabold text-slate-400 block uppercase tracking-wider">
+                        Beneficio Neto
+                      </span>
                       <span
-                        className={`text-sm font-black ${
-                          isPositiveNet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+                        className={`text-base font-black ${
+                          isPositiveNet ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
                         {isPositiveNet ? '+' : ''}{formatEUR(asset.net_pnl, hideFigures)}
@@ -351,28 +378,30 @@ export const CommissionsModal: React.FC<CommissionsModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Fila Inferior: Desglose de la resta (Bruto - Comisión = Neto) */}
-                  <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 grid grid-cols-3 gap-1.5 text-center text-[11px]">
-                    <div className="bg-slate-50 dark:bg-slate-800/40 rounded-lg p-1.5">
-                      <span className="text-[9px] text-slate-400 block font-medium">P/G Bruto</span>
+                  {/* Fila Inferior: Desglose de la resta (P/G Bruto - Comisión = Neto) */}
+                  <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 grid grid-cols-3 gap-1.5 text-center text-[11px]">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-1.5 border border-slate-200/60 dark:border-slate-700/60">
+                      <span className="text-[9px] text-slate-400 block font-semibold">P/G Bruto</span>
                       <span className={`font-bold ${isPositiveGross ? 'text-slate-900 dark:text-white' : 'text-rose-500'}`}>
                         {isPositiveGross ? '+' : ''}{formatEUR(asset.realized_pnl, hideFigures)}
                       </span>
                     </div>
 
-                    <div className="bg-amber-50/60 dark:bg-amber-950/20 rounded-lg p-1.5 border border-amber-200/40 dark:border-amber-800/30">
-                      <span className="text-[9px] text-amber-700 dark:text-amber-400 block font-medium">Comisión Pagada</span>
-                      <span className="font-extrabold text-amber-600 dark:text-amber-400">
+                    <div className="bg-amber-50/80 dark:bg-amber-950/30 rounded-xl p-1.5 border border-amber-300/60 dark:border-amber-700/60">
+                      <span className="text-[9px] text-amber-800 dark:text-amber-300 block font-bold">Comisión</span>
+                      <span className="font-black text-amber-600 dark:text-amber-400">
                         -{formatEUR(asset.total_fees, hideFigures)}
                       </span>
                     </div>
 
-                    <div className={`rounded-lg p-1.5 border ${
-                      isPositiveNet
-                        ? 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-200/50 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-300'
-                        : 'bg-rose-50/70 dark:bg-rose-950/40 border-rose-200/50 dark:border-rose-800/40 text-rose-600'
-                    }`}>
-                      <span className="text-[9px] block font-bold uppercase tracking-wider">Neto Real</span>
+                    <div
+                      className={`rounded-xl p-1.5 border ${
+                        isPositiveNet
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200'
+                          : 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-200'
+                      }`}
+                    >
+                      <span className="text-[9px] block font-extrabold uppercase tracking-wider">Neto Real</span>
                       <span className="font-black text-xs">
                         {isPositiveNet ? '+' : ''}{formatEUR(asset.net_pnl, hideFigures)}
                       </span>
