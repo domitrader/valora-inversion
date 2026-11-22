@@ -14,6 +14,8 @@ import {
   Check,
   RotateCcw,
   Sparkles,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 
 interface HistoricalAssetModalProps {
@@ -33,6 +35,7 @@ export const HistoricalAssetModal: React.FC<HistoricalAssetModalProps> = ({
   const [selectedType, setSelectedType] = useState<'Todos' | AssetType>('Todos');
   const [sortBy, setSortBy] = useState<'pnl-desc' | 'pnl-asc' | 'trades-desc' | 'name-asc'>('pnl-desc');
   const [selectedAssetIsin, setSelectedAssetIsin] = useState<string | null>(null);
+  const [isExpandedView, setIsExpandedView] = useState(false);
 
   const filteredAssets = useMemo(() => {
     return ALL_ASSETS.filter(a => {
@@ -71,10 +74,14 @@ export const HistoricalAssetModal: React.FC<HistoricalAssetModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
-      <div className="bg-white dark:bg-[#0B0F19] w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[92vh] flex flex-col border border-slate-200 dark:border-slate-800">
+      <div
+        className={`bg-white dark:bg-[#0B0F19] w-full max-w-xl rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl flex flex-col border border-slate-200 dark:border-slate-800 transition-all ${
+          isExpandedView ? 'h-[96vh]' : 'max-h-[92vh]'
+        }`}
+      >
         
         {/* Cabecera */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-black text-sm">
               📊
@@ -88,12 +95,22 @@ export const HistoricalAssetModal: React.FC<HistoricalAssetModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-full"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsExpandedView(!isExpandedView)}
+              className="p-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+              title={isExpandedView ? 'Vista compacta' : 'Expandir a pantalla completa'}
+            >
+              {isExpandedView ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded-full"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Indicador de Activo Seleccionado vs Total */}
