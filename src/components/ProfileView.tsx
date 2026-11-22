@@ -99,6 +99,33 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     portfolioService.exportToJson(portfolioState);
   };
 
+  const handleExportCsv = () => {
+    const header = 'Producto;Ticker;ISIN;Tipo;Títulos;Precio Compra (EUR);Precio Actual (EUR);Valor Total (EUR);P/G No Realizada (EUR);Fecha Compra';
+    const rows = portfolioState.positions.map(p => {
+      const formatNum = (n: number) => n.toFixed(2).replace('.', ',');
+      return [
+        `"${(p.name || '').replace(/"/g, '""')}"`,
+        p.ticker || '',
+        p.isin || '',
+        p.type || '',
+        p.shares.toString().replace('.', ','),
+        formatNum(p.avgPrice),
+        formatNum(p.currentPrice),
+        formatNum(p.totalValue),
+        formatNum(p.unrealizedGainLoss),
+        p.purchaseDate || '',
+      ].join(';');
+    });
+    const csvContent = '\uFEFF' + [header, ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cartera_domingo_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -349,7 +376,18 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         >
           <div className="flex items-center gap-2.5">
             <Upload className="w-4 h-4 text-emerald-600" />
-            <span>Importador DEGIRO / MyInvestor / CSV</span>
+            <span>Importar desde DEGIRO / MyInvestor / CSV</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={handleExportCsv}
+          className="w-full text-left py-2.5 px-3 rounded-2xl hover:bg-slate-50 transition-colors flex items-center justify-between text-xs font-bold text-slate-800"
+        >
+          <div className="flex items-center gap-2.5">
+            <Download className="w-4 h-4 text-blue-600" />
+            <span>Exportar cartera a Excel / CSV</span>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
         </button>

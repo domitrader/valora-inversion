@@ -142,7 +142,7 @@ export const ImportPortfolioModal: React.FC<ImportPortfolioModalProps> = ({
           {/* Botones de plantilla de prueba con 1 click */}
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
-              Prueba rápida con datos reales:
+              Cargar plantilla de ejemplo CSV para probar:
             </span>
             <div className="flex gap-2">
               <button
@@ -151,7 +151,7 @@ export const ImportPortfolioModal: React.FC<ImportPortfolioModalProps> = ({
                 className="flex-1 py-1.5 px-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-blue-100 transition-colors"
               >
                 <Building className="w-3.5 h-3.5" />
-                <span>Exportación DEGIRO</span>
+                <span>Ejemplo CSV DEGIRO</span>
               </button>
               <button
                 type="button"
@@ -159,7 +159,7 @@ export const ImportPortfolioModal: React.FC<ImportPortfolioModalProps> = ({
                 className="flex-1 py-1.5 px-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-emerald-100 transition-colors"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Exportación MyInvestor</span>
+                <span>Ejemplo CSV MyInvestor</span>
               </button>
             </div>
           </div>
