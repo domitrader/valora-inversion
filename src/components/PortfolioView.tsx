@@ -183,7 +183,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-xs"
             title="Perfil de usuario"
           >
-            SE
+            DO
           </button>
         </div>
       </header>

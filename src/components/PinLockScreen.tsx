@@ -90,7 +90,7 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({
             ? step === 'enter'
               ? 'Crear Clave de Acceso'
               : 'Confirma tu Clave PIN'
-            : 'Valora — Acceso Seguro'}
+            : 'Domingo — Acceso Seguro'}
         </h1>
         <p className="text-xs text-slate-400 mt-1.5 max-w-[260px]">
           {isSettingPin

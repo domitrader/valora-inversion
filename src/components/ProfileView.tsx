@@ -128,16 +128,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
       {/* 2. Tarjeta de Usuario */}
       <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs flex items-center gap-3.5">
         <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-slate-900 to-slate-700 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
-          CM
+          DO
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-extrabold text-slate-900 text-base">Carlos Moreno</h2>
+            <h2 className="font-extrabold text-slate-900 text-base">Domingo</h2>
             <span className="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
               Privada / Familiar
             </span>
           </div>
-          <span className="text-xs text-slate-400">carlos.moreno@inversor.es</span>
+          <span className="text-xs text-slate-400">domingo151@gmail.com</span>
         </div>
       </div>
 
@@ -502,7 +502,7 @@ create policy "public_access" on portfolio_states for all using (true) with chec
 
       {/* 7. Aviso legal */}
       <div className="text-[11px] text-slate-400 text-center leading-relaxed px-2">
-        <p>Valora Inversión no constituye asesoramiento financiero ni recomendación de inversión. Las cotizaciones pueden sufrir ligeros retrasos según la bolsa de negociación.</p>
+        <p>Domingo Portafolio no constituye asesoramiento financiero ni recomendación de inversión. Las cotizaciones pueden sufrir ligeros retrasos según la bolsa de negociación.</p>
         <p className="mt-1 font-semibold text-slate-500">Versión 1.0.0 • Mobile-first PWA</p>
       </div>
     </div>

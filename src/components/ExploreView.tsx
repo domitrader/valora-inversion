@@ -95,7 +95,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
             onClick={onGoToProfile}
             className="w-8 h-8 rounded-full bg-slate-100 border border-slate-300 text-slate-700 font-bold text-xs flex items-center justify-center hover:bg-slate-200 transition-colors shadow-xs"
           >
-            SE
+            DO
           </button>
         </div>
       </header>
