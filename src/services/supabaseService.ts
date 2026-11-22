@@ -1,7 +1,14 @@
 import { PortfolioState } from '../types/portfolio';
 import { INITIAL_PORTFOLIO_STATE } from '../data/mockPortfolio';
 
-const LOCAL_STORAGE_KEY = 'valora_portfolio_state_v1';
+const LOCAL_STORAGE_KEY = 'valora_portfolio_state_v4';
+
+// Legacy keys to clean up
+const LEGACY_STORAGE_KEYS = [
+  'valora_portfolio_state_v1',
+  'valora_portfolio_state_v2',
+  'valora_portfolio_state_v3'
+];
 
 /**
  * Service layer prepared for Supabase connection (PostgreSQL + RLS + Auth)
@@ -28,9 +35,22 @@ export class SupabaseService {
    */
   public static async getPortfolioState(): Promise<PortfolioState> {
     try {
+      // Limpiar versiones obsoletas para forzar actualización de los ETFs separados
+      LEGACY_STORAGE_KEYS.forEach(k => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed: PortfolioState = JSON.parse(stored);
+        // Validar si tiene las posiciones separadas (debe tener las 4 posiciones separadas de oro y nasdaq)
+        const hasLegacyMergedPositions = parsed.positions?.some(
+          p => p.id === 'pos-wt-gold-3x' || (p.isin === 'IE00B8HGT870' && p.shares === 155)
+        );
+
+        if (!hasLegacyMergedPositions && parsed.positions && parsed.positions.length >= 7) {
+          return parsed;
+        }
       }
     } catch (e) {
       console.warn('Error reading from localStorage, using initial mock data', e);
@@ -57,6 +77,9 @@ export class SupabaseService {
    */
   public static async resetToDefault(): Promise<PortfolioState> {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
+    LEGACY_STORAGE_KEYS.forEach(k => {
+      try { localStorage.removeItem(k); } catch {}
+    });
     return INITIAL_PORTFOLIO_STATE;
   }
 }

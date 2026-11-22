@@ -84,7 +84,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<InicioSubTab>('portafolio');
   const [selectedAssetFilter, setSelectedAssetFilter] = useState<'Todos' | AssetType>('Todos');
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [positionSort, setPositionSort] = useState<'value-desc' | 'change-asc' | 'change-desc' | 'name-asc'>('value-desc');
+  const [positionSort, setPositionSort] = useState<'degiro' | 'value-desc' | 'change-asc' | 'change-desc' | 'name-asc'>('degiro');
   const [selectedPosition, setSelectedPosition] = useState<PositionItem | null>(null);
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashInput, setCashInput] = useState(cash.toString());
@@ -119,6 +119,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const filteredPositions = positions
     .filter(pos => selectedAssetFilter === 'Todos' || pos.type === selectedAssetFilter)
     .sort((a, b) => {
+      if (positionSort === 'degiro') return 0;
       if (positionSort === 'value-desc') return b.totalValue - a.totalValue;
       if (positionSort === 'name-asc') return a.name.localeCompare(b.name);
       if (positionSort === 'change-desc') return b.dailyChangePct - a.dailyChangePct;
