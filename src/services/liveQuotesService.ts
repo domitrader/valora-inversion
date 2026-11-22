@@ -200,91 +200,134 @@ export const liveQuotesService = {
   },
 
   /**
-   * Busca activos globales en Yahoo Finance de forma gratuita y paralela (acciones, ETFs, todas las bolsas del mundo: .MI, .DE, .MC, .PA, .L, NYSE, NASDAQ)
+   * Busca activos globales en tiempo real (acciones, ETFs, fondos de todas las bolsas del mundo: BME, MIL, XETR, EURONEXT, LSE, NYSE, NASDAQ)
+   * Usa TradingView Global Scanner (CORS nativo, 0€ gratis, sin bloqueos) + precio en vivo incluido.
    */
   async searchGlobalMarketAssets(query: string): Promise<Array<{
     symbol: string;
+    yahooSymbol: string;
     name: string;
     exchange: string;
     quoteType: string;
     countryFlag: string;
     assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto';
+    priceEUR: number;
+    changePct: number;
   }>> {
     const clean = query.trim();
     if (clean.length < 2) return [];
 
-    const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=20&newsCount=0`;
-    const candidates = [
-      `/api/finance/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=20&newsCount=0`,
-      `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
-    ];
-
-    const tryFetch = async (url: string) => {
+    const runTvScan = async (field: 'name' | 'description') => {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 4500);
+      const timer = setTimeout(() => controller.abort(), 5000);
       try {
-        const res = await fetch(url, { signal: controller.signal });
+        const res = await fetch('https://scanner.tradingview.com/global/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify({
+            filter: [{ left: field, operation: 'match', right: clean }],
+            columns: ['name', 'description', 'exchange', 'close', 'change', 'currency', 'type'],
+            range: [0, 20],
+          }),
+          signal: controller.signal,
+        });
         clearTimeout(timer);
-        if (!res.ok) throw new Error('HTTP error');
-        const data = await res.json();
-        const quotes = data?.quotes;
-        if (!Array.isArray(quotes) || quotes.length === 0) throw new Error('Empty');
-        return quotes;
-      } catch (err) {
+        if (!res.ok) return [];
+        const json = await res.json();
+        return Array.isArray(json?.data) ? json.data : [];
+      } catch {
         clearTimeout(timer);
-        throw err;
+        return [];
       }
     };
 
-    const firstFulfilled = <T,>(promises: Promise<T>[]): Promise<T> =>
-      new Promise((resolve, reject) => {
-        let rejections = 0;
-        if (promises.length === 0) return reject(new Error('No promises'));
-        promises.forEach(p =>
-          p.then(resolve).catch(() => {
-            rejections++;
-            if (rejections === promises.length) reject(new Error('All failed'));
-          })
-        );
+    const [byName, byDesc] = await Promise.all([runTvScan('name'), runTvScan('description')]);
+    const combined = [...byName, ...byDesc];
+    const seen = new Set<string>();
+    const results: Array<{
+      symbol: string;
+      yahooSymbol: string;
+      name: string;
+      exchange: string;
+      quoteType: string;
+      countryFlag: string;
+      assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto';
+      priceEUR: number;
+      changePct: number;
+    }> = [];
+
+    for (const item of combined) {
+      const s = String(item?.s || '');
+      const d = item?.d;
+      if (!s || !Array.isArray(d) || seen.has(s)) continue;
+      seen.add(s);
+
+      const ticker = String(d[0] || '').toUpperCase();
+      const desc = String(d[1] || ticker);
+      const exch = String(d[2] || '').toUpperCase();
+      const rawClose = Number(d[3] || 0);
+      const rawChange = Number(d[4] || 0);
+      const currency = String(d[5] || 'EUR');
+      const tvType = String(d[6] || 'stock').toLowerCase();
+
+      // Determinar bandera y sufijo Yahoo según bolsa
+      let countryFlag = '🌐';
+      let yahooSuffix = '';
+      if (exch === 'BME' || exch === 'MADRID') {
+        countryFlag = '🇪🇸';
+        yahooSuffix = '.MC';
+      } else if (exch === 'MIL' || exch === 'MILAN' || exch === 'EUROTLX') {
+        countryFlag = '🇮🇹';
+        yahooSuffix = '.MI';
+      } else if (exch === 'XETR' || exch === 'FWB' || exch === 'GETTEX' || exch === 'TRADEGATE') {
+        countryFlag = '🇩🇪';
+        yahooSuffix = '.DE';
+      } else if (exch === 'EURONEXT' || exch === 'EPA') {
+        countryFlag = '🇪🇺';
+        yahooSuffix = '.AS';
+      } else if (exch === 'LSE' || exch === 'LSIN') {
+        countryFlag = '🇬🇧';
+        yahooSuffix = '.L';
+      } else if (exch === 'SIX') {
+        countryFlag = '🇨🇭';
+        yahooSuffix = '.SW';
+      } else if (exch === 'NYSE' || exch === 'NASDAQ' || exch === 'AMEX' || exch === 'ARCA') {
+        countryFlag = '🇺🇸';
+        yahooSuffix = '';
+      }
+
+      const yahooSymbol = ticker.includes('.') || ticker.includes('-') ? ticker : `${ticker}${yahooSuffix}`;
+
+      // Convertir precio a EUR
+      let priceEUR = rawClose;
+      if (currency === 'USD') {
+        priceEUR = rawClose / this.eurUsdRate;
+      } else if (currency === 'GBX' || currency === 'GBp') {
+        priceEUR = (rawClose / 100) / this.eurGbpRate;
+      } else if (currency === 'GBP') {
+        priceEUR = rawClose / this.eurGbpRate;
+      }
+
+      let assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Acciones';
+      if (tvType === 'fund' || desc.toUpperCase().includes('ETF') || desc.toUpperCase().includes('UCITS') || desc.toUpperCase().includes('LEVERAGED')) {
+        assetType = 'ETFs';
+      } else if (tvType === 'crypto') {
+        assetType = 'Cripto';
+      }
+
+      results.push({
+        symbol: `${ticker}${yahooSuffix}`,
+        yahooSymbol,
+        name: desc,
+        exchange: exch || 'Global',
+        quoteType: tvType.toUpperCase(),
+        countryFlag,
+        assetType,
+        priceEUR: Number(priceEUR.toFixed(2)),
+        changePct: Number(rawChange.toFixed(2)),
       });
-
-    try {
-      const quotes = await firstFulfilled(candidates.map(tryFetch));
-      return quotes
-        .filter((q: any) => q && q.symbol && (q.shortname || q.longname))
-        .map((q: any) => {
-          const sym = String(q.symbol).toUpperCase();
-          const qt = String(q.quoteType || '').toUpperCase();
-          const exch = String(q.exchDisp || q.exchange || 'Mercado Global');
-
-          let countryFlag = '🌐';
-          if (sym.endsWith('.MC')) countryFlag = '🇪🇸';
-          else if (sym.endsWith('.MI')) countryFlag = '🇮🇹';
-          else if (sym.endsWith('.DE') || sym.endsWith('.F')) countryFlag = '🇩🇪';
-          else if (sym.endsWith('.PA')) countryFlag = '🇫🇷';
-          else if (sym.endsWith('.AS')) countryFlag = '🇳🇱';
-          else if (sym.endsWith('.L')) countryFlag = '🇬🇧';
-          else if (sym.endsWith('.SW')) countryFlag = '🇨🇭';
-          else if (!sym.includes('.')) countryFlag = '🇺🇸';
-
-          let assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Acciones';
-          if (qt === 'ETF') assetType = 'ETFs';
-          else if (qt === 'MUTUALFUND') assetType = 'Fondos';
-          else if (qt === 'CRYPTOCURRENCY') assetType = 'Cripto';
-
-          return {
-            symbol: sym,
-            name: String(q.longname || q.shortname),
-            exchange: exch,
-            quoteType: qt,
-            countryFlag,
-            assetType,
-          };
-        });
-    } catch {
-      return [];
     }
+
+    return results;
   },
 };

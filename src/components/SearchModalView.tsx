@@ -90,14 +90,14 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
           .map(r => ({
             name: r.name,
             ticker: r.symbol,
-            yahooSymbol: r.symbol,
+            yahooSymbol: r.yahooSymbol || r.symbol,
             isin: '',
             type: r.assetType,
             countryFlag: r.countryFlag,
             market: r.exchange,
-            price: 0, // Se obtendrá en vivo al tocar '+'
+            price: r.priceEUR || 0,
             currency: 'EUR',
-            dailyChangePct: 0,
+            dailyChangePct: r.changePct || 0,
             logoBg: r.assetType === 'ETFs' ? 'bg-amber-600' : r.assetType === 'Fondos' ? 'bg-emerald-700' : 'bg-blue-700',
             logoText: r.symbol.split('.')[0].slice(0, 4),
             zeroDoubleTax: r.symbol.endsWith('.L') || r.symbol.endsWith('.MC'),
@@ -391,7 +391,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
                 : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
             }`}
           >
-            🌐 Todos ({COMPREHENSIVE_CATALOG.length})
+            🌐 Todos (Global)
           </button>
 
           <button
