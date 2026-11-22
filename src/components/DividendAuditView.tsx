@@ -29,6 +29,7 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
   const [selectedYear, setSelectedYear] = useState<string>('Todos');
   const [activeTab, setActiveTab] = useState<'historial' | 'mapa-futuro' | 'empresas'>('historial');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [selectedProductIsin, setSelectedProductIsin] = useState<string>('TODOS');
   const [taxRateSpanish19, setTaxRateSpanish19] = useState<boolean>(true);
 
   const rawData = dividendsRaw as {
@@ -147,6 +148,43 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
     return Math.max(...rawData.annualSummary.map(a => a.net), 1);
   }, [rawData.annualSummary]);
 
+  // Datos consolidados o específicos para la pestaña 'Por Activo'
+  const selectedProductData = useMemo(() => {
+    if (selectedProductIsin === 'TODOS') {
+      const gross = rawData.productSummary.reduce((acc, p) => acc + p.gross, 0);
+      const tax = rawData.productSummary.reduce((acc, p) => acc + p.tax, 0);
+      const net = rawData.productSummary.reduce((acc, p) => acc + p.net, 0);
+      const count = rawData.productSummary.reduce((acc, p) => acc + p.count, 0);
+      return {
+        product: 'Todos los Activos con Dividendo',
+        ticker: `${rawData.productSummary.length} activos`,
+        isin: 'TODOS',
+        flag: '💼',
+        gross,
+        tax,
+        net,
+        count,
+      };
+    }
+    const found = rawData.productSummary.find(p => p.isin === selectedProductIsin);
+    if (found) return found;
+    return rawData.productSummary[0] || {
+      product: 'Activo',
+      ticker: '',
+      isin: '',
+      flag: '📄',
+      gross: 0,
+      tax: 0,
+      net: 0,
+      count: 0,
+    };
+  }, [selectedProductIsin, rawData.productSummary]);
+
+  const selectedProductPayments = useMemo(() => {
+    if (selectedProductIsin === 'TODOS') return rawData.payments;
+    return rawData.payments.filter(p => p.isin === selectedProductIsin);
+  }, [selectedProductIsin, rawData.payments]);
+
   return (
     <div className="space-y-4">
       {/* 1. SELECTOR DE CARTERA / BROKER */}
@@ -198,146 +236,28 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
         </div>
       </div>
 
-      {/* 2. TARJETA RESUMEN DE DIVIDENDOS */}
-      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-xl border border-slate-800">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-            <Receipt className="w-3.5 h-3.5 text-emerald-400" />
-            {selectedYear === 'Todos' ? 'Total Histórico Cobrado (2018–2026)' : `Total Dividendos Año ${selectedYear}`}
-          </span>
-          <span className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-            {filteredPayments.length} pagos
-          </span>
-        </div>
-
-        <div className="text-3xl font-black mt-2 mb-3 text-emerald-400 tracking-tight">
-          +{formatEUR(currentNet, hideFigures)}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 pt-3 border-t border-slate-800/80 text-xs">
-          <div>
-            <span className="text-slate-400 block text-[11px]">Total Bruto Generado:</span>
-            <span className="font-bold text-white text-sm">{formatEUR(currentGross, hideFigures)}</span>
-          </div>
-          <div>
-            <span className="text-slate-400 block text-[11px]">Retención en Origen (IRPF):</span>
-            <span className="font-bold text-rose-400 text-sm">-{formatEUR(currentTaxes, hideFigures)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. SELECTOR HORIZONTAL DE AÑOS */}
-      <div>
-        <div className="flex items-center justify-between mb-1.5 px-1">
-          <span className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-            Filtrar por Año
-          </span>
-          {selectedYear !== 'Todos' && (
-            <button
-              onClick={() => setSelectedYear('Todos')}
-              className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Ver todos los años
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => setSelectedYear('Todos')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all ${
-              selectedYear === 'Todos'
-                ? 'bg-slate-900 text-white shadow-xs dark:bg-white dark:text-slate-900'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'
-            }`}
-          >
-            Todos ({formatEUR(rawData.totalHistoricalNet, hideFigures)})
-          </button>
-          {rawData.annualSummary.map(a => (
-            <button
-              key={a.year}
-              onClick={() => setSelectedYear(a.year)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 ${
-                selectedYear === a.year
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'
-              }`}
-            >
-              <span>{a.year}</span>
-              <span className={`text-[10px] opacity-80 ${selectedYear === a.year ? 'text-white' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                {formatEUR(a.net, hideFigures)}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 4. GRÁFICO VISUAL DE EVOLUCIÓN HISTÓRICA ANUAL */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 dark:text-white">
-              Evolución Anual de Cobros (2018–2026)
-            </h4>
-          </div>
-          <span className="text-[10px] text-slate-400">Pulsa una barra para filtrar</span>
-        </div>
-
-        <div className="grid grid-cols-9 gap-1.5 items-end h-28 pt-2 pb-1 border-b border-slate-100 dark:border-slate-800">
-          {[...rawData.annualSummary].reverse().map(item => {
-            const heightPct = Math.max(12, Math.round((item.net / maxAnnualNet) * 100));
-            const isSelected = selectedYear === item.year;
-
-            return (
-              <div
-                key={item.year}
-                onClick={() => setSelectedYear(selectedYear === item.year ? 'Todos' : item.year)}
-                className="flex flex-col items-center h-full justify-end group cursor-pointer"
-                title={`${item.year}: ${item.net.toFixed(2)} € (${item.count} pagos)`}
-              >
-                <span className="text-[9px] font-black text-slate-700 dark:text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity mb-1">
-                  {Math.round(item.net)}€
-                </span>
-                <div
-                  style={{ height: `${heightPct}%` }}
-                  className={`w-full rounded-t-lg transition-all ${
-                    isSelected
-                      ? 'bg-emerald-500 shadow-md ring-2 ring-emerald-400'
-                      : 'bg-slate-200 dark:bg-slate-800 group-hover:bg-emerald-400/80'
-                  }`}
-                />
-                <span className={`text-[10px] mt-1.5 font-bold ${isSelected ? 'text-emerald-600 font-black' : 'text-slate-400'}`}>
-                  {item.year.slice(2)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2 px-1">
-          <span>Récord: <strong>2021 (136,95 €)</strong></span>
-          <span>Total acumulado: <strong>{formatEUR(rawData.totalHistoricalNet, hideFigures)}</strong></span>
-        </div>
-      </div>
-
-      {/* 5. NAVEGACIÓN INTERNA: HISTORIAL | MAPA FUTURO | POR EMPRESA */}
-      <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl gap-1">
+      {/* 2. NAVEGACIÓN PRINCIPAL DE PESTAÑAS (ARRIBA DEL TODO) */}
+      <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl gap-1 shadow-inner border border-slate-200/60 dark:border-slate-700/60">
         <button
           onClick={() => setActiveTab('historial')}
-          className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all ${
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'historial'
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-900/10 dark:ring-white/10'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          📜 Historial ({filteredPayments.length})
+          <span>📜 Historial</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            {filteredPayments.length}
+          </span>
         </button>
 
         <button
           onClick={() => setActiveTab('mapa-futuro')}
-          className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'mapa-futuro'
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-900/10 dark:ring-white/10'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <span>📅 Mapa Futuro</span>
@@ -346,15 +266,300 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
 
         <button
           onClick={() => setActiveTab('empresas')}
-          className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all ${
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'empresas'
-              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm ring-1 ring-slate-900/10 dark:ring-white/10'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          🏢 Por Empresa
+          <span>🏢 Por Empresa</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            {rawData.productSummary.length}
+          </span>
         </button>
       </div>
+
+      {/* 3. PANEL HERO DINÁMICO (CUADRO AZUL QUE REACCIONA A LA PESTAÑA Y AL ACTIVO SELECCIONADO) */}
+      {activeTab === 'historial' && (
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-xl border border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-emerald-400" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-300">
+                Historial de Dividendos Cobrados
+              </span>
+            </div>
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              {filteredPayments.length} Pagos Registrados
+            </span>
+          </div>
+
+          <div className="text-center py-1">
+            <div className="text-3xl sm:text-4xl font-black tracking-tight text-emerald-400">
+              +{formatEUR(currentNet, hideFigures)}
+            </div>
+            <div className="text-xs font-medium text-slate-300 mt-1">
+              {selectedYear === 'Todos' ? 'Total Histórico Neto Cobrado (2018–2026)' : `Neto Cobrado en ${selectedYear}`}
+            </div>
+          </div>
+
+          {/* 3 Columnas: Bruto, Retención, Neto */}
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-center">
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-slate-800">
+              <div className="text-[10px] text-slate-400 font-bold uppercase">Total Bruto</div>
+              <div className="text-xs font-black text-slate-200 mt-0.5">
+                +{formatEUR(currentGross, hideFigures)}
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-slate-800">
+              <div className="text-[10px] text-amber-400 font-bold uppercase">Retenciones</div>
+              <div className="text-xs font-black text-rose-400 mt-0.5">
+                -{formatEUR(currentTaxes, hideFigures)}
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-emerald-500/30">
+              <div className="text-[10px] text-emerald-400 font-bold uppercase">Neto en Cuenta</div>
+              <div className="text-xs font-black text-emerald-400 mt-0.5">
+                +{formatEUR(currentNet, hideFigures)}
+              </div>
+            </div>
+          </div>
+
+          {/* Selector de Años */}
+          <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-slate-400 font-semibold">Filtrar año:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setSelectedYear('Todos')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                  selectedYear === 'Todos'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                }`}
+              >
+                Todos
+              </button>
+              {rawData.annualSummary.map(a => (
+                <button
+                  key={a.year}
+                  type="button"
+                  onClick={() => setSelectedYear(a.year)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all shrink-0 ${
+                    selectedYear === a.year
+                      ? 'bg-emerald-500 text-white shadow-xs'
+                      : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {a.year}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Gráfico Visual de Evolución Histórica Anual */}
+          <div className="pt-3 border-t border-slate-800/80">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase font-bold text-slate-400">Evolución Anual (2018–2026)</span>
+              <span className="text-[10px] text-slate-400">Récord: 2021 (136,95 €)</span>
+            </div>
+            <div className="grid grid-cols-9 gap-1.5 items-end h-20 pt-1 pb-1">
+              {[...rawData.annualSummary].reverse().map(item => {
+                const heightPct = Math.max(15, Math.round((item.net / maxAnnualNet) * 100));
+                const isSelected = selectedYear === item.year;
+                return (
+                  <div
+                    key={item.year}
+                    onClick={() => setSelectedYear(selectedYear === item.year ? 'Todos' : item.year)}
+                    className="flex flex-col items-center h-full justify-end cursor-pointer group"
+                    title={`${item.year}: ${item.net.toFixed(2)} €`}
+                  >
+                    <div
+                      style={{ height: `${heightPct}%` }}
+                      className={`w-full rounded-t-md transition-all ${
+                        isSelected
+                          ? 'bg-emerald-400 ring-2 ring-emerald-300'
+                          : 'bg-slate-700 group-hover:bg-emerald-500/80'
+                      }`}
+                    />
+                    <span className={`text-[9px] mt-1 font-bold ${isSelected ? 'text-emerald-400' : 'text-slate-400'}`}>
+                      {item.year.slice(2)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'mapa-futuro' && (
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-xl border border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-emerald-400" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-300">
+                Proyección Anual • Cobros Futuros
+              </span>
+            </div>
+
+            {/* BOTÓN CONMUTADOR: BRUTO vs NETO (19% IRPF ESPAÑA) */}
+            <div className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-700/60 shadow-inner self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setTaxRateSpanish19(false)}
+                className={`py-1 px-2.5 rounded-lg text-[11px] font-bold transition-all ${
+                  !taxRateSpanish19
+                    ? 'bg-slate-700 text-white shadow-sm ring-1 ring-slate-500'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                💶 Bruto
+              </button>
+              <button
+                type="button"
+                onClick={() => setTaxRateSpanish19(true)}
+                className={`py-1 px-2.5 rounded-lg text-[11px] font-black transition-all ${
+                  taxRateSpanish19
+                    ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🇪🇸 Neto (-19% IRPF)
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center py-2">
+            <div className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+              +{formatEUR(taxRateSpanish19 ? futureNet19Sum : futureGrossSum, hideFigures)}
+            </div>
+            <div className="text-xs font-medium text-slate-300 mt-1">
+              {taxRateSpanish19
+                ? 'Neto Anual Estimado (Tras 19% Fiscalidad Española)'
+                : 'Importe Total Bruto Proyectado'}
+            </div>
+          </div>
+
+          {/* 3 Columnas: Bruto, Retención 19%, Neto */}
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800 text-center">
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-slate-800">
+              <div className="text-[10px] text-slate-400 font-bold uppercase">Total Bruto</div>
+              <div className="text-xs font-black text-slate-200 mt-0.5">
+                +{formatEUR(futureGrossSum, hideFigures)}
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-slate-800">
+              <div className="text-[10px] text-amber-400 font-bold uppercase">Retención 19%</div>
+              <div className="text-xs font-black text-rose-400 mt-0.5">
+                -{formatEUR(futureSpanishTax19Sum, hideFigures)}
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-emerald-500/30">
+              <div className="text-[10px] text-emerald-400 font-bold uppercase">Neto Anual</div>
+              <div className="text-xs font-black text-emerald-400 mt-0.5">
+                +{formatEUR(futureNet19Sum, hideFigures)}
+              </div>
+            </div>
+          </div>
+
+          {/* Resumen de activos que reparten en el año */}
+          <div className="mt-3.5 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-300">
+            <span className="font-semibold text-slate-400">Activos en el cómputo anual:</span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {futureDistinctAssets.map(a => (
+                <span key={a.isin} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white/10 text-white font-bold border border-white/10 text-[10px]">
+                  <span>{a.flag}</span>
+                  <span>{a.product}</span>
+                  <span className="text-emerald-400">
+                    (+{formatEUR(taxRateSpanish19 ? a.annualGross * 0.81 : a.annualGross, hideFigures)})
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'empresas' && (
+        <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white rounded-3xl p-5 shadow-xl border border-slate-800">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-300 truncate max-w-[220px]">
+                {selectedProductData.product}
+              </span>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              {selectedProductData.count} Cobros Realizados
+            </span>
+          </div>
+
+          <div className="text-center py-2">
+            <div className="text-3xl sm:text-4xl font-black tracking-tight text-emerald-400">
+              +{formatEUR(selectedProductData.net, hideFigures)}
+            </div>
+            <div className="text-xs font-medium text-slate-300 mt-1">
+              Neto Real Cobrado de {selectedProductData.product}
+            </div>
+          </div>
+
+          {/* 3 Columnas: Bruto, Retención, Neto */}
+          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-slate-800 text-center">
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-slate-800">
+              <div className="text-[10px] text-slate-400 font-bold uppercase">Total Bruto</div>
+              <div className="text-xs font-black text-slate-200 mt-0.5">
+                +{formatEUR(selectedProductData.gross, hideFigures)}
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-slate-800">
+              <div className="text-[10px] text-amber-400 font-bold uppercase">Retenciones</div>
+              <div className="text-xs font-black text-rose-400 mt-0.5">
+                -{formatEUR(selectedProductData.tax, hideFigures)}
+              </div>
+            </div>
+            <div className="bg-slate-900/70 rounded-xl p-2 border border-emerald-500/30">
+              <div className="text-[10px] text-emerald-400 font-bold uppercase">Neto Total</div>
+              <div className="text-xs font-black text-emerald-400 mt-0.5">
+                +{formatEUR(selectedProductData.net, hideFigures)}
+              </div>
+            </div>
+          </div>
+
+          {/* Selector Rápido de Activo en la Tarjeta */}
+          <div className="mt-3.5 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+            <span className="text-[11px] text-slate-400 font-semibold">Tocar empresa:</span>
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setSelectedProductIsin('TODOS')}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                  selectedProductIsin === 'TODOS'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                }`}
+              >
+                🌐 Todas
+              </button>
+              {rawData.productSummary.slice(0, 6).map(prod => (
+                <button
+                  key={prod.isin}
+                  type="button"
+                  onClick={() => setSelectedProductIsin(prod.isin)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shrink-0 ${
+                    selectedProductIsin === prod.isin
+                      ? 'bg-emerald-500 text-white shadow-xs'
+                      : 'bg-slate-800/80 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>{prod.flag}</span>
+                  <span>{prod.product.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CONTENIDO PESTAÑA 1: HISTORIAL DE PAGOS */}
       {activeTab === 'historial' && (
