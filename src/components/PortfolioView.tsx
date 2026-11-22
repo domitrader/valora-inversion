@@ -36,9 +36,6 @@ import {
   Wallet,
   PieChart,
   Calendar,
-  Sparkles,
-  TrendingDown,
-  TrendingUp,
   RefreshCw,
   ChevronDown,
   Check,
@@ -185,11 +182,11 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         </div>
       </header>
 
-      {/* 2. Pestañas superiores: "Para ti" | "Portafolio" | "Dividendos" */}
+      {/* 2. Pestañas superiores: "Portafolio" | "Dividendos" */}
       <div className="flex items-center gap-1 px-4 mb-4">
-        {(['para-ti', 'portafolio', 'dividendos'] as InicioSubTab[]).map(tab => {
+        {(['portafolio', 'dividendos'] as InicioSubTab[]).map(tab => {
           const isActive = activeSubTab === tab;
-          const label = tab === 'para-ti' ? 'Para ti' : tab === 'portafolio' ? 'Portafolio' : 'Dividendos';
+          const label = tab === 'portafolio' ? 'Portafolio' : 'Dividendos';
           return (
             <button
               key={tab}
@@ -898,42 +895,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         </section>
       )}
 
-      {/* PESTAÑA: PARA TI */}
-      {activeSubTab === 'para-ti' && (
-        <section className="px-4 space-y-4">
-          {/* Briefing IA diario */}
-          <div className="bg-emerald-50/70 border border-emerald-100 rounded-3xl p-4">
-            <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs mb-1">
-              <Sparkles className="w-4 h-4 text-emerald-600" />
-              <span>Resumen patrimonial del día</span>
-            </div>
-            <p className="text-xs text-slate-700 leading-relaxed">
-              Tu cartera experimenta hoy una corrección del <strong>9,65%</strong> impulsada principalmente por la toma de beneficios en activos de tecnología y ETPs cripto. Tus activos defensivos como <em>Realty Income (+0,82%)</em> proporcionan estabilidad al flujo de rentas.
-            </p>
-          </div>
 
-          {/* Mayor subida y mayor bajada */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-xs">
-              <div className="flex items-center gap-1.5 text-emerald-600 font-bold text-xs mb-1">
-                <TrendingUp className="w-3.5 h-3.5" />
-                <span>Mayor subida</span>
-              </div>
-              <div className="font-bold text-slate-900 text-sm">Realty Income</div>
-              <div className="text-xs font-semibold text-emerald-600 mt-0.5">+0,82 % (+14,95 €)</div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-2xl p-3 shadow-xs">
-              <div className="flex items-center gap-1.5 text-rose-500 font-bold text-xs mb-1">
-                <TrendingDown className="w-3.5 h-3.5" />
-                <span>Mayor corrección</span>
-              </div>
-              <div className="font-bold text-slate-900 text-sm truncate">WisdomTree Battery</div>
-              <div className="text-xs font-semibold text-rose-500 mt-0.5">-15,74 % (-176,08 €)</div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* MODAL DETALLE DE POSICIÓN */}
       {selectedPosition && (

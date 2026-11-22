@@ -1,6 +1,6 @@
 export type MainTab = 'inicio' | 'eventos' | 'explorar' | 'seguimiento' | 'perfil';
 
-export type InicioSubTab = 'para-ti' | 'portafolio' | 'dividendos';
+export type InicioSubTab = 'portafolio' | 'dividendos';
 
 export type AssetType = 'Acciones' | 'ETFs' | 'Cripto';
 
