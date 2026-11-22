@@ -18,6 +18,9 @@ import { Sparkline } from './Sparkline';
 import { InteractiveChart } from './InteractiveChart';
 import { HistoricalAssetModal } from './HistoricalAssetModal';
 import { DividendAuditView } from './DividendAuditView';
+import { CommissionsModal } from './CommissionsModal';
+import { NetCashFlowModal } from './NetCashFlowModal';
+import { ClosedProfitsModal } from './ClosedProfitsModal';
 import degiroData from '../data/degiroPositionsData.json';
 import {
   Search,
@@ -92,6 +95,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
   const [showHistoricalModal, setShowHistoricalModal] = useState(false);
+  const [showCommissionsModal, setShowCommissionsModal] = useState(false);
+  const [showNetCashFlowModal, setShowNetCashFlowModal] = useState(false);
+  const [showClosedModal, setShowClosedModal] = useState(false);
 
   // Selector estilo DEGIRO: Posiciones abiertas / Posiciones cerradas / Todas las posiciones
   const [positionViewMode, setPositionViewMode] = useState<'abiertas' | 'cerradas' | 'todas'>('abiertas');
@@ -391,37 +397,76 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
-                  <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
-                    <span className="text-[10px] font-semibold text-slate-400 block">Beneficio Cerrado</span>
+                  {/* 1. Casilla Beneficio Cerrado -> Abre ventana de beneficio cerrado */}
+                  <button
+                    type="button"
+                    onClick={() => setShowClosedModal(true)}
+                    className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                    title="Ver detalle de beneficio cerrado y posiciones ganadoras/perdedoras"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-400 block">Beneficio Cerrado</span>
+                      <span className="text-[10px] text-slate-500 group-hover:text-emerald-400 transition">↗</span>
+                    </div>
                     <span className="text-sm font-extrabold text-emerald-400 mt-0.5 block">
                       +{formatEUR(tradingAnalytics.totalRealizedPnl, hideFigures)}
                     </span>
-                  </div>
+                  </button>
 
+                  {/* 2. Casilla Flujo Neto Retirado -> Abre ventana de flujo neto y transferencias */}
                   {tradingAnalytics.netCashFlow !== undefined && (
-                    <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
-                      <span className="text-[10px] font-semibold text-slate-400 block">Flujo Neto Retirado</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowNetCashFlowModal(true)}
+                      className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                      title="Ver detalle de depósitos, retiradas a banco y saldo neto extraído"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-slate-400 block">Flujo Neto Retirado</span>
+                        <span className="text-[10px] text-slate-500 group-hover:text-emerald-300 transition">↗</span>
+                      </div>
                       <span className="text-sm font-extrabold text-emerald-300 mt-0.5 block">
                         +{formatEUR(tradingAnalytics.netCashFlow, hideFigures)}
                       </span>
-                    </div>
+                    </button>
                   )}
 
+                  {/* 3. Casilla Dividendos Netos -> Navega directamente a la página de dividendos */}
                   {tradingAnalytics.totalDividendsReceived !== undefined && (
-                    <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
-                      <span className="text-[10px] font-semibold text-slate-400 block">Dividendos Netos</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSubTab('dividendos');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                      title="Ir a la página y desglose de dividendos"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-semibold text-slate-400 block">Dividendos Netos</span>
+                        <span className="text-[10px] text-slate-500 group-hover:text-white transition">➔</span>
+                      </div>
                       <span className="text-sm font-extrabold text-white mt-0.5 block">
                         +{formatEUR(tradingAnalytics.totalDividendsReceived, hideFigures)}
                       </span>
-                    </div>
+                    </button>
                   )}
 
-                  <div className="bg-slate-800/50 rounded-2xl p-2.5 border border-slate-700/50">
-                    <span className="text-[10px] font-semibold text-slate-400 block">Comisiones DEGIRO</span>
+                  {/* 4. Casilla Comisiones DEGIRO -> Abre ventana con todas las comisiones reflejadas */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCommissionsModal(true)}
+                    className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                    title="Ver desglose completo de comisiones de corretaje, conectividad y cambio"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-400 block">Comisiones DEGIRO</span>
+                      <span className="text-[10px] text-slate-500 group-hover:text-amber-400 transition">↗</span>
+                    </div>
                     <span className="text-sm font-extrabold text-slate-300 mt-0.5 block">
                       {formatEUR(tradingAnalytics.totalFeesPaid, hideFigures)}
                     </span>
-                  </div>
+                  </button>
                 </div>
 
                 {/* Botón para ver desglose de beneficio por activo (117 activos) */}
@@ -1085,6 +1130,27 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       <HistoricalAssetModal
         isOpen={showHistoricalModal}
         onClose={() => setShowHistoricalModal(false)}
+        hideFigures={hideFigures}
+      />
+
+      {/* MODAL COMISIONES DEGIRO */}
+      <CommissionsModal
+        isOpen={showCommissionsModal}
+        onClose={() => setShowCommissionsModal(false)}
+        hideFigures={hideFigures}
+      />
+
+      {/* MODAL FLUJO NETO Y MOVIMIENTO DE FONDOS */}
+      <NetCashFlowModal
+        isOpen={showNetCashFlowModal}
+        onClose={() => setShowNetCashFlowModal(false)}
+        hideFigures={hideFigures}
+      />
+
+      {/* MODAL BENEFICIO CERRADO */}
+      <ClosedProfitsModal
+        isOpen={showClosedModal}
+        onClose={() => setShowClosedModal(false)}
         hideFigures={hideFigures}
       />
     </div>
