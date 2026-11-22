@@ -171,6 +171,60 @@ export interface PortfolioState {
   historicalAssetStats?: HistoricalAssetStat[];
 }
 
+export interface DividendPaymentItem {
+  date: string;
+  year: string;
+  month: string;
+  product: string;
+  isin: string;
+  gross: number;
+  tax: number;
+  net: number;
+  currency: string;
+  broker: string;
+  flag: string;
+  descriptions?: string[];
+}
+
+export interface AnnualDividendSummary {
+  year: string;
+  gross: number;
+  tax: number;
+  net: number;
+  count: number;
+}
+
+export interface ProductDividendSummary {
+  product: string;
+  isin: string;
+  flag: string;
+  gross: number;
+  tax: number;
+  net: number;
+  count: number;
+}
+
+export interface FutureDividendProjection {
+  id: string;
+  product: string;
+  ticker: string;
+  isin: string;
+  shares: number;
+  broker: string;
+  flag: string;
+  month: string;
+  quarter: string;
+  estimatedDate: string;
+  dividendPerShare: number;
+  currency: string;
+  estimatedGrossEUR: number;
+  estimatedTaxEUR: number;
+  estimatedNetEUR: number;
+  frequency: string;
+  status: string;
+}
+
+
 export interface NewsItem {
   id: string;
   title: string;

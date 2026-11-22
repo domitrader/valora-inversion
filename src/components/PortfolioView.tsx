@@ -17,6 +17,7 @@ import { MOCK_CHART_DATA } from '../data/mockPortfolio';
 import { Sparkline } from './Sparkline';
 import { InteractiveChart } from './InteractiveChart';
 import { HistoricalAssetModal } from './HistoricalAssetModal';
+import { DividendAuditView } from './DividendAuditView';
 import degiroData from '../data/degiroPositionsData.json';
 import {
   Search,
@@ -848,49 +849,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       {/* PESTAÑA: DIVIDENDOS */}
       {activeSubTab === 'dividendos' && (
         <section className="px-4">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-5 mb-5 shadow-lg">
-            <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-              Ingresos Anuales Estimados
-            </span>
-            <div className="text-3xl font-black mt-1 mb-2">
-              {formatEUR(metrics.annualProjectedDividends, hideFigures)}
-            </div>
-            <div className="flex items-center justify-between text-xs text-slate-300 pt-3 border-t border-slate-700/60">
-              <div>
-                <span className="text-slate-400">Media mensual:</span>{' '}
-                <span className="font-bold text-white">{formatEUR(metrics.monthlyAverageDividends, hideFigures)} / mes</span>
-              </div>
-              <div>
-                <span className="text-slate-400">Yield medio:</span>{' '}
-                <span className="font-bold text-emerald-400">{formatPercent(metrics.dividendYieldPct, false)}</span>
-              </div>
-            </div>
-          </div>
-
-          <h3 className="font-extrabold text-lg text-slate-900 mb-3">Próximos cobros en cartera</h3>
-          <div className="space-y-2 mb-6">
-            {upcomingDividends.map(ev => (
-              <div key={ev.id} className="bg-white border border-slate-200 rounded-2xl p-3 flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold ${ev.logoBg || 'bg-slate-700'}`}>
-                    {ev.logoText || ev.ticker.slice(0, 2)}
-                  </div>
-                  <div>
-                    <div className="font-bold text-slate-900 text-sm">{ev.assetName}</div>
-                    <div className="text-xs text-slate-500">{ev.date} • {ev.description}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-bold text-emerald-600 text-sm">
-                    +{formatEUR(ev.estimatedAmount || 0, hideFigures)}
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    {ev.confirmed ? 'Confirmado' : 'Estimado'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <DividendAuditView hideFigures={hideFigures} />
         </section>
       )}
 

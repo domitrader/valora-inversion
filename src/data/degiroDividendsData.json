@@ -1,0 +1,2114 @@
+{
+  "totalHistoricalNet": 533.26,
+  "totalHistoricalGross": 620.87,
+  "totalHistoricalTaxes": 87.61,
+  "totalPaymentsCount": 104,
+  "yearsAvailable": [
+    "2026",
+    "2025",
+    "2024",
+    "2023",
+    "2022",
+    "2021",
+    "2020",
+    "2019",
+    "2018"
+  ],
+  "brokersAvailable": [
+    "Todas",
+    "DEGIRO",
+    "MyInvestor"
+  ],
+  "annualSummary": [
+    {
+      "year": "2026",
+      "gross": 2.55,
+      "tax": 0.39,
+      "net": 2.16,
+      "count": 3
+    },
+    {
+      "year": "2025",
+      "gross": 16.8,
+      "tax": 2.54,
+      "net": 14.26,
+      "count": 6
+    },
+    {
+      "year": "2024",
+      "gross": 83.36,
+      "tax": 12.8,
+      "net": 70.56,
+      "count": 14
+    },
+    {
+      "year": "2023",
+      "gross": 108.9,
+      "tax": 16.33,
+      "net": 92.57,
+      "count": 23
+    },
+    {
+      "year": "2022",
+      "gross": 121.08,
+      "tax": 18.19,
+      "net": 102.89,
+      "count": 23
+    },
+    {
+      "year": "2021",
+      "gross": 154.37,
+      "tax": 17.42,
+      "net": 136.95,
+      "count": 15
+    },
+    {
+      "year": "2020",
+      "gross": 122.34,
+      "tax": 18.37,
+      "net": 103.97,
+      "count": 15
+    },
+    {
+      "year": "2019",
+      "gross": 2.35,
+      "tax": 0.35,
+      "net": 2.0,
+      "count": 1
+    },
+    {
+      "year": "2018",
+      "gross": 9.12,
+      "tax": 1.22,
+      "net": 7.9,
+      "count": 4
+    }
+  ],
+  "productSummary": [
+    {
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "flag": "🇺🇸",
+      "gross": 176.91,
+      "tax": 26.54,
+      "net": 150.37,
+      "count": 19
+    },
+    {
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "flag": "🇺🇸",
+      "gross": 156.02,
+      "tax": 23.43,
+      "net": 132.59,
+      "count": 18
+    },
+    {
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "flag": "🇺🇸",
+      "gross": 74.92,
+      "tax": 11.25,
+      "net": 63.67,
+      "count": 13
+    },
+    {
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "flag": "🇺🇸",
+      "gross": 63.14,
+      "tax": 9.47,
+      "net": 53.67,
+      "count": 7
+    },
+    {
+      "product": "ISHARES GLOBAL CLEAN ENERGY TRNSTN",
+      "isin": "IE00B1XNHC34",
+      "flag": "🇮🇪",
+      "gross": 39.23,
+      "tax": 0.0,
+      "net": 39.23,
+      "count": 2
+    },
+    {
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "flag": "🇺🇸",
+      "gross": 30.21,
+      "tax": 4.54,
+      "net": 25.67,
+      "count": 14
+    },
+    {
+      "product": "STARBUCKS CORP",
+      "isin": "US8552441094",
+      "flag": "🇺🇸",
+      "gross": 17.63,
+      "tax": 2.64,
+      "net": 14.99,
+      "count": 2
+    },
+    {
+      "product": "INTEL CORP",
+      "isin": "US4581401001",
+      "flag": "🇺🇸",
+      "gross": 13.2,
+      "tax": 1.99,
+      "net": 11.21,
+      "count": 2
+    },
+    {
+      "product": "MCDONALD'S CORP",
+      "isin": "US5801351017",
+      "flag": "🇺🇸",
+      "gross": 10.62,
+      "tax": 1.59,
+      "net": 9.03,
+      "count": 1
+    },
+    {
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "flag": "🇺🇸",
+      "gross": 7.83,
+      "tax": 1.2,
+      "net": 6.63,
+      "count": 15
+    },
+    {
+      "product": "AMADEUS IT GROUP, S.A.",
+      "isin": "ES0109067019",
+      "flag": "🇪🇸",
+      "gross": 7.2,
+      "tax": 1.37,
+      "net": 5.83,
+      "count": 1
+    },
+    {
+      "product": "THE HOME DEPOT, INC.",
+      "isin": "US4370761029",
+      "flag": "🇺🇸",
+      "gross": 6.0,
+      "tax": 0.9,
+      "net": 5.1,
+      "count": 1
+    },
+    {
+      "product": "JPMORGAN CHASE & CO.",
+      "isin": "US46625H1005",
+      "flag": "🇺🇸",
+      "gross": 5.0,
+      "tax": 0.75,
+      "net": 4.25,
+      "count": 1
+    },
+    {
+      "product": "EBAY INC.",
+      "isin": "US2786421030",
+      "flag": "🇺🇸",
+      "gross": 3.2,
+      "tax": 0.48,
+      "net": 2.72,
+      "count": 1
+    },
+    {
+      "product": "PEPSICO, INC.",
+      "isin": "US7134481081",
+      "flag": "🇺🇸",
+      "gross": 2.54,
+      "tax": 0.38,
+      "net": 2.16,
+      "count": 2
+    },
+    {
+      "product": "INTUIT INC.",
+      "isin": "US4612021034",
+      "flag": "🇺🇸",
+      "gross": 2.35,
+      "tax": 0.35,
+      "net": 2.0,
+      "count": 1
+    },
+    {
+      "product": "ADR ON TAIWAN SEMICONDUCTOR",
+      "isin": "US8740391003",
+      "flag": "🇺🇸",
+      "gross": 2.46,
+      "tax": 0.52,
+      "net": 1.94,
+      "count": 1
+    },
+    {
+      "product": "VANGUARD S&P 500 UCITS ETF USD DIS",
+      "isin": "IE00B3XXRP09",
+      "flag": "🇮🇪",
+      "gross": 1.04,
+      "tax": 0.0,
+      "net": 1.04,
+      "count": 1
+    },
+    {
+      "product": "SBA COMMUNICATIONS CORP CLASS A",
+      "isin": "US78410G1040",
+      "flag": "🇺🇸",
+      "gross": 0.93,
+      "tax": 0.14,
+      "net": 0.79,
+      "count": 1
+    },
+    {
+      "product": "WOODWARD, INC.",
+      "isin": "US9807451037",
+      "flag": "🇺🇸",
+      "gross": 0.44,
+      "tax": 0.07,
+      "net": 0.37,
+      "count": 1
+    }
+  ],
+  "payments": [
+    {
+      "date": "02-10-2026",
+      "year": "2026",
+      "month": "10",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 1.25,
+      "tax": 0.19,
+      "net": 1.06,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "29-06-2026",
+      "year": "2026",
+      "month": "06",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 1.25,
+      "tax": 0.19,
+      "net": 1.06,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-04-2026",
+      "year": "2026",
+      "month": "04",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "29-12-2025",
+      "year": "2025",
+      "month": "12",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "03-10-2025",
+      "year": "2025",
+      "month": "10",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-07-2025",
+      "year": "2025",
+      "month": "07",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "13-06-2025",
+      "year": "2025",
+      "month": "06",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 8.3,
+      "tax": 1.25,
+      "net": 7.05,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "03-04-2025",
+      "year": "2025",
+      "month": "04",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "14-03-2025",
+      "year": "2025",
+      "month": "03",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 8.3,
+      "tax": 1.25,
+      "net": 7.05,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "30-12-2024",
+      "year": "2024",
+      "month": "12",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "17-12-2024",
+      "year": "2024",
+      "month": "12",
+      "product": "MCDONALD'S CORP",
+      "isin": "US5801351017",
+      "gross": 10.62,
+      "tax": 1.59,
+      "net": 9.03,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "13-12-2024",
+      "year": "2024",
+      "month": "12",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 8.3,
+      "tax": 1.25,
+      "net": 7.05,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-10-2024",
+      "year": "2024",
+      "month": "10",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.05,
+      "tax": 0.01,
+      "net": 0.04,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "13-09-2024",
+      "year": "2024",
+      "month": "09",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 21.0,
+      "tax": 3.15,
+      "net": 17.85,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-09-2024",
+      "year": "2024",
+      "month": "09",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 10.4,
+      "tax": 1.56,
+      "net": 8.84,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "05-07-2024",
+      "year": "2024",
+      "month": "07",
+      "product": "AMADEUS IT GROUP, S.A.",
+      "isin": "ES0109067019",
+      "gross": 7.2,
+      "tax": 1.37,
+      "net": 5.83,
+      "currency": "EUR",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇪🇸"
+    },
+    {
+      "date": "14-06-2024",
+      "year": "2024",
+      "month": "06",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 9.0,
+      "tax": 1.35,
+      "net": 7.65,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-06-2024",
+      "year": "2024",
+      "month": "06",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 2.08,
+      "tax": 0.31,
+      "net": 1.77,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "17-05-2024",
+      "year": "2024",
+      "month": "05",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 6.0,
+      "tax": 0.9,
+      "net": 5.1,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-04-2024",
+      "year": "2024",
+      "month": "04",
+      "product": "PEPSICO, INC.",
+      "isin": "US7134481081",
+      "gross": 1.27,
+      "tax": 0.19,
+      "net": 1.08,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "16-02-2024",
+      "year": "2024",
+      "month": "02",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 4.8,
+      "tax": 0.72,
+      "net": 4.08,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "12-02-2024",
+      "year": "2024",
+      "month": "02",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 1.32,
+      "tax": 0.2,
+      "net": 1.12,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "08-01-2024",
+      "year": "2024",
+      "month": "01",
+      "product": "PEPSICO, INC.",
+      "isin": "US7134481081",
+      "gross": 1.27,
+      "tax": 0.19,
+      "net": 1.08,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "29-12-2023",
+      "year": "2023",
+      "month": "12",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.08,
+      "tax": 0.01,
+      "net": 0.07,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "15-12-2023",
+      "year": "2023",
+      "month": "12",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 5.25,
+      "tax": 0.79,
+      "net": 4.46,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-12-2023",
+      "year": "2023",
+      "month": "12",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 7.28,
+      "tax": 1.09,
+      "net": 6.19,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "17-11-2023",
+      "year": "2023",
+      "month": "11",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 4.8,
+      "tax": 0.72,
+      "net": 4.08,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "13-11-2023",
+      "year": "2023",
+      "month": "11",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 10.71,
+      "tax": 1.61,
+      "net": 9.1,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-11-2023",
+      "year": "2023",
+      "month": "11",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 1.14,
+      "tax": 0.17,
+      "net": 0.97,
+      "currency": "USD",
+      "descriptions": [
+        "Retención del dividendo",
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "15-09-2023",
+      "year": "2023",
+      "month": "09",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 4.76,
+      "tax": 0.71,
+      "net": 4.05,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-09-2023",
+      "year": "2023",
+      "month": "09",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 6.3,
+      "tax": 0.95,
+      "net": 5.35,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "29-08-2023",
+      "year": "2023",
+      "month": "08",
+      "product": "WOODWARD, INC.",
+      "isin": "US9807451037",
+      "gross": 0.44,
+      "tax": 0.07,
+      "net": 0.37,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "18-08-2023",
+      "year": "2023",
+      "month": "08",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 4.8,
+      "tax": 0.72,
+      "net": 4.08,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-08-2023",
+      "year": "2023",
+      "month": "08",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 4.78,
+      "tax": 0.72,
+      "net": 4.06,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-08-2023",
+      "year": "2023",
+      "month": "08",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 1.14,
+      "tax": 0.17,
+      "net": 0.97,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "09-06-2023",
+      "year": "2023",
+      "month": "06",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 7.48,
+      "tax": 1.12,
+      "net": 6.36,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-06-2023",
+      "year": "2023",
+      "month": "06",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 9.0,
+      "tax": 1.35,
+      "net": 7.65,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "19-05-2023",
+      "year": "2023",
+      "month": "05",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 4.32,
+      "tax": 0.65,
+      "net": 3.67,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-05-2023",
+      "year": "2023",
+      "month": "05",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 7.43,
+      "tax": 1.11,
+      "net": 6.32,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-05-2023",
+      "year": "2023",
+      "month": "05",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 1.14,
+      "tax": 0.17,
+      "net": 0.97,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "30-03-2023",
+      "year": "2023",
+      "month": "03",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.4,
+      "tax": 0.06,
+      "net": 0.34,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-03-2023",
+      "year": "2023",
+      "month": "03",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 7.48,
+      "tax": 1.12,
+      "net": 6.36,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-03-2023",
+      "year": "2023",
+      "month": "03",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 9.0,
+      "tax": 1.35,
+      "net": 7.65,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "17-02-2023",
+      "year": "2023",
+      "month": "02",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 4.14,
+      "tax": 0.62,
+      "net": 3.52,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "16-02-2023",
+      "year": "2023",
+      "month": "02",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 5.89,
+      "tax": 0.88,
+      "net": 5.01,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-02-2023",
+      "year": "2023",
+      "month": "02",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 1.14,
+      "tax": 0.17,
+      "net": 0.97,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "23-12-2022",
+      "year": "2022",
+      "month": "12",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.32,
+      "tax": 0.05,
+      "net": 0.27,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "09-12-2022",
+      "year": "2022",
+      "month": "12",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 7.48,
+      "tax": 1.12,
+      "net": 6.36,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-12-2022",
+      "year": "2022",
+      "month": "12",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 9.0,
+      "tax": 1.35,
+      "net": 7.65,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "15-11-2022",
+      "year": "2022",
+      "month": "11",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 5.36,
+      "tax": 0.8,
+      "net": 4.56,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-11-2022",
+      "year": "2022",
+      "month": "11",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 4.14,
+      "tax": 0.62,
+      "net": 3.52,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-11-2022",
+      "year": "2022",
+      "month": "11",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 0.98,
+      "tax": 0.15,
+      "net": 0.83,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "30-09-2022",
+      "year": "2022",
+      "month": "09",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.32,
+      "tax": 0.05,
+      "net": 0.27,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "09-09-2022",
+      "year": "2022",
+      "month": "09",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 6.82,
+      "tax": 1.02,
+      "net": 5.8,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-09-2022",
+      "year": "2022",
+      "month": "09",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 7.5,
+      "tax": 1.13,
+      "net": 6.37,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "15-08-2022",
+      "year": "2022",
+      "month": "08",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 5.58,
+      "tax": 0.84,
+      "net": 4.74,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-08-2022",
+      "year": "2022",
+      "month": "08",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 3.91,
+      "tax": 0.59,
+      "net": 3.32,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-08-2022",
+      "year": "2022",
+      "month": "08",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 0.98,
+      "tax": 0.15,
+      "net": 0.83,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "04-07-2022",
+      "year": "2022",
+      "month": "07",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 0.56,
+      "tax": 0.08,
+      "net": 0.48,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "09-06-2022",
+      "year": "2022",
+      "month": "06",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 6.82,
+      "tax": 1.02,
+      "net": 5.8,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-06-2022",
+      "year": "2022",
+      "month": "06",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 7.5,
+      "tax": 1.13,
+      "net": 6.37,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "13-05-2022",
+      "year": "2022",
+      "month": "05",
+      "product": "ADR ON ASML HOLDING N.V.",
+      "isin": "USN070592100",
+      "gross": 23.39,
+      "tax": 3.51,
+      "net": 19.88,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "12-05-2022",
+      "year": "2022",
+      "month": "05",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 3.91,
+      "tax": 0.59,
+      "net": 3.32,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-05-2022",
+      "year": "2022",
+      "month": "05",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 2.45,
+      "tax": 0.37,
+      "net": 2.08,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-03-2022",
+      "year": "2022",
+      "month": "03",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 4.34,
+      "tax": 0.65,
+      "net": 3.69,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-03-2022",
+      "year": "2022",
+      "month": "03",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 7.5,
+      "tax": 1.13,
+      "net": 6.37,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-02-2022",
+      "year": "2022",
+      "month": "02",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 3.3,
+      "tax": 0.5,
+      "net": 2.8,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-02-2022",
+      "year": "2022",
+      "month": "02",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 3.92,
+      "tax": 0.59,
+      "net": 3.33,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "01-02-2022",
+      "year": "2022",
+      "month": "02",
+      "product": "JPMORGAN CHASE & CO.",
+      "isin": "US46625H1005",
+      "gross": 5.0,
+      "tax": 0.75,
+      "net": 4.25,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "08-12-2021",
+      "year": "2021",
+      "month": "12",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 22.88,
+      "tax": 3.43,
+      "net": 19.45,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "25-11-2021",
+      "year": "2021",
+      "month": "11",
+      "product": "ISHARES GLOBAL CLEAN ENERGY TRNSTN",
+      "isin": "IE00B1XNHC34",
+      "gross": 20.74,
+      "tax": 0.0,
+      "net": 20.74,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇮🇪"
+    },
+    {
+      "date": "12-11-2021",
+      "year": "2021",
+      "month": "11",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 12.1,
+      "tax": 1.82,
+      "net": 10.28,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-11-2021",
+      "year": "2021",
+      "month": "11",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 4.4,
+      "tax": 0.66,
+      "net": 3.74,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "15-10-2021",
+      "year": "2021",
+      "month": "10",
+      "product": "ADR ON TAIWAN SEMICONDUCTOR",
+      "isin": "US8740391003",
+      "gross": 2.46,
+      "tax": 0.52,
+      "net": 1.94,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-09-2021",
+      "year": "2021",
+      "month": "09",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 2.8,
+      "tax": 0.42,
+      "net": 2.38,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-09-2021",
+      "year": "2021",
+      "month": "09",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 1.6,
+      "tax": 0.24,
+      "net": 1.36,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "13-08-2021",
+      "year": "2021",
+      "month": "08",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 11.88,
+      "tax": 1.78,
+      "net": 10.1,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-06-2021",
+      "year": "2021",
+      "month": "06",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 11.2,
+      "tax": 1.68,
+      "net": 9.52,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-06-2021",
+      "year": "2021",
+      "month": "06",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 3.2,
+      "tax": 0.48,
+      "net": 2.72,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "27-05-2021",
+      "year": "2021",
+      "month": "05",
+      "product": "ISHARES GLOBAL CLEAN ENERGY TRNSTN",
+      "isin": "IE00B1XNHC34",
+      "gross": 18.49,
+      "tax": 0.0,
+      "net": 18.49,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇮🇪"
+    },
+    {
+      "date": "14-05-2021",
+      "year": "2021",
+      "month": "05",
+      "product": "APPLE INC.",
+      "isin": "US0378331005",
+      "gross": 6.82,
+      "tax": 1.02,
+      "net": 5.8,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "12-03-2021",
+      "year": "2021",
+      "month": "03",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 11.2,
+      "tax": 1.68,
+      "net": 9.52,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-03-2021",
+      "year": "2021",
+      "month": "03",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 22.4,
+      "tax": 3.36,
+      "net": 19.04,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-02-2021",
+      "year": "2021",
+      "month": "02",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 2.2,
+      "tax": 0.33,
+      "net": 1.87,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-12-2020",
+      "year": "2020",
+      "month": "12",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 16.8,
+      "tax": 2.52,
+      "net": 14.28,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-12-2020",
+      "year": "2020",
+      "month": "12",
+      "product": "INTEL CORP",
+      "isin": "US4581401001",
+      "gross": 9.9,
+      "tax": 1.49,
+      "net": 8.41,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-12-2020",
+      "year": "2020",
+      "month": "12",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 12.8,
+      "tax": 1.92,
+      "net": 10.88,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-11-2020",
+      "year": "2020",
+      "month": "11",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 2.0,
+      "tax": 0.3,
+      "net": 1.7,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "21-09-2020",
+      "year": "2020",
+      "month": "09",
+      "product": "EBAY INC.",
+      "isin": "US2786421030",
+      "gross": 3.2,
+      "tax": 0.48,
+      "net": 2.72,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "11-09-2020",
+      "year": "2020",
+      "month": "09",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 23.97,
+      "tax": 3.6,
+      "net": 20.37,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-09-2020",
+      "year": "2020",
+      "month": "09",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 9.9,
+      "tax": 1.49,
+      "net": 8.41,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "21-08-2020",
+      "year": "2020",
+      "month": "08",
+      "product": "STARBUCKS CORP",
+      "isin": "US8552441094",
+      "gross": 14.76,
+      "tax": 2.21,
+      "net": 12.55,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-08-2020",
+      "year": "2020",
+      "month": "08",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 6.4,
+      "tax": 0.96,
+      "net": 5.44,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "19-06-2020",
+      "year": "2020",
+      "month": "06",
+      "product": "THE HOME DEPOT, INC.",
+      "isin": "US4370761029",
+      "gross": 6.0,
+      "tax": 0.9,
+      "net": 5.1,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "19-06-2020",
+      "year": "2020",
+      "month": "06",
+      "product": "SBA COMMUNICATIONS CORP CLASS A",
+      "isin": "US78410G1040",
+      "gross": 0.93,
+      "tax": 0.14,
+      "net": 0.79,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "12-06-2020",
+      "year": "2020",
+      "month": "06",
+      "product": "MICROSOFT CORPORATION",
+      "isin": "US5949181045",
+      "gross": 5.61,
+      "tax": 0.84,
+      "net": 4.77,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "03-06-2020",
+      "year": "2020",
+      "month": "06",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 3.9,
+      "tax": 0.59,
+      "net": 3.31,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "02-06-2020",
+      "year": "2020",
+      "month": "06",
+      "product": "INTEL CORP",
+      "isin": "US4581401001",
+      "gross": 3.3,
+      "tax": 0.5,
+      "net": 2.8,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "25-05-2020",
+      "year": "2020",
+      "month": "05",
+      "product": "STARBUCKS CORP",
+      "isin": "US8552441094",
+      "gross": 2.87,
+      "tax": 0.43,
+      "net": 2.44,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "19-04-2019",
+      "year": "2019",
+      "month": "04",
+      "product": "INTUIT INC.",
+      "isin": "US4612021034",
+      "gross": 2.35,
+      "tax": 0.35,
+      "net": 2.0,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "17-06-2018",
+      "year": "2018",
+      "month": "06",
+      "product": "NVIDIA CORPORATION",
+      "isin": "US67066G1040",
+      "gross": 3.3,
+      "tax": 0.5,
+      "net": 2.8,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "06-06-2018",
+      "year": "2018",
+      "month": "06",
+      "product": "VISA INC. CLASS A",
+      "isin": "US92826C8394",
+      "gross": 3.78,
+      "tax": 0.57,
+      "net": 3.21,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "10-05-2018",
+      "year": "2018",
+      "month": "05",
+      "product": "MASTERCARD INCORPORATED CLASS A",
+      "isin": "US57636Q1040",
+      "gross": 1.0,
+      "tax": 0.15,
+      "net": 0.85,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo",
+        "Retención del dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇺🇸"
+    },
+    {
+      "date": "06-04-2018",
+      "year": "2018",
+      "month": "04",
+      "product": "VANGUARD S&P 500 UCITS ETF USD DIS",
+      "isin": "IE00B3XXRP09",
+      "gross": 1.04,
+      "tax": 0.0,
+      "net": 1.04,
+      "currency": "USD",
+      "descriptions": [
+        "Dividendo"
+      ],
+      "broker": "DEGIRO",
+      "flag": "🇮🇪"
+    }
+  ],
+  "futureCalendar": [
+    {
+      "id": "fut-nvda-q1",
+      "product": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "isin": "US67066G1040",
+      "shares": 5,
+      "broker": "DEGIRO",
+      "flag": "🇺🇸",
+      "month": "Marzo 2027",
+      "quarter": "Q1",
+      "estimatedDate": "2027-03-27",
+      "dividendPerShare": 0.1,
+      "currency": "USD",
+      "estimatedGrossEUR": 0.46,
+      "estimatedTaxEUR": 0.07,
+      "estimatedNetEUR": 0.39,
+      "frequency": "Trimestral",
+      "status": "Estimado"
+    },
+    {
+      "id": "fut-nvda-q2",
+      "product": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "isin": "US67066G1040",
+      "shares": 5,
+      "broker": "DEGIRO",
+      "flag": "🇺🇸",
+      "month": "Junio 2027",
+      "quarter": "Q2",
+      "estimatedDate": "2027-06-28",
+      "dividendPerShare": 0.1,
+      "currency": "USD",
+      "estimatedGrossEUR": 0.46,
+      "estimatedTaxEUR": 0.07,
+      "estimatedNetEUR": 0.39,
+      "frequency": "Trimestral",
+      "status": "Estimado"
+    },
+    {
+      "id": "fut-nvda-q3",
+      "product": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "isin": "US67066G1040",
+      "shares": 5,
+      "broker": "DEGIRO",
+      "flag": "🇺🇸",
+      "month": "Septiembre 2027",
+      "quarter": "Q3",
+      "estimatedDate": "2027-09-28",
+      "dividendPerShare": 0.1,
+      "currency": "USD",
+      "estimatedGrossEUR": 0.46,
+      "estimatedTaxEUR": 0.07,
+      "estimatedNetEUR": 0.39,
+      "frequency": "Trimestral",
+      "status": "Estimado"
+    },
+    {
+      "id": "fut-nvda-q4",
+      "product": "NVIDIA Corporation",
+      "ticker": "NVDA",
+      "isin": "US67066G1040",
+      "shares": 5,
+      "broker": "DEGIRO",
+      "flag": "🇺🇸",
+      "month": "Diciembre 2027",
+      "quarter": "Q4",
+      "estimatedDate": "2027-12-28",
+      "dividendPerShare": 0.1,
+      "currency": "USD",
+      "estimatedGrossEUR": 0.46,
+      "estimatedTaxEUR": 0.07,
+      "estimatedNetEUR": 0.39,
+      "frequency": "Trimestral",
+      "status": "Estimado"
+    }
+  ]
+}
