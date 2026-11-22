@@ -5,6 +5,9 @@ const LOCAL_STORAGE_KEY = 'valora_portfolio_state_v4';
 const SUPABASE_CONFIG_KEY = 'valora_supabase_config_v1';
 const CLOUD_ROW_ID = 'domingo_portfolio';
 
+const DEFAULT_SUPABASE_URL = 'https://hveszaejunbguilywipu.supabase.co';
+const DEFAULT_SUPABASE_KEY = 'sb_publishable_V0QP2u2j3Ds_-cPTItsgBw_1RGlkerw';
+
 // Legacy keys to clean up
 const LEGACY_STORAGE_KEYS = [
   'valora_portfolio_state_v1',
@@ -19,9 +22,21 @@ export interface SupabaseCloudConfig {
   lastSyncedAt?: string;
 }
 
+function buildHeaders(key: string, extra?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = {
+    apikey: key,
+    ...(extra || {}),
+  };
+  // Solo enviar Authorization Bearer si es un JWT clásico (eyJ...), las nuevas sb_publishable_ usan solo apikey
+  if (key.startsWith('eyJ')) {
+    headers.Authorization = `Bearer ${key}`;
+  }
+  return headers;
+}
+
 /**
  * Service layer for Supabase connection (PostgreSQL REST API) + LocalStorage fallback.
- * 100% gratuito usando el plan Free de Supabase.
+ * Preconfigurado con el proyecto gratuito en la nube del usuario.
  */
 export class SupabaseService {
   private static config: SupabaseCloudConfig | null = null;
@@ -35,7 +50,13 @@ export class SupabaseService {
         return this.config;
       }
     } catch {}
-    return null;
+    // Preconfiguración por defecto lista para usar
+    this.config = {
+      url: DEFAULT_SUPABASE_URL,
+      anonKey: DEFAULT_SUPABASE_KEY,
+      enabled: true,
+    };
+    return this.config;
   }
 
   public static saveConfig(cfg: SupabaseCloudConfig | null): void {
@@ -68,10 +89,7 @@ export class SupabaseService {
     try {
       const res = await fetch(`${url}/rest/v1/portfolio_states?id=eq.${CLOUD_ROW_ID}&select=id`, {
         method: 'GET',
-        headers: {
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
+        headers: buildHeaders(anonKey),
       });
       return res.ok;
     } catch {
@@ -90,10 +108,7 @@ export class SupabaseService {
           `${cfg.url}/rest/v1/portfolio_states?id=eq.${CLOUD_ROW_ID}&select=state,updated_at`,
           {
             method: 'GET',
-            headers: {
-              apikey: cfg.anonKey,
-              Authorization: `Bearer ${cfg.anonKey}`,
-            },
+            headers: buildHeaders(cfg.anonKey),
           }
         );
         if (res.ok) {
@@ -147,12 +162,10 @@ export class SupabaseService {
         const nowIso = new Date().toISOString();
         const res = await fetch(`${cfg.url}/rest/v1/portfolio_states`, {
           method: 'POST',
-          headers: {
-            apikey: cfg.anonKey,
-            Authorization: `Bearer ${cfg.anonKey}`,
+          headers: buildHeaders(cfg.anonKey, {
             'Content-Type': 'application/json',
             Prefer: 'resolution=merge-duplicates',
-          },
+          }),
           body: JSON.stringify({
             id: CLOUD_ROW_ID,
             state,
@@ -178,12 +191,10 @@ export class SupabaseService {
       const nowIso = new Date().toISOString();
       const res = await fetch(`${cfg.url}/rest/v1/portfolio_states`, {
         method: 'POST',
-        headers: {
-          apikey: cfg.anonKey,
-          Authorization: `Bearer ${cfg.anonKey}`,
+        headers: buildHeaders(cfg.anonKey, {
           'Content-Type': 'application/json',
           Prefer: 'resolution=merge-duplicates',
-        },
+        }),
         body: JSON.stringify({
           id: CLOUD_ROW_ID,
           state,
