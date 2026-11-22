@@ -7,6 +7,7 @@ import {
   MarketHoliday,
   getMarketStatusInfo,
 } from '../data/marketHolidays';
+import { WeeklyEarningsCalendarModal } from './WeeklyEarningsCalendarModal';
 import {
   Calendar,
   DollarSign,
@@ -41,6 +42,7 @@ export const EventsView: React.FC<EventsViewProps> = ({
   hideFigures = false,
 }) => {
   const [activeSection, setActiveSection] = useState<EventSection>('dividendos');
+  const [isWeeklyEarningsOpen, setIsWeeklyEarningsOpen] = useState<boolean>(false);
 
   // Estado de los mercados (Texto automático)
   const marketStatus = useMemo(() => getMarketStatusInfo(), []);
@@ -182,15 +184,18 @@ export const EventsView: React.FC<EventsViewProps> = ({
         </button>
 
         <button
-          onClick={() => setActiveSection('resultados')}
+          onClick={() => {
+            setActiveSection('resultados');
+            setIsWeeklyEarningsOpen(true);
+          }}
           className={`flex items-center gap-1.5 text-xs px-3.5 py-1.5 rounded-full font-bold whitespace-nowrap transition-all ${
             activeSection === 'resultados'
-              ? 'bg-slate-900 text-white shadow-xs'
+              ? 'bg-indigo-600 text-white shadow-xs'
               : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5" />
-          <span>Resultados</span>
+          <span>Resultados (Semana)</span>
         </button>
 
         <button
@@ -406,6 +411,45 @@ export const EventsView: React.FC<EventsViewProps> = ({
       {/* --- SECCIÓN 3: RESULTADOS CORPORATIVOS (EARNINGS) --- */}
       {activeSection === 'resultados' && (
         <div className="space-y-3 animate-fadeIn">
+          {/* Banner interactivo de acceso directo al Calendario Semanal */}
+          <div
+            onClick={() => setIsWeeklyEarningsOpen(true)}
+            className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 border border-indigo-500/40 rounded-2xl p-4 text-white shadow-md cursor-pointer hover:border-indigo-400 transition-all flex items-center justify-between group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300 font-bold group-hover:scale-105 transition-transform text-lg">
+                📅
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-sm text-white">
+                    Calendario Semanal de Resultados
+                  </span>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950">
+                    Wall Street
+                  </span>
+                </div>
+                <p className="text-xs text-indigo-200/80 mt-0.5">
+                  Lunes a Viernes: Apertura (BMO) y Cierre (AMC) de las grandes empresas
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-indigo-300 group-hover:translate-x-1 transition-transform" />
+          </div>
+
+          <div className="flex items-center justify-between px-1 pt-1">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+              Próximos Resultados en tu Radar
+            </span>
+            <button
+              onClick={() => setIsWeeklyEarningsOpen(true)}
+              className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              <span>Ver Semana Completa</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
           {realEarningsEvents.map(event => {
             const eventDate = new Date(event.date);
             const formattedDate = eventDate.toLocaleDateString('es-ES', {
@@ -615,6 +659,13 @@ export const EventsView: React.FC<EventsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* MODAL CALENDARIO SEMANAL DE RESULTADOS */}
+      <WeeklyEarningsCalendarModal
+        isOpen={isWeeklyEarningsOpen}
+        onClose={() => setIsWeeklyEarningsOpen(false)}
+        userPortfolioTickers={positions.map(p => p.ticker)}
+      />
     </div>
   );
 };
