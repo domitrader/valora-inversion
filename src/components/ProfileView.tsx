@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PortfolioState } from '../types/portfolio';
 import { portfolioService } from '../services/portfolioService';
 import { SupabaseService } from '../services/supabaseService';
+import { biometricService } from '../services/biometricService';
 import {
   User,
   Shield,
@@ -22,6 +23,7 @@ import {
   Lock,
   KeyRound,
   RefreshCw,
+  Fingerprint,
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -55,6 +57,27 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 }) => {
   const [newPortName, setNewPortName] = useState('');
   const [showAddPort, setShowAddPort] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(() => biometricService.isEnabled());
+
+  useEffect(() => {
+    biometricService.isAvailable().then(setBiometricAvailable);
+  }, []);
+
+  const handleToggleBiometric = async () => {
+    if (biometricEnabled) {
+      biometricService.disable();
+      setBiometricEnabled(false);
+    } else {
+      const ok = await biometricService.register('Domingo');
+      if (ok) {
+        setBiometricEnabled(true);
+        alert('👆 Huella / Face ID activado correctamente en este dispositivo.');
+      } else {
+        alert('No se pudo activar la biometría en este navegador o fue cancelada.');
+      }
+    }
+  };
 
   // Configuración de Supabase Gratis en la Nube
   const savedCloud = SupabaseService.getSavedConfig();
@@ -330,29 +353,48 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </p>
 
         {hasPin ? (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onLockNow}
-              className="flex-1 py-2 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5"
-            >
-              <Lock className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Bloquear Ahora</span>
-            </button>
-            <button
-              type="button"
-              onClick={onStartSetPin}
-              className="py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"
-            >
-              Cambiar
-            </button>
-            <button
-              type="button"
-              onClick={onDisablePin}
-              className="py-2 px-3 rounded-xl border border-rose-200 hover:bg-rose-50 text-xs font-bold text-rose-600 transition-colors"
-            >
-              Desactivar
-            </button>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onLockNow}
+                className="flex-1 py-2 px-3 rounded-xl bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Bloquear Ahora</span>
+              </button>
+              <button
+                type="button"
+                onClick={onStartSetPin}
+                className="py-2 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors"
+              >
+                Cambiar
+              </button>
+              <button
+                type="button"
+                onClick={onDisablePin}
+                className="py-2 px-3 rounded-xl border border-rose-200 hover:bg-rose-50 text-xs font-bold text-rose-600 transition-colors"
+              >
+                Desactivar
+              </button>
+            </div>
+
+            {biometricAvailable && (
+              <button
+                type="button"
+                onClick={handleToggleBiometric}
+                className={`w-full py-2 px-3 rounded-xl border text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${
+                  biometricEnabled
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
+                    : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <Fingerprint className="w-4 h-4 text-emerald-600" />
+                <span>
+                  {biometricEnabled ? 'Huella / Face ID Activado (Tocar para desactivar)' : 'Activar Desbloqueo con Huella / Face ID'}
+                </span>
+              </button>
+            )}
           </div>
         ) : (
           <button

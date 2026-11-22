@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Shield, Lock, Delete, KeyRound, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Lock, Delete, KeyRound, AlertCircle, Eye, EyeOff, Fingerprint } from 'lucide-react';
+import { biometricService } from '../services/biometricService';
 
 interface PinLockScreenProps {
   storedPin: string;
@@ -23,6 +24,23 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const [showNumbers, setShowNumbers] = useState(false);
+  const [biometricEnabled] = useState(() => biometricService.isEnabled());
+
+  const handleBiometricUnlock = async () => {
+    const ok = await biometricService.authenticate();
+    if (ok) {
+      onUnlock();
+    }
+  };
+
+  useEffect(() => {
+    if (!isSettingPin && biometricEnabled) {
+      const timer = setTimeout(() => {
+        handleBiometricUnlock();
+      }, 250);
+      return () => clearTimeout(timer);
+    }
+  }, [isSettingPin, biometricEnabled]);
 
   const handleKeyPress = (digit: string) => {
     setErrorMsg('');
@@ -185,8 +203,20 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({
       )}
 
       {!isSettingPin && (
-        <div className="text-[11px] text-slate-500 font-medium">
-          Privacidad local garantizada • Datos en el dispositivo
+        <div className="flex flex-col items-center gap-3">
+          {biometricEnabled && (
+            <button
+              type="button"
+              onClick={handleBiometricUnlock}
+              className="px-5 py-2.5 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-2 transition-all active:scale-95 shadow-sm"
+            >
+              <Fingerprint className="w-4 h-4 text-emerald-400" />
+              <span>Desbloquear con Huella / Face ID</span>
+            </button>
+          )}
+          <div className="text-[11px] text-slate-500 font-medium">
+            Privacidad local garantizada • Datos en el dispositivo
+          </div>
         </div>
       )}
     </div>
