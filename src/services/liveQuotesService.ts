@@ -64,14 +64,19 @@ export const liveQuotesService = {
       }
 
       // 1. Intentar a través del proxy local de Vite
-      let res = await fetch(`/api/finance/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`);
+      let res = await fetch(`/api/finance/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`).catch(() => null);
       
-      // 2. Si no responde por estar fuera de Vite, usar proxy CORS público
-      if (!res.ok) {
-        res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query2.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`)}`);
+      // 2. Si no responde por estar fuera de Vite (GitHub Pages), usar proxies CORS gratuitos
+      if (!res || !res.ok) {
+        const yahooChartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`;
+        res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(yahooChartUrl)}`).catch(() => null);
+      }
+      if (!res || !res.ok) {
+        const yahooChartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`;
+        res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yahooChartUrl)}`).catch(() => null);
       }
 
-      if (res.ok) {
+      if (res && res.ok) {
         const data = await res.json();
         const meta = data.chart?.result?.[0]?.meta;
         if (meta && meta.regularMarketPrice) {
@@ -195,7 +200,7 @@ export const liveQuotesService = {
   },
 
   /**
-   * Busca activos globales en Yahoo Finance de forma gratuita (acciones, ETFs, todas las bolsas del mundo: .MI, .DE, .MC, .PA, .L, NYSE, NASDAQ)
+   * Busca activos globales en Yahoo Finance de forma gratuita y paralela (acciones, ETFs, todas las bolsas del mundo: .MI, .DE, .MC, .PA, .L, NYSE, NASDAQ)
    */
   async searchGlobalMarketAssets(query: string): Promise<Array<{
     symbol: string;
@@ -208,60 +213,78 @@ export const liveQuotesService = {
     const clean = query.trim();
     if (clean.length < 2) return [];
 
-    const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=15&newsCount=0`;
+    const targetUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=20&newsCount=0`;
     const candidates = [
-      `/api/finance/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=15&newsCount=0`,
+      `/api/finance/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=20&newsCount=0`,
       `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
       `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+      `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
     ];
 
-    for (const url of candidates) {
+    const tryFetch = async (url: string) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4500);
       try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 3500);
         const res = await fetch(url, { signal: controller.signal });
         clearTimeout(timer);
-        if (!res.ok) continue;
-
+        if (!res.ok) throw new Error('HTTP error');
         const data = await res.json();
         const quotes = data?.quotes;
-        if (!Array.isArray(quotes)) continue;
-
-        return quotes
-          .filter((q: any) => q && q.symbol && (q.shortname || q.longname))
-          .map((q: any) => {
-            const sym = String(q.symbol).toUpperCase();
-            const qt = String(q.quoteType || '').toUpperCase();
-            const exch = String(q.exchDisp || q.exchange || 'Mercado Global');
-
-            let countryFlag = '🌐';
-            if (sym.endsWith('.MC')) countryFlag = '🇪🇸';
-            else if (sym.endsWith('.MI')) countryFlag = '🇮🇹';
-            else if (sym.endsWith('.DE') || sym.endsWith('.F')) countryFlag = '🇩🇪';
-            else if (sym.endsWith('.PA')) countryFlag = '🇫🇷';
-            else if (sym.endsWith('.AS')) countryFlag = '🇳🇱';
-            else if (sym.endsWith('.L')) countryFlag = '🇬🇧';
-            else if (sym.endsWith('.SW')) countryFlag = '🇨🇭';
-            else if (!sym.includes('.')) countryFlag = '🇺🇸';
-
-            let assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Acciones';
-            if (qt === 'ETF') assetType = 'ETFs';
-            else if (qt === 'MUTUALFUND') assetType = 'Fondos';
-            else if (qt === 'CRYPTOCURRENCY') assetType = 'Cripto';
-
-            return {
-              symbol: sym,
-              name: String(q.longname || q.shortname),
-              exchange: exch,
-              quoteType: qt,
-              countryFlag,
-              assetType,
-            };
-          });
-      } catch {
-        // Intentar el siguiente proxy silenciosamente
+        if (!Array.isArray(quotes) || quotes.length === 0) throw new Error('Empty');
+        return quotes;
+      } catch (err) {
+        clearTimeout(timer);
+        throw err;
       }
+    };
+
+    const firstFulfilled = <T,>(promises: Promise<T>[]): Promise<T> =>
+      new Promise((resolve, reject) => {
+        let rejections = 0;
+        if (promises.length === 0) return reject(new Error('No promises'));
+        promises.forEach(p =>
+          p.then(resolve).catch(() => {
+            rejections++;
+            if (rejections === promises.length) reject(new Error('All failed'));
+          })
+        );
+      });
+
+    try {
+      const quotes = await firstFulfilled(candidates.map(tryFetch));
+      return quotes
+        .filter((q: any) => q && q.symbol && (q.shortname || q.longname))
+        .map((q: any) => {
+          const sym = String(q.symbol).toUpperCase();
+          const qt = String(q.quoteType || '').toUpperCase();
+          const exch = String(q.exchDisp || q.exchange || 'Mercado Global');
+
+          let countryFlag = '🌐';
+          if (sym.endsWith('.MC')) countryFlag = '🇪🇸';
+          else if (sym.endsWith('.MI')) countryFlag = '🇮🇹';
+          else if (sym.endsWith('.DE') || sym.endsWith('.F')) countryFlag = '🇩🇪';
+          else if (sym.endsWith('.PA')) countryFlag = '🇫🇷';
+          else if (sym.endsWith('.AS')) countryFlag = '🇳🇱';
+          else if (sym.endsWith('.L')) countryFlag = '🇬🇧';
+          else if (sym.endsWith('.SW')) countryFlag = '🇨🇭';
+          else if (!sym.includes('.')) countryFlag = '🇺🇸';
+
+          let assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Acciones';
+          if (qt === 'ETF') assetType = 'ETFs';
+          else if (qt === 'MUTUALFUND') assetType = 'Fondos';
+          else if (qt === 'CRYPTOCURRENCY') assetType = 'Cripto';
+
+          return {
+            symbol: sym,
+            name: String(q.longname || q.shortname),
+            exchange: exch,
+            quoteType: qt,
+            countryFlag,
+            assetType,
+          };
+        });
+    } catch {
+      return [];
     }
-    return [];
   },
 };
