@@ -36,6 +36,8 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'Todos' | AssetType>(initialCategory || 'Todos');
+  const [onlyZeroDoubleTax, setOnlyZeroDoubleTax] = useState(false);
+  const [onlyDegiroCore, setOnlyDegiroCore] = useState(false);
   const [quickAddAsset, setQuickAddAsset] = useState<CatalogAsset | null>(null);
   
   // Parámetros para añadir posición
@@ -60,7 +62,11 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     const term = searchTerm.toLowerCase().trim();
     return COMPREHENSIVE_CATALOG.filter(asset => {
       const matchesFilter = selectedFilter === 'Todos' || asset.type === selectedFilter;
-      if (!term) return matchesFilter;
+      const matchesZeroTax = !onlyZeroDoubleTax || asset.zeroDoubleTax === true;
+      const matchesDegiroCore = !onlyDegiroCore || asset.degiroCore1Eur === true;
+
+      if (!matchesFilter || !matchesZeroTax || !matchesDegiroCore) return false;
+      if (!term) return true;
 
       const matchesSearch =
         asset.name.toLowerCase().includes(term) ||
@@ -68,9 +74,9 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
         (asset.isin && asset.isin.toLowerCase().includes(term)) ||
         asset.market.toLowerCase().includes(term);
 
-      return matchesFilter && matchesSearch;
+      return matchesSearch;
     });
-  }, [searchTerm, selectedFilter]);
+  }, [searchTerm, selectedFilter, onlyZeroDoubleTax, onlyDegiroCore]);
 
   // Agrupación para la vista de inicio vacía
   const accionesList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'Acciones'), []);
@@ -209,6 +215,27 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
             {asset.isin && <span className="text-[10px] text-slate-400 font-mono">({asset.isin})</span>}
             <span className="text-[11px] text-slate-400">• {asset.market}</span>
           </div>
+          {/* Etiquetas fiscales y DEGIRO Core */}
+          {(asset.zeroDoubleTax || asset.degiroCore1Eur || asset.accumulation) && (
+            <div className="flex flex-wrap items-center gap-1 mt-1">
+              {asset.zeroDoubleTax && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold">
+                  <ShieldCheck className="w-2.5 h-2.5" />
+                  <span>{asset.withholdingTaxOrigin || '0% Doble Retención'}</span>
+                </span>
+              )}
+              {asset.degiroCore1Eur && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[9px] font-extrabold">
+                  ⚡ DEGIRO 1€
+                </span>
+              )}
+              {asset.accumulation && (
+                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[9px] font-bold">
+                  🔄 Acum.
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -255,7 +282,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Buscar Logista (LOG), Visa (V), Fondos MyInvestor..."
+            placeholder="Buscar Logista, Visa, UK, Fondos MyInvestor..."
             autoFocus
             className="w-full text-sm text-slate-900 placeholder-slate-400 bg-transparent py-2 pr-8 focus:outline-none"
           />
@@ -271,65 +298,95 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
       </header>
 
       {/* 2. Chips de filtro horizontales (Acciones, ETFs, Fondos, Cripto) */}
-      <div className="flex items-center gap-1.5 px-3 py-2.5 overflow-x-auto no-scrollbar border-b border-slate-100 bg-slate-50/60">
-        <button
-          onClick={() => setSelectedFilter('Todos')}
-          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-            selectedFilter === 'Todos'
-              ? 'bg-slate-900 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          🌐 Todos
-        </button>
+      <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-slate-100 bg-slate-50/60">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setSelectedFilter('Todos')}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              selectedFilter === 'Todos'
+                ? 'bg-slate-900 text-white shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            🌐 Todos ({COMPREHENSIVE_CATALOG.length})
+          </button>
 
-        <button
-          onClick={() => setSelectedFilter('Acciones')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-            selectedFilter === 'Acciones'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          <Building2 className="w-3 h-3" />
-          <span>Acciones</span>
-        </button>
+          <button
+            onClick={() => setSelectedFilter('Acciones')}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              selectedFilter === 'Acciones'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Building2 className="w-3 h-3" />
+            <span>Acciones</span>
+          </button>
 
-        <button
-          onClick={() => setSelectedFilter('ETFs')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-            selectedFilter === 'ETFs'
-              ? 'bg-amber-500 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          <PieChart className="w-3 h-3" />
-          <span>ETFs</span>
-        </button>
+          <button
+            onClick={() => setSelectedFilter('ETFs')}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              selectedFilter === 'ETFs'
+                ? 'bg-amber-500 text-white shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <PieChart className="w-3 h-3" />
+            <span>ETFs</span>
+          </button>
 
-        <button
-          onClick={() => setSelectedFilter('Fondos')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-            selectedFilter === 'Fondos'
-              ? 'bg-emerald-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          <TrendingUp className="w-3 h-3" />
-          <span>Fondos MyInvestor</span>
-        </button>
+          <button
+            onClick={() => setSelectedFilter('Fondos')}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              selectedFilter === 'Fondos'
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <TrendingUp className="w-3 h-3" />
+            <span>Fondos MyInvestor</span>
+          </button>
 
-        <button
-          onClick={() => setSelectedFilter('Cripto')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
-            selectedFilter === 'Cripto'
-              ? 'bg-fuchsia-600 text-white shadow-xs'
-              : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-          }`}
-        >
-          <Coins className="w-3 h-3" />
-          <span>Cripto</span>
-        </button>
+          <button
+            onClick={() => setSelectedFilter('Cripto')}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 ${
+              selectedFilter === 'Cripto'
+                ? 'bg-fuchsia-600 text-white shadow-xs'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Coins className="w-3 h-3" />
+            <span>Cripto</span>
+          </button>
+        </div>
+
+        {/* Filtros especiales: 0% Doble Retención y DEGIRO Core 1€ */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setOnlyZeroDoubleTax(v => !v)}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition-all shrink-0 border ${
+              onlyZeroDoubleTax
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                : 'bg-emerald-50/70 text-emerald-800 border-emerald-200 hover:bg-emerald-100'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3" />
+            <span>0% Doble Retención (UK / Irlanda / ES)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setOnlyDegiroCore(v => !v)}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition-all shrink-0 border ${
+              onlyDegiroCore
+                ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                : 'bg-blue-50/70 text-blue-800 border-blue-200 hover:bg-blue-100'
+            }`}
+          >
+            <span>⚡ ETFs DEGIRO Core (1€ / Gratis)</span>
+          </button>
+        </div>
       </div>
 
       {/* Alerta de confirmación */}
@@ -356,7 +413,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
 
       {/* 4. Lista de resultados o categorías iniciales */}
       <div className="flex-1 overflow-y-auto px-2 py-2">
-        {selectedFilter === 'Todos' && !searchTerm ? (
+        {selectedFilter === 'Todos' && !searchTerm && !onlyZeroDoubleTax && !onlyDegiroCore ? (
           <>
             {/* Sección Acciones Populares */}
             <div className="mb-4">

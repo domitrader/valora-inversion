@@ -1,5 +1,6 @@
 import { PositionItem } from '../types/portfolio';
 import { generateSampleSparkline } from '../utils/calculations';
+import { COMPREHENSIVE_CATALOG } from '../data/comprehensiveAssetCatalog';
 
 export interface LiveMarketQuote {
   ticker: string;
@@ -12,10 +13,11 @@ export interface LiveMarketQuote {
 /**
  * Servicio de cotizaciones en tiempo real integrado con:
  * - CoinGecko API (criptoactivos en EUR)
- * - Yahoo Finance API (acciones IBEX 35, Wall Street y ETFs europeos con conversión de divisa EUR/USD)
+ * - Yahoo Finance API (acciones IBEX 35, Reino Unido, Europa, Wall Street y ETFs con conversión EUR/USD/GBP)
  */
 export const liveQuotesService = {
   eurUsdRate: 1.085, // Tasa de respaldo
+  eurGbpRate: 0.85,  // Tasa de respaldo EUR/GBP
 
   /**
    * Obtiene la tasa de cambio EUR/USD en tiempo real
@@ -46,11 +48,20 @@ export const liveQuotesService = {
       // Limpiar ticker (ej: "NVDA / US67066G1040" -> "NVDA")
       let cleanSymbol = symbol.split(/[\s/|]/)[0].trim().toUpperCase();
 
-      // Mapeos comunes para bolsas europeas
-      if (cleanSymbol === 'ENG') cleanSymbol = 'ENG.MC';
-      if (cleanSymbol === 'SAN') cleanSymbol = 'SAN.MC';
-      if (cleanSymbol === 'ITX') cleanSymbol = 'ITX.MC';
-      if (cleanSymbol === 'VUSA') cleanSymbol = 'VUSA.AS';
+      // Buscar si el activo tiene símbolo específico de Yahoo en nuestro catálogo completo
+      const catalogMatch = COMPREHENSIVE_CATALOG.find(
+        c => c.ticker.toUpperCase() === cleanSymbol || (c.yahooSymbol && c.yahooSymbol.toUpperCase() === cleanSymbol)
+      );
+      if (catalogMatch?.yahooSymbol) {
+        cleanSymbol = catalogMatch.yahooSymbol;
+      } else {
+        // Mapeos comunes de respaldo
+        if (cleanSymbol === 'ENG') cleanSymbol = 'ENG.MC';
+        if (cleanSymbol === 'SAN') cleanSymbol = 'SAN.MC';
+        if (cleanSymbol === 'ITX') cleanSymbol = 'ITX.MC';
+        if (cleanSymbol === 'LOG') cleanSymbol = 'LOG.MC';
+        if (cleanSymbol === 'VUSA') cleanSymbol = 'VUSA.AS';
+      }
 
       // 1. Intentar a través del proxy local de Vite
       let res = await fetch(`/api/finance/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`);
@@ -65,14 +76,20 @@ export const liveQuotesService = {
         const meta = data.chart?.result?.[0]?.meta;
         if (meta && meta.regularMarketPrice) {
           const rawPrice = meta.regularMarketPrice;
-          const currency = (meta.currency || 'USD').toUpperCase();
+          const rawCurrency = meta.currency || 'USD';
+          const currency = rawCurrency.toUpperCase();
           const prevClose = meta.chartPreviousClose || rawPrice;
           const changePct = prevClose > 0 ? ((rawPrice - prevClose) / prevClose) * 100 : 0;
 
-          // Convertir a EUR si la cotización está en USD
+          // Convertir a EUR según divisa (USD, GBP o peniques GBp)
           let priceEUR = rawPrice;
           if (currency === 'USD') {
             priceEUR = rawPrice / this.eurUsdRate;
+          } else if (rawCurrency === 'GBp' || rawCurrency === 'GBX') {
+            // Londres cotiza muchas acciones en peniques (GBp = 0.01 GBP)
+            priceEUR = (rawPrice / 100) / this.eurGbpRate;
+          } else if (currency === 'GBP') {
+            priceEUR = rawPrice / this.eurGbpRate;
           }
 
           return {
