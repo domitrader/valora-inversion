@@ -78,7 +78,7 @@ export const PinLockScreen: React.FC<PinLockScreenProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950 text-white flex flex-col justify-between items-center px-6 py-10 select-none">
+    <div className="fixed inset-0 z-[100] bg-slate-950 text-white flex flex-col justify-between items-center px-6 py-10 select-none">
       {/* Top Header */}
       <div className="w-full max-w-xs flex flex-col items-center text-center mt-6">
         <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-emerald-500/20 to-teal-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 shadow-lg shadow-emerald-950/40">

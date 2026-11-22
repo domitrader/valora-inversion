@@ -59,6 +59,7 @@ export const App: React.FC = () => {
     setPinCode(newPin);
     setIsSettingPin(false);
     setIsLocked(false);
+    alert('🔐 PIN de seguridad activado. Te pedirá la clave cada vez que abras la web o vuelvas tras minimizarla.');
   };
 
   const handleDisablePin = () => {
@@ -78,6 +79,21 @@ export const App: React.FC = () => {
       setIsLocked(true);
     }
   };
+
+  // Auto-bloqueo al minimizar/cambiar de app en el móvil más de 20 segundos
+  useEffect(() => {
+    if (!pinCode) return;
+    let hiddenAt = 0;
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+      } else if (hiddenAt > 0 && Date.now() - hiddenAt > 20000) {
+        setIsLocked(true);
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [pinCode]);
 
   // Initial load from storage / service
   useEffect(() => {
