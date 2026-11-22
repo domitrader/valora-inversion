@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PortfolioState } from '../types/portfolio';
 import { portfolioService } from '../services/portfolioService';
+import { SupabaseService } from '../services/supabaseService';
 import {
   User,
   Shield,
@@ -20,6 +21,7 @@ import {
   Laptop,
   Lock,
   KeyRound,
+  RefreshCw,
 } from 'lucide-react';
 
 interface ProfileViewProps {
@@ -53,6 +55,45 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 }) => {
   const [newPortName, setNewPortName] = useState('');
   const [showAddPort, setShowAddPort] = useState(false);
+
+  // Configuración de Supabase Gratis en la Nube
+  const savedCloud = SupabaseService.getSavedConfig();
+  const [supabaseUrl, setSupabaseUrl] = useState(savedCloud?.url || '');
+  const [supabaseKey, setSupabaseKey] = useState(savedCloud?.anonKey || '');
+  const [cloudConnected, setCloudConnected] = useState(Boolean(savedCloud?.enabled));
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState('');
+  const [showSqlGuide, setShowSqlGuide] = useState(false);
+
+  const handleConnectSupabase = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabaseUrl.trim() || !supabaseKey.trim()) return;
+    setIsSyncingCloud(true);
+    setCloudMessage('');
+    const ok = await SupabaseService.init(supabaseUrl, supabaseKey);
+    if (ok) {
+      const pushed = await SupabaseService.syncNow(portfolioState);
+      setCloudConnected(true);
+      setCloudMessage(pushed ? '✅ Conectado y datos sincronizados en la nube.' : '✅ Conectado correctamente.');
+    } else {
+      setCloudConnected(false);
+      setCloudMessage('⚠️ No se pudo conectar. Revisa la URL, la Anon Key o que la tabla SQL esté creada.');
+    }
+    setIsSyncingCloud(false);
+  };
+
+  const handleSyncCloudNow = async () => {
+    setIsSyncingCloud(true);
+    const ok = await SupabaseService.syncNow(portfolioState);
+    setCloudMessage(ok ? '✅ Sincronización completada ahora mismo.' : '⚠️ Error al sincronizar con la nube.');
+    setIsSyncingCloud(false);
+  };
+
+  const handleDisconnectSupabase = () => {
+    SupabaseService.saveConfig(null);
+    setCloudConnected(false);
+    setCloudMessage('Desconectado de la nube (los datos siguen guardados en tu navegador).');
+  };
 
   const handleExportBackup = () => {
     portfolioService.exportToJson(portfolioState);
@@ -349,15 +390,114 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </button>
       </div>
 
-      {/* 6. Arquitectura Supabase & Vercel */}
-      <div className="bg-slate-900 text-white rounded-3xl p-4 mb-4 shadow-sm text-xs space-y-2">
-        <div className="flex items-center gap-2 text-emerald-400 font-bold">
-          <Shield className="w-4 h-4" />
-          <span>Arquitectura Segura y Multiusuario</span>
+      {/* 6. Base de Datos en la Nube (Supabase Gratis 0 €/mes) */}
+      <div className="bg-slate-900 text-white rounded-3xl p-4 mb-4 shadow-sm text-xs space-y-3 border border-slate-800">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-emerald-400 font-bold">
+            <Shield className="w-4 h-4" />
+            <span>Base de Datos en la Nube (Supabase Gratis)</span>
+          </div>
+          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+            cloudConnected
+              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              : 'bg-slate-800 text-slate-400 border-slate-700'
+          }`}>
+            {cloudConnected ? '🟢 Conectado' : '⚪ Solo Local'}
+          </span>
         </div>
+
         <p className="text-slate-300 text-[11px] leading-relaxed">
-          Esta aplicación está equipada con una capa desacoplada en <code>src/services/portfolioService.ts</code> lista para conectar tu proyecto de <strong>Supabase</strong> (autenticación OAuth/correo y Row Level Security) para aislar los datos de cada usuario con cifrado en reposo y despliegue continuo en <strong>Vercel</strong>.
+          Conecta tu proyecto gratuito de <strong>Supabase</strong> (0 €/mes) para que todo lo que añadas manualmente no se pierda nunca aunque borres el historial del navegador o cambies de móvil.
         </p>
+
+        {cloudMessage && (
+          <div className="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-[11px] font-semibold text-emerald-300">
+            {cloudMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleConnectSupabase} className="space-y-2">
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 block mb-1">Supabase Project URL</label>
+            <input
+              type="url"
+              value={supabaseUrl}
+              onChange={e => setSupabaseUrl(e.target.value)}
+              placeholder="https://xxxxx.supabase.co"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 block mb-1">Supabase Anon Public Key</label>
+            <input
+              type="password"
+              value={supabaseKey}
+              onChange={e => setSupabaseKey(e.target.value)}
+              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI..."
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="submit"
+              disabled={isSyncingCloud}
+              className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCloud ? 'animate-spin' : ''}`} />
+              <span>{cloudConnected ? 'Actualizar Conexión' : 'Conectar Nube Gratis'}</span>
+            </button>
+
+            {cloudConnected && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSyncCloudNow}
+                  disabled={isSyncingCloud}
+                  className="py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold text-xs border border-slate-700 transition-colors"
+                >
+                  Guardar Ahora
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDisconnectSupabase}
+                  className="py-2 px-3 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 font-bold text-xs border border-rose-800/50 transition-colors"
+                >
+                  Desconectar
+                </button>
+              </>
+            )}
+          </div>
+        </form>
+
+        <div className="pt-1 border-t border-slate-800">
+          <button
+            type="button"
+            onClick={() => setShowSqlGuide(v => !v)}
+            className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+          >
+            <Info className="w-3.5 h-3.5" />
+            <span>{showSqlGuide ? 'Ocultar guía de configuración (1 minuto)' : '¿Cómo crear la tabla gratis en Supabase? Ver guía'}</span>
+          </button>
+
+          {showSqlGuide && (
+            <div className="mt-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-[10px] text-slate-300 space-y-1.5">
+              <p>1. Crea una cuenta gratuita en <strong>supabase.com</strong> y crea un proyecto.</p>
+              <p>2. Entra en <strong>SQL Editor</strong>, pega y ejecuta esto:</p>
+              <pre className="bg-slate-900 p-2 rounded-lg text-[9px] text-emerald-300 overflow-x-auto font-mono select-all">
+{`create table if not exists portfolio_states (
+  id text primary key,
+  state jsonb not null,
+  updated_at timestamptz default now()
+);
+alter table portfolio_states enable row level security;
+create policy "public_access" on portfolio_states for all using (true) with check (true);`}
+              </pre>
+              <p>3. Copia tu <strong>Project URL</strong> y <strong>anon public key</strong> de <em>Project Settings → API</em> y pégalos arriba.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 7. Aviso legal */}
