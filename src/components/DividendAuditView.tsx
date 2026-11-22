@@ -29,6 +29,7 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
   const [selectedYear, setSelectedYear] = useState<string>('Todos');
   const [activeTab, setActiveTab] = useState<'historial' | 'mapa-futuro' | 'empresas'>('historial');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [taxRateSpanish19, setTaxRateSpanish19] = useState<boolean>(true);
 
   const rawData = dividendsRaw as {
     totalHistoricalNet: number;
@@ -86,6 +87,47 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
       return matchBroker && matchYear && matchSearch;
     });
   }, [rawData.payments, selectedBroker, selectedYear, searchTerm]);
+
+  // Filtrado de calendario futuro según broker
+  const filteredFutureCalendar = useMemo(() => {
+    return rawData.futureCalendar.filter(ev => {
+      return selectedBroker === 'Todas' || ev.broker.toUpperCase() === selectedBroker.toUpperCase();
+    });
+  }, [rawData.futureCalendar, selectedBroker]);
+
+  // Suma total de cobros futuros proyectados (Bruto, Retención 19% España y Neto)
+  const futureGrossSum = useMemo(() => {
+    return filteredFutureCalendar.reduce((acc, ev) => acc + ev.estimatedGrossEUR, 0);
+  }, [filteredFutureCalendar]);
+
+  const futureSpanishTax19Sum = useMemo(() => {
+    return futureGrossSum * 0.19;
+  }, [futureGrossSum]);
+
+  const futureNet19Sum = useMemo(() => {
+    return futureGrossSum * 0.81;
+  }, [futureGrossSum]);
+
+  const futureDistinctAssets = useMemo(() => {
+    const map = new Map<string, { product: string; ticker: string; isin: string; flag: string; annualGross: number; count: number }>();
+    filteredFutureCalendar.forEach(ev => {
+      const existing = map.get(ev.isin);
+      if (existing) {
+        existing.annualGross += ev.estimatedGrossEUR;
+        existing.count += 1;
+      } else {
+        map.set(ev.isin, {
+          product: ev.product,
+          ticker: ev.ticker,
+          isin: ev.isin,
+          flag: ev.flag,
+          annualGross: ev.estimatedGrossEUR,
+          count: 1,
+        });
+      }
+    });
+    return Array.from(map.values());
+  }, [filteredFutureCalendar]);
 
   // Cálculos dinámicos según filtros aplicados
   const currentNet = useMemo(() => {
@@ -373,6 +415,96 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
       {/* CONTENIDO PESTAÑA 2: MAPA FUTURO (CALENDARIO DE COBROS Y PROYECCIONES) */}
       {activeTab === 'mapa-futuro' && (
         <div className="space-y-4">
+          {/* TARJETA DESTACADA: SUMA TOTAL ANUAL EN MAPA FUTURO */}
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-3xl p-5 shadow-lg border border-slate-700/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-slate-700/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                    Proyección Anual 2027 • Suma Total de Cartera
+                  </div>
+                  <h3 className="text-base font-extrabold text-white">
+                    {futureDistinctAssets.length} {futureDistinctAssets.length === 1 ? 'Activo' : 'Activos'} con Dividendo ({filteredFutureCalendar.length} Cobros en el Año)
+                  </h3>
+                </div>
+              </div>
+
+              {/* Botón selector Bruto / Neto 19% */}
+              <div className="flex items-center gap-1.5 p-1 bg-slate-800/80 rounded-xl border border-slate-700 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setTaxRateSpanish19(false)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                    !taxRateSpanish19 ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  💶 Bruto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTaxRateSpanish19(true)}
+                  className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                    taxRateSpanish19 ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🇪🇸 Neto (-19% IRPF)
+                </button>
+              </div>
+            </div>
+
+            {/* 3 Columnas de Totales Anuales */}
+            <div className="grid grid-cols-3 gap-3 pt-3.5 text-center">
+              <div className="bg-white/5 rounded-2xl p-2.5 border border-white/5">
+                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  Total Bruto Anual
+                </div>
+                <div className="text-base sm:text-lg font-black text-white mt-0.5">
+                  +{formatEUR(futureGrossSum, hideFigures)}
+                </div>
+                <div className="text-[9px] text-slate-400 mt-0.5 font-medium">100% devengado</div>
+              </div>
+
+              <div className="bg-rose-500/10 rounded-2xl p-2.5 border border-rose-500/20">
+                <div className="text-[10px] font-bold text-rose-300 uppercase tracking-wider">
+                  Retenciones (19%)
+                </div>
+                <div className="text-base sm:text-lg font-black text-rose-400 mt-0.5">
+                  -{formatEUR(futureSpanishTax19Sum, hideFigures)}
+                </div>
+                <div className="text-[9px] text-rose-300/80 mt-0.5 font-medium">IRPF España</div>
+              </div>
+
+              <div className="bg-emerald-500/15 rounded-2xl p-2.5 border border-emerald-500/30">
+                <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
+                  Total Neto Anual
+                </div>
+                <div className="text-base sm:text-lg font-black text-emerald-400 mt-0.5">
+                  +{formatEUR(futureNet19Sum, hideFigures)}
+                </div>
+                <div className="text-[9px] text-emerald-300/80 mt-0.5 font-medium">Líquido a percibir</div>
+              </div>
+            </div>
+
+            {/* Resumen por Activo */}
+            <div className="mt-3.5 pt-3 border-t border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-300">
+              <span className="font-semibold text-slate-400">Activos en el cómputo anual:</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {futureDistinctAssets.map(a => (
+                  <span key={a.isin} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 text-white font-bold border border-white/10">
+                    <span>{a.flag}</span>
+                    <span>{a.product}</span>
+                    <span className="text-emerald-400">
+                      (+{formatEUR(taxRateSpanish19 ? a.annualGross * 0.81 : a.annualGross, hideFigures)})
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* Tarjeta explicativa de la cartera actual de DEGIRO */}
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-3xl p-4 text-xs">
             <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold mb-1">
@@ -393,39 +525,51 @@ export const DividendAuditView: React.FC<DividendAuditViewProps> = ({ hideFigure
                   Mapa de Cobros Proyectados (NVIDIA - 5 acciones)
                 </h4>
               </div>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                ~1,56 € neto / año
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                {taxRateSpanish19 ? 'Mostrando Neto (-19%)' : 'Mostrando Bruto'}
               </span>
             </div>
 
             <div className="space-y-2">
-              {rawData.futureCalendar.map(ev => (
-                <div
-                  key={ev.id}
-                  className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white font-black text-xs flex items-center justify-center">
-                      NV
-                    </div>
-                    <div>
-                      <div className="font-extrabold text-slate-900 dark:text-white text-xs">
-                        {ev.product} ({ev.ticker})
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        {ev.month} • {ev.frequency} • {ev.shares} acciones
-                      </div>
-                    </div>
-                  </div>
+              {filteredFutureCalendar.map(ev => {
+                const gross = ev.estimatedGrossEUR;
+                const tax19 = gross * 0.19;
+                const net19 = gross * 0.81;
+                const displayVal = taxRateSpanish19 ? net19 : gross;
 
-                  <div className="text-right">
-                    <div className="font-black text-emerald-600 dark:text-emerald-400 text-xs">
-                      +{ev.estimatedNetEUR.toFixed(2)} €
+                return (
+                  <div
+                    key={ev.id}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-700 text-white font-black text-xs flex items-center justify-center">
+                        NV
+                      </div>
+                      <div>
+                        <div className="font-extrabold text-slate-900 dark:text-white text-xs">
+                          {ev.product} ({ev.ticker})
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {ev.month} • {ev.frequency} • {ev.shares} acciones
+                        </div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          Bruto: {gross.toFixed(2)} € • IRPF 19%: -{tax19.toFixed(2)} €
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-400 font-medium">{ev.status}</div>
+
+                    <div className="text-right">
+                      <div className="font-black text-emerald-600 dark:text-emerald-400 text-xs">
+                        +{formatEUR(displayVal, hideFigures)}
+                      </div>
+                      <div className="text-[10px] font-bold px-1.5 py-0.5 rounded-md inline-block mt-0.5 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                        {taxRateSpanish19 ? 'Neto (-19%)' : 'Bruto'}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
