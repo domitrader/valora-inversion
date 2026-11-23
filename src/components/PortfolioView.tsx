@@ -298,14 +298,21 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
   return (
     <div className="pb-28 relative overflow-x-clip">
-      {/* Fondo fotográfico del globo terráqueo azulado en la parte superior */}
-      <div
-        className="pointer-events-none absolute top-0 left-0 right-0 h-[250px] bg-cover bg-top bg-no-repeat select-none"
-        style={{ backgroundImage: `url(${earthGlobeHeader})` }}
-        aria-hidden="true"
-      >
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/15 via-white/55 to-white dark:from-slate-950/70 dark:via-slate-950/85 dark:to-[#0B0F19]" />
-      </div>
+      {/* Fondo fotográfico del globo terráqueo azulado (solo en portada de Portafolio) */}
+      {activeSubTab === 'portafolio' ? (
+        <div
+          className="pointer-events-none absolute top-0 left-0 right-0 h-[250px] z-0 bg-cover bg-top bg-no-repeat select-none"
+          style={{ backgroundImage: `url(${earthGlobeHeader})` }}
+          aria-hidden="true"
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-sky-50/15 via-white/55 to-white dark:from-slate-950/70 dark:via-slate-950/85 dark:to-[#0B0F19]" />
+        </div>
+      ) : (
+        <div
+          className="pointer-events-none absolute top-0 left-0 right-0 h-32 z-0 bg-gradient-to-b from-[#E6F4FE] to-transparent dark:from-[#0B1221] dark:to-transparent select-none"
+          aria-hidden="true"
+        />
+      )}
 
       {/* 1. Cabecera con Menú Lateral Izquierdo (☰), Sección Activa, Lupa y Avatar Dorado */}
       <header className="relative z-20 flex items-center justify-between px-4 pt-3.5 pb-2.5 sticky top-0 backdrop-blur-[2px]">
@@ -1456,14 +1463,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
       {/* PESTAÑA: DIVIDENDOS */}
       {activeSubTab === 'dividendos' && (
-        <section className="px-4">
+        <section className="relative z-10 px-4 pt-1">
           <DividendAuditView hideFigures={hideFigures} />
         </section>
       )}
 
       {/* PESTAÑA: ZONA DE GRÁFICOS */}
       {activeSubTab === 'graficos' && (
-        <section>
+        <section className="relative z-10 pt-1">
           <ChartsHubView positions={positions} hideFigures={hideFigures} />
         </section>
       )}

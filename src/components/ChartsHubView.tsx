@@ -222,8 +222,8 @@ export const ChartsHubView: React.FC<ChartsHubViewProps> = ({ positions, hideFig
         </span>
       </div>
 
-      {/* Selector de Gráficos (1 vista limpia a la vez) */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+      {/* Selector de Gráficos (todos los 5 botones siempre visibles) */}
+      <div className="flex flex-wrap gap-1.5 pb-1">
         {(
           [
             { id: 'heatmap', label: 'Mapa de Calor', icon: Flame },
@@ -240,10 +240,10 @@ export const ChartsHubView: React.FC<ChartsHubViewProps> = ({ positions, hideFig
               key={tab.id}
               type="button"
               onClick={() => setActiveChart(tab.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 transition-all ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold whitespace-nowrap transition-all active:scale-95 ${
                 active
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xs'
-                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+                  ? 'bg-gradient-to-r from-sky-600 to-blue-700 text-white shadow-[0_4px_12px_rgba(2,132,199,0.35)]'
+                  : 'bg-white dark:bg-slate-900 border border-sky-200/80 dark:border-slate-800 text-[#0B2246] dark:text-slate-200 hover:bg-sky-50'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
