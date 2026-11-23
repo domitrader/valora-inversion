@@ -60,6 +60,8 @@ export interface PositionItem {
   unrealizedGainLossPct: number;
   /** Flujo neto histórico acumulado de DEGIRO (ventas - compras - comisiones - AutoFX) para calcular Total +/- idéntico a DEGIRO en vivo */
   historicalNetCashFlow?: number;
+  /** Capital máximo invertido simultáneamente en el activo (para calcular la rentabilidad % histórica real sin distorsiones) */
+  historicalPeakCapital?: number;
   sparkline: number[];
   dividendYield?: number;
   annualDividendPerShare?: number;

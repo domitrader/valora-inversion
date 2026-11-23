@@ -112,22 +112,25 @@ export class SupabaseService {
       const audited = auditedById.get(pos.id);
       if (audited && typeof audited.historicalNetCashFlow === 'number') {
         const missingFlow = typeof pos.historicalNetCashFlow !== 'number';
+        const missingPeak = typeof audited.historicalPeakCapital === 'number' && typeof pos.historicalPeakCapital !== 'number';
         const staleAvg =
           (pos.id === 'pos-nvda-ndq' && pos.avgPrice === 31.1) ||
           (pos.id === 'pos-wt-gold-3x-mil' && pos.avgPrice === 40) ||
           (pos.id === 'pos-wt-nasdaq-3x-mil' && pos.avgPrice === 116.98);
 
-        if (missingFlow || staleAvg) {
+        if (missingFlow || missingPeak || staleAvg) {
           patched = true;
           const totalValue = Number((pos.shares * pos.currentPrice).toFixed(2));
           const flow = audited.historicalNetCashFlow;
+          const peak = audited.historicalPeakCapital;
           const unrealizedGainLoss = Number((totalValue + flow).toFixed(2));
-          const denom = flow < 0 ? Math.abs(flow) : Math.max(pos.shares * audited.avgPrice, 1);
+          const denom = peak && peak > 0 ? peak : (flow < 0 ? Math.abs(flow) : Math.max(pos.shares * audited.avgPrice, 1));
           const unrealizedGainLossPct = Number(((unrealizedGainLoss / denom) * 100).toFixed(2));
           return {
             ...pos,
             avgPrice: audited.avgPrice,
             historicalNetCashFlow: flow,
+            historicalPeakCapital: peak,
             unrealizedGainLoss,
             unrealizedGainLossPct,
           };

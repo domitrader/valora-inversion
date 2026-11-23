@@ -313,9 +313,12 @@ export const liveQuotesService = {
       const unrealizedGainLoss = hasHistoricalFlow
         ? Number((totalValue + pos.historicalNetCashFlow!).toFixed(2))
         : Number((totalValue - totalCost).toFixed(2));
-      const pctDenominator = hasHistoricalFlow
-        ? (pos.historicalNetCashFlow! < 0 ? Math.abs(pos.historicalNetCashFlow!) : (totalCost > 0 ? totalCost : 1))
-        : (totalCost > 0 ? totalCost : 1);
+      const pctDenominator =
+        typeof pos.historicalPeakCapital === 'number' && pos.historicalPeakCapital > 0
+          ? pos.historicalPeakCapital
+          : hasHistoricalFlow
+            ? (pos.historicalNetCashFlow! < 0 ? Math.abs(pos.historicalNetCashFlow!) : (totalCost > 0 ? totalCost : 1))
+            : (totalCost > 0 ? totalCost : 1);
       const unrealizedGainLossPct = pctDenominator > 0 ? Number(((unrealizedGainLoss / pctDenominator) * 100).toFixed(2)) : 0;
       // Variación diaria exacta desde el precio de cierre anterior (evita sobreestimar cuando hay subidas fuertes >5%)
       const prevCloseVal = (1 + liveChangePct / 100) !== 0 ? totalValue / (1 + liveChangePct / 100) : totalValue;
