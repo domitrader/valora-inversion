@@ -180,7 +180,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     setSharesInput(defaultShares.toString());
     setTotalAmountInput(asset.price > 0 ? (defaultShares * asset.price).toFixed(2) : '');
     setAddMode(defaultAddMode);
-    setTargetListId(activeWatchlistListId || 'default');
+    setTargetListId(activeWatchlistListId && activeWatchlistListId !== 'all' ? activeWatchlistListId : 'default');
 
     // Si es resultado online (o cualquier ticker con símbolo de Yahoo), intentar traer su precio actual en vivo
     if (asset.price === 0 || asset.yahooSymbol) {

@@ -64,18 +64,23 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   const [editPrice, setEditPrice] = useState('');
   const [editShares, setEditShares] = useState('');
   const [editListId, setEditListId] = useState('default');
+  const [showListDropdown, setShowListDropdown] = useState(false);
 
   const lists = useMemo(() => {
     if (watchlistLists && watchlistLists.length > 0) return watchlistLists;
     return [{ id: 'default', name: 'Favoritos', createdAt: '2026-01-01' }];
   }, [watchlistLists]);
 
-  const activeList = lists.find(l => l.id === activeListId) || lists[0];
+  const isAllMode = activeListId === 'all';
+  const activeList = isAllMode
+    ? { id: 'all', name: 'Todas las carteras', createdAt: '' }
+    : lists.find(l => l.id === activeListId) || lists[0];
 
-  // Filtrar items que pertenecen a la lista activa
+  // Filtrar items que pertenecen a la lista activa (o todas si es 'all')
   const itemsInActiveList = useMemo(() => {
+    if (isAllMode) return watchlist;
     return watchlist.filter(item => (item.listId || 'default') === activeList.id);
-  }, [watchlist, activeList.id]);
+  }, [watchlist, activeList.id, isAllMode]);
 
   // Ordenación según la opción elegida
   const sortedWatchlist = useMemo(() => {
@@ -210,45 +215,137 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         </div>
       </header>
 
-      {/* 2. Barra de Listas / Carteras de Favoritos + Botón Crear Nueva */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 mb-2">
-        {lists.map(list => {
-          const isActive = list.id === activeList.id;
-          const count = watchlist.filter(i => (i.listId || 'default') === list.id).length;
-          return (
-            <button
-              key={list.id}
-              type="button"
-              onClick={() => onSelectList(list.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 transition-all ${
-                isActive
-                  ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xs'
-                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300'
+      {/* 2. Selector Desplegable Unificado de Listas / Carteras */}
+      <div className="relative mb-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowListDropdown(prev => !prev)}
+            className="flex-1 flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center shrink-0">
+                <Briefcase className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-left min-w-0">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block leading-none">
+                  Cartera / Lista activa
+                </span>
+                <span className="text-xs font-black text-slate-950 dark:text-white truncate block mt-0.5">
+                  {activeList.name} ({itemsInActiveList.length})
+                </span>
+              </div>
+            </div>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-500 transition-transform shrink-0 ${
+                showListDropdown ? 'rotate-180' : ''
               }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>{list.name}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isActive
-                    ? 'bg-white/20 dark:bg-slate-900/15'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowNewListModal(true)}
+            className="w-11 h-11 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white flex items-center justify-center shadow-xs active:scale-95 transition shrink-0"
+            title="Crear nueva lista / cartera"
+          >
+            <FolderPlus className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Menú desplegable de todas las listas */}
+        {showListDropdown && (
+          <>
+            <div
+              className="fixed inset-0 z-20"
+              onClick={() => setShowListDropdown(false)}
+            />
+            <div className="absolute left-0 right-0 top-14 z-30 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 shadow-2xl space-y-1">
+              {/* Opción 0: Todas las carteras juntas */}
+              <button
+                type="button"
+                onClick={() => {
+                  onSelectList('all');
+                  setShowListDropdown(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-extrabold transition ${
+                  isAllMode
+                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950'
+                    : 'text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
+                <span className="flex items-center gap-2">
+                  <span>🌐</span>
+                  <span>Todas las carteras</span>
+                  <span className="text-[10px] opacity-75">({watchlist.length})</span>
+                </span>
+                {isAllMode && <Check className="w-4 h-4 stroke-[2.5]" />}
+              </button>
 
-        <button
-          type="button"
-          onClick={() => setShowNewListModal(true)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 hover:bg-sky-100 transition"
-        >
-          <FolderPlus className="w-3.5 h-3.5" />
-          <span>Nueva lista</span>
-        </button>
+              <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
+
+              {/* Listas individuales */}
+              {lists.map(list => {
+                const isSelected = !isAllMode && list.id === activeList.id;
+                const count = watchlist.filter(i => (i.listId || 'default') === list.id).length;
+                return (
+                  <div key={list.id} className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectList(list.id);
+                        setShowListDropdown(false);
+                      }}
+                      className={`flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-extrabold transition ${
+                        isSelected
+                          ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950'
+                          : 'text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 truncate">
+                        <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                        <span className="truncate">{list.name}</span>
+                        <span className="text-[10px] opacity-75">({count})</span>
+                      </span>
+                      {isSelected && <Check className="w-4 h-4 stroke-[2.5] shrink-0" />}
+                    </button>
+
+                    {list.id !== 'default' && (
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (confirm(`¿Eliminar la lista "${list.name}" y sus activos?`)) {
+                            onDeleteList(list.id);
+                            setShowListDropdown(false);
+                          }
+                        }}
+                        className="p-2.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+                        title={`Eliminar "${list.name}"`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div className="border-t border-slate-100 dark:border-slate-800 pt-1 mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowListDropdown(false);
+                    setShowNewListModal(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-extrabold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 transition"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>Crear nueva lista / cartera</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* 3. Tarjeta Resumen de Cartera Simulada para la lista activa */}
@@ -346,7 +443,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
         </div>
 
         <div className="flex items-center gap-1.5">
-          {activeList.id !== 'default' && (
+          {!isAllMode && activeList.id !== 'default' && (
             <button
               type="button"
               onClick={() => {
