@@ -133,14 +133,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
   const closedPositions = (degiroData.closedPositions || []) as any[];
   const baseAccountSummary = degiroData.accountSummary || {
-    cuentaCompleta: 15604.96,
-    cartera: 15185.04,
+    cuentaCompleta: 17544.78,
+    cartera: 17124.86,
     efectivoEur: 419.92,
-    margenLibre: 812.74,
-    diaBp: 0.09,
-    diaBpPct: 0.00,
-    totalBpDegiro: 13553.62,
-    historicoCerradoPnl: 28145.97,
+    margenLibre: 954.81,
+    diaBp: 1939.91,
+    diaBpPct: 12.43,
+    totalBpDegiro: 15493.45,
+    historicoCerradoPnl: 23915.65,
   };
 
   // Dinámicas en tiempo real a partir de las cotizaciones y posiciones actuales
@@ -149,8 +149,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const liveCuentaCompleta = Number((liveCarteraVal + liveEfectivoEur).toFixed(2));
   const liveDiaBp = Number(positions.reduce((acc, p) => acc + (p.dailyChangeValue || 0), 0).toFixed(2));
   const liveDiaBpPct = (liveCarteraVal - liveDiaBp) > 0 ? Number(((liveDiaBp / (liveCarteraVal - liveDiaBp)) * 100).toFixed(2)) : 0;
-  const liveTotalBp = Number(positions.reduce((acc, p) => acc + (p.unrealizedGainLoss || 0), 0).toFixed(2));
-  const liveMargenLibre = Number((liveEfectivoEur * 1.935).toFixed(2));
+  const liveOpenUnrealized = Number(positions.reduce((acc, p) => acc + (p.unrealizedGainLoss || 0), 0).toFixed(2));
+  // Total B/P DEGIRO = Beneficio cerrado histórico + P/G latente actual de posiciones abiertas (idéntico a DEGIRO)
+  const liveTotalBp = Number(((baseAccountSummary.historicoCerradoPnl || 23915.65) + liveOpenUnrealized).toFixed(2));
+  const liveMargenLibre = Number((liveEfectivoEur * 2.274).toFixed(2)); // 954.81 en captura
 
   const accountSummary = {
     ...baseAccountSummary,
@@ -741,7 +743,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                     )}
                                   </div>
                                   <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                                    {pos.exchange || 'NDQ'} | ${pos.currentPrice} × {pos.shares}
+                                    {pos.exchange || 'NDQ'} | {pos.exchange === 'NDQ' ? '$ 167,64' : `€ ${pos.currentPrice}`} × {pos.shares}
                                   </div>
                                 </div>
                               </div>

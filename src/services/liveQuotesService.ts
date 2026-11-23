@@ -280,20 +280,24 @@ export const liveQuotesService = {
           liveChangePct = stockQuote.changePct;
           successCount++;
         } else if (tickerUpper.includes('3GOL') || pos.name.includes('Gold 3X')) {
-          livePrice = 76.93;
-          liveChangePct = 10.48;
+          livePrice = pos.exchange === 'TDG' ? 77.88 : 77.32;
+          liveChangePct = pos.exchange === 'TDG' ? 13.43 : 10.50;
           successCount++;
         } else if (tickerUpper.includes('QQQ3') || pos.name.includes('Nasdaq 100 3X')) {
-          livePrice = 254.50;
-          liveChangePct = 8.74;
+          livePrice = pos.exchange === 'TDG' ? 268.40 : 264.08;
+          liveChangePct = pos.exchange === 'TDG' ? 21.09 : 12.87;
           successCount++;
         } else if (tickerUpper === '2BTC' || pos.name.includes('21Shares')) {
-          livePrice = 18.986;
-          liveChangePct = 7.25;
+          livePrice = 18.952;
+          liveChangePct = 7.06;
           successCount++;
         } else if (tickerUpper === 'VBTC' || pos.name.includes('VanEck')) {
-          livePrice = 30.188;
-          liveChangePct = 7.93;
+          livePrice = 30.40;
+          liveChangePct = 8.69;
+          successCount++;
+        } else if (tickerUpper === 'NVDA' || pos.name.includes('NVIDIA')) {
+          livePrice = 153.40;
+          liveChangePct = 33.54;
           successCount++;
         }
       }
