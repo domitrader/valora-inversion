@@ -1,7 +1,7 @@
 import { PortfolioState } from '../types/portfolio';
 import { INITIAL_PORTFOLIO_STATE } from '../data/mockPortfolio';
 
-const LOCAL_STORAGE_KEY = 'valora_portfolio_state_v5';
+const LOCAL_STORAGE_KEY = 'valora_portfolio_state_v6';
 const SUPABASE_CONFIG_KEY = 'valora_supabase_config_v1';
 const CLOUD_ROW_ID = 'domingo_portfolio';
 
@@ -13,7 +13,8 @@ const LEGACY_STORAGE_KEYS = [
   'valora_portfolio_state_v1',
   'valora_portfolio_state_v2',
   'valora_portfolio_state_v3',
-  'valora_portfolio_state_v4'
+  'valora_portfolio_state_v4',
+  'valora_portfolio_state_v5'
 ];
 
 export interface SupabaseCloudConfig {

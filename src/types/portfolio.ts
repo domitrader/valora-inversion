@@ -58,6 +58,8 @@ export interface PositionItem {
   totalValue: number;
   unrealizedGainLoss: number;
   unrealizedGainLossPct: number;
+  /** Flujo neto histórico acumulado de DEGIRO (ventas - compras - comisiones - AutoFX) para calcular Total +/- idéntico a DEGIRO en vivo */
+  historicalNetCashFlow?: number;
   sparkline: number[];
   dividendYield?: number;
   annualDividendPerShare?: number;

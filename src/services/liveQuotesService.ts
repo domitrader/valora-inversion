@@ -308,9 +308,18 @@ export const liveQuotesService = {
 
       const totalValue = Number((pos.shares * livePrice).toFixed(2));
       const totalCost = Number((pos.shares * pos.avgPrice).toFixed(2));
-      const unrealizedGainLoss = Number((totalValue - totalCost).toFixed(2));
-      const unrealizedGainLossPct = totalCost > 0 ? Number(((unrealizedGainLoss / totalCost) * 100).toFixed(2)) : 0;
-      const dailyChangeValue = Number(((totalValue * liveChangePct) / 100).toFixed(2));
+      // Fórmula exacta DEGIRO: si existe historicalNetCashFlow, Total +/- = Valor actual + Flujo neto histórico (con todas las compras, ventas y comisiones)
+      const hasHistoricalFlow = typeof pos.historicalNetCashFlow === 'number';
+      const unrealizedGainLoss = hasHistoricalFlow
+        ? Number((totalValue + pos.historicalNetCashFlow!).toFixed(2))
+        : Number((totalValue - totalCost).toFixed(2));
+      const pctDenominator = hasHistoricalFlow
+        ? (pos.historicalNetCashFlow! < 0 ? Math.abs(pos.historicalNetCashFlow!) : (totalCost > 0 ? totalCost : 1))
+        : (totalCost > 0 ? totalCost : 1);
+      const unrealizedGainLossPct = pctDenominator > 0 ? Number(((unrealizedGainLoss / pctDenominator) * 100).toFixed(2)) : 0;
+      // Variación diaria exacta desde el precio de cierre anterior (evita sobreestimar cuando hay subidas fuertes >5%)
+      const prevCloseVal = (1 + liveChangePct / 100) !== 0 ? totalValue / (1 + liveChangePct / 100) : totalValue;
+      const dailyChangeValue = Number((totalValue - prevCloseVal).toFixed(2));
 
       updatedPositions.push({
         ...pos,

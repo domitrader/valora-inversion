@@ -1,7 +1,7 @@
 import { PortfolioState, PositionItem, WatchlistItem, FinancialEvent } from '../types/portfolio';
 import { INITIAL_PORTFOLIO_STATE } from '../data/mockPortfolio';
 
-const STORAGE_KEY = 'valora_portfolio_state_v5';
+const STORAGE_KEY = 'valora_portfolio_state_v6';
 
 /**
  * Servicio de almacenamiento desacoplado con arquitectura limpia.
