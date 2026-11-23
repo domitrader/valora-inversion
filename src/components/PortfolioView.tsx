@@ -22,6 +22,7 @@ import { CommissionsModal } from './CommissionsModal';
 import { NetCashFlowModal } from './NetCashFlowModal';
 import { ClosedProfitsModal } from './ClosedProfitsModal';
 import { AssetHistoryModal, getAssetHistoryCount } from './AssetHistoryModal';
+import { ChartsHubView } from './ChartsHubView';
 import { formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import degiroData from '../data/degiroPositionsData.json';
 import {
@@ -45,6 +46,9 @@ import {
   ArrowDown,
   ArrowUpDown,
   BarChart3,
+  Menu,
+  Briefcase,
+  Coins,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -94,6 +98,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [positionSort, setPositionSort] = useState<'degiro' | 'value-desc' | 'change-asc' | 'change-desc' | 'name-asc'>('degiro');
   const [selectedPosition, setSelectedPosition] = useState<PositionItem | null>(null);
   const [historyModalPosition, setHistoryModalPosition] = useState<PositionItem | null>(null);
+  const [homeDrawerOpen, setHomeDrawerOpen] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashInput, setCashInput] = useState(cash.toString());
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
@@ -227,20 +232,46 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
   return (
     <div className="pb-24 pt-2">
-      {/* 1. Cabecera idéntica a la captura de pantalla: "Inicio" + Lupa + Avatar */}
-      <header className="flex items-center justify-between px-4 pt-1 pb-3">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950 dark:text-white">Inicio</h1>
-        <div className="flex items-center gap-3">
+      {/* 1. Cabecera con Menú Lateral Izquierdo (☰), Sección Activa, Lupa y Avatar */}
+      <header className="flex items-center justify-between px-4 pt-1 pb-3 sticky top-0 z-20 bg-[#F8FAFC]/95 dark:bg-[#0B0F19]/95 backdrop-blur-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <button
+            type="button"
+            onClick={() => setHomeDrawerOpen(true)}
+            className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-800 dark:text-slate-100 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shrink-0"
+            title="Abrir menú de Inicio"
+          >
+            <Menu className="w-5 h-5 stroke-[2.3]" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white leading-tight truncate">
+              {activeSubTab === 'portafolio'
+                ? 'Portafolio'
+                : activeSubTab === 'dividendos'
+                  ? 'Dividendos'
+                  : 'Zona de Gráficos'}
+            </h1>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+              {activeSubTab === 'portafolio'
+                ? 'DEGIRO · Cartera en vivo'
+                : activeSubTab === 'dividendos'
+                  ? 'Auditoría 2018–2026 y Mapa Futuro'
+                  : 'Mapa de Calor y Rendimiento Real'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onOpenSearch}
-            className="w-9 h-9 rounded-full flex items-center justify-center text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             title="Buscar activos"
           >
-            <Search className="w-5 h-5 stroke-[2.2]" />
+            <Search className="w-4 h-4 stroke-[2.2]" />
           </button>
           <button
             onClick={onGoToProfile}
-            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shadow-xs"
+            className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center shadow-xs"
             title="Perfil de usuario"
           >
             DO
@@ -248,26 +279,102 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         </div>
       </header>
 
-      {/* 2. Pestañas superiores: "Portafolio" | "Dividendos" */}
-      <div className="flex items-center gap-1 px-4 mb-4">
-        {(['portafolio', 'dividendos'] as InicioSubTab[]).map(tab => {
-          const isActive = activeSubTab === tab;
-          const label = tab === 'portafolio' ? 'Portafolio' : 'Dividendos';
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveSubTab(tab)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                isActive
-                  ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/40'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      {/* MENÚ LATERAL DESLIZABLE IZQUIERDO DE INICIO */}
+      {homeDrawerOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex animate-in fade-in duration-150"
+          onClick={() => setHomeDrawerOpen(false)}
+        >
+          <aside
+            className="w-72 max-w-[82vw] h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col p-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  Mi Patrimonio
+                </span>
+                <h2 className="text-base font-black text-slate-950 dark:text-white">Inicio</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHomeDrawerOpen(false)}
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <nav className="space-y-1.5 flex-1">
+              {(
+                [
+                  {
+                    id: 'portafolio' as InicioSubTab,
+                    label: 'Portafolio (DEGIRO)',
+                    subtitle: 'Posiciones, Día +/- y Total +/- en vivo',
+                    icon: Briefcase,
+                    color: 'text-sky-500',
+                  },
+                  {
+                    id: 'graficos' as InicioSubTab,
+                    label: 'Zona de Gráficos',
+                    subtitle: 'Mapa de Calor, Años/Meses/Semanas y Top',
+                    icon: BarChart3,
+                    color: 'text-indigo-500',
+                  },
+                  {
+                    id: 'dividendos' as InicioSubTab,
+                    label: 'Dividendos',
+                    subtitle: 'Auditoría 2018–2026 y Mapa Futuro',
+                    icon: Coins,
+                    color: 'text-emerald-500',
+                  },
+                ]
+              ).map(item => {
+                const Icon = item.icon;
+                const isActive = activeSubTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveSubTab(item.id);
+                      setHomeDrawerOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all ${
+                      isActive
+                        ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-sm'
+                        : 'hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-800 dark:text-slate-200'
+                    }`}
+                  >
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        isActive ? 'bg-white/15 dark:bg-slate-900/10' : 'bg-slate-100 dark:bg-slate-800'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-white dark:text-slate-950' : item.color}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-extrabold truncate">{item.label}</div>
+                      <div
+                        className={`text-[10px] truncate ${
+                          isActive ? 'text-slate-300 dark:text-slate-600' : 'text-slate-400'
+                        }`}
+                      >
+                        {item.subtitle}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 text-center">
+              Cartera DEGIRO · Domingo (2018–2026)
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* CONTENIDO SEGÚN LA SUB-PESTAÑA ACTIVA */}
       {activeSubTab === 'portafolio' && (
@@ -1080,6 +1187,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       {activeSubTab === 'dividendos' && (
         <section className="px-4">
           <DividendAuditView hideFigures={hideFigures} />
+        </section>
+      )}
+
+      {/* PESTAÑA: ZONA DE GRÁFICOS */}
+      {activeSubTab === 'graficos' && (
+        <section>
+          <ChartsHubView positions={positions} hideFigures={hideFigures} />
         </section>
       )}
 
