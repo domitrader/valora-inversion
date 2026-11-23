@@ -53,6 +53,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   const [purchaseDate, setPurchaseDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [sharesInput, setSharesInput] = useState('10');
   const [priceInput, setPriceInput] = useState('');
+  const [totalAmountInput, setTotalAmountInput] = useState('');
   const [addMode, setAddMode] = useState<'portfolio' | 'watchlist'>(defaultAddMode);
   const [targetListId, setTargetListId] = useState<string>(activeWatchlistListId || 'default');
   const [addedSuccessMsg, setAddedSuccessMsg] = useState('');
@@ -175,7 +176,9 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     const today = new Date().toISOString().split('T')[0];
     setPurchaseDate(today);
     setPriceInput(asset.price > 0 ? asset.price.toString() : '');
-    setSharesInput(asset.type === 'Fondos' ? '1.000' : '10');
+    const defaultShares = asset.type === 'Fondos' ? 100 : 10;
+    setSharesInput(defaultShares.toString());
+    setTotalAmountInput(asset.price > 0 ? (defaultShares * asset.price).toFixed(2) : '');
     setAddMode(defaultAddMode);
     setTargetListId(activeWatchlistListId || 'default');
 
@@ -184,8 +187,46 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
       const live = await liveQuotesService.fetchStockQuote(asset.yahooSymbol || asset.ticker);
       if (live && live.priceEUR > 0) {
         setQuickAddAsset(prev => prev ? { ...prev, price: live.priceEUR, dailyChangePct: live.changePct } : prev);
-        setPriceInput(prev => (!prev || prev === '0' || prev === asset.price.toString() ? live.priceEUR.toString() : prev));
+        setPriceInput(prev => {
+          const nextPrice = (!prev || prev === '0' || prev === asset.price.toString()) ? live.priceEUR.toString() : prev;
+          setTotalAmountInput((defaultShares * (parseFloat(nextPrice) || live.priceEUR)).toFixed(2));
+          return nextPrice;
+        });
       }
+    }
+  };
+
+  // Cálculo bidireccional: al poner un importe en € (ej. 1000 € o 3000 €), calcula automáticamente los títulos aproximados
+  const handleTotalAmountChange = (rawVal: string) => {
+    setTotalAmountInput(rawVal);
+    const targetEur = parseFloat(rawVal);
+    const unitPrice = parseFloat(priceInput) || quickAddAsset?.price || 0;
+    if (!isNaN(targetEur) && targetEur > 0 && unitPrice > 0) {
+      const isFractional = quickAddAsset?.type === 'Fondos' || quickAddAsset?.type === 'Cripto';
+      const calcShares = isFractional
+        ? Number((targetEur / unitPrice).toFixed(4))
+        : Math.max(1, Math.round(targetEur / unitPrice));
+      setSharesInput(calcShares.toString());
+    }
+  };
+
+  const handleSharesInputChange = (rawVal: string) => {
+    setSharesInput(rawVal);
+    const sh = parseFloat(rawVal);
+    const unitPrice = parseFloat(priceInput) || quickAddAsset?.price || 0;
+    if (!isNaN(sh) && sh >= 0 && unitPrice > 0) {
+      setTotalAmountInput((sh * unitPrice).toFixed(2));
+    } else {
+      setTotalAmountInput('');
+    }
+  };
+
+  const handlePriceInputChange = (rawVal: string) => {
+    setPriceInput(rawVal);
+    const unitPrice = parseFloat(rawVal);
+    const sh = parseFloat(sharesInput);
+    if (!isNaN(unitPrice) && unitPrice > 0 && !isNaN(sh) && sh > 0) {
+      setTotalAmountInput((sh * unitPrice).toFixed(2));
     }
   };
 
@@ -783,7 +824,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
                     type="number"
                     step="any"
                     value={priceInput}
-                    onChange={e => setPriceInput(e.target.value)}
+                    onChange={e => handlePriceInputChange(e.target.value)}
                     placeholder={quickAddAsset.price.toString()}
                     className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
@@ -794,7 +835,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
                       <span>Precio histórico estimado: <strong>{formatEUR(historicalEstimate.estimatedPrice)}</strong></span>
                       <button
                         type="button"
-                        onClick={() => setPriceInput(historicalEstimate.estimatedPrice.toString())}
+                        onClick={() => handlePriceInputChange(historicalEstimate.estimatedPrice.toString())}
                         className="px-2 py-0.5 rounded-lg bg-emerald-600 text-white font-bold text-[10px] hover:bg-emerald-700 transition-colors shadow-2xs"
                       >
                         Aplicar
@@ -812,17 +853,50 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
                     type="number"
                     step="any"
                     value={sharesInput}
-                    onChange={e => setSharesInput(e.target.value)}
+                    onChange={e => handleSharesInputChange(e.target.value)}
                     className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
-                {/* Resumen del importe total */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Total inversión estimada:</span>
-                  <span className="font-black text-slate-900 text-sm">
-                    {formatEUR((parseFloat(sharesInput) || 0) * (parseFloat(priceInput) || 0))}
-                  </span>
+                {/* 4. CAMPO EDITABLE: TOTAL INVERSIÓN (€) -> CALCULA AUTOMÁTICAMENTE LOS TÍTULOS */}
+                <div className="pt-2 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-[11px] font-black text-slate-700">
+                      Invertir por importe (€):
+                    </label>
+                    <div className="relative w-32">
+                      <input
+                        type="number"
+                        step="any"
+                        value={totalAmountInput}
+                        onChange={e => handleTotalAmountChange(e.target.value)}
+                        placeholder="1000"
+                        className="w-full border border-emerald-300 bg-emerald-50/40 rounded-xl pl-3 pr-7 py-1.5 text-sm font-black text-slate-900 text-right focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-700">€</span>
+                    </div>
+                  </div>
+
+                  {/* Botones rápidos de importe en euros */}
+                  <div className="flex items-center gap-1.5">
+                    {[500, 1000, 3000, 5000].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => handleTotalAmountChange(amt.toString())}
+                        className="flex-1 py-1 rounded-lg text-[10px] font-extrabold bg-slate-100 hover:bg-emerald-100 hover:text-emerald-800 text-slate-700 transition"
+                      >
+                        {amt.toLocaleString('es-ES')} €
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Importe real ({sharesInput || 0} títulos):</span>
+                    <span className="font-black text-slate-900">
+                      {formatEUR((parseFloat(sharesInput) || 0) * (parseFloat(priceInput) || quickAddAsset.price || 0))}
+                    </span>
+                  </div>
                 </div>
               </div>
 
