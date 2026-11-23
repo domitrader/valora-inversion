@@ -4,7 +4,7 @@ export type InicioSubTab = 'portafolio' | 'dividendos' | 'graficos';
 
 export type AssetType = 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto';
 
-export type TimeRange = '1D' | '1S' | '1M' | '3M' | 'YTD' | '1A' | '5A';
+export type TimeRange = '1D' | '1S' | '1M' | '3M' | 'YTD' | '1A' | '5A' | '10A';
 
 export type SortOption = 'name-asc' | 'name-desc' | 'change-asc' | 'change-desc' | 'custom';
 

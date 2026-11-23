@@ -175,12 +175,22 @@ export function buildRealDegiroChartData(
         points: appendLivePoint(slice),
       };
     }
-    case '5A':
-    default: {
+    case '5A': {
       // Últimos 5 años reales completos (60 meses reales + hoy en vivo)
       const slice = ALL_MONTHLY.slice(-60);
       return {
         subtitle: 'B/P acumulado real · últimos 5 años (auditado)',
+        points: appendLivePoint(slice),
+      };
+    }
+    case '10A':
+    default: {
+      // Hasta 10 años reales completos (120 meses: todo tu histórico auditado 2018–2026 + hoy en vivo)
+      const slice = ALL_MONTHLY.slice(-120);
+      const firstYear = slice[0]?.date.slice(0, 4) || '2018';
+      const lastYear = slice[slice.length - 1]?.date.slice(0, 4) || '2026';
+      return {
+        subtitle: `B/P acumulado real · 10A (${firstYear}–${lastYear} auditado)`,
         points: appendLivePoint(slice),
       };
     }

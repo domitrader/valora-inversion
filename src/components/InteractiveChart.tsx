@@ -13,7 +13,7 @@ interface InteractiveChartProps {
   hideFigures?: boolean;
 }
 
-const TIME_RANGES: TimeRange[] = ['1D', '1S', '1M', '3M', 'YTD', '1A', '5A'];
+const TIME_RANGES: TimeRange[] = ['1D', '1S', '1M', '3M', 'YTD', '1A', '5A', '10A'];
 
 export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   data,
@@ -221,7 +221,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
               <button
                 key={range}
                 onClick={() => onRangeChange(range)}
-                className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full transition-all duration-150 ${
+                className={`text-[11px] font-extrabold px-2 py-1 rounded-full transition-all duration-150 shrink-0 ${
                   isActive
                     ? isPositive
                       ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_4px_12px_rgba(16,185,129,0.45)]'
