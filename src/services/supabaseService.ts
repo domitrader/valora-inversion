@@ -100,6 +100,47 @@ export class SupabaseService {
   }
 
   /**
+   * Garantiza que las posiciones auditadas de DEGIRO conserven siempre su historicalNetCashFlow y avgPrice reales,
+   * protegiendo contra pestañas antiguas abiertas que hayan sobrescrito Supabase con datos sin auditar.
+   */
+  private static enforceAuditedDegiroData(state: PortfolioState): PortfolioState {
+    if (!state?.positions || !Array.isArray(state.positions)) return state;
+    const auditedById = new Map(INITIAL_PORTFOLIO_STATE.positions.map(p => [p.id, p]));
+    let patched = false;
+
+    const fixedPositions = state.positions.map(pos => {
+      const audited = auditedById.get(pos.id);
+      if (audited && typeof audited.historicalNetCashFlow === 'number') {
+        const missingFlow = typeof pos.historicalNetCashFlow !== 'number';
+        const staleAvg =
+          (pos.id === 'pos-nvda-ndq' && pos.avgPrice === 31.1) ||
+          (pos.id === 'pos-wt-gold-3x-mil' && pos.avgPrice === 40) ||
+          (pos.id === 'pos-wt-nasdaq-3x-mil' && pos.avgPrice === 116.98);
+
+        if (missingFlow || staleAvg) {
+          patched = true;
+          const totalValue = Number((pos.shares * pos.currentPrice).toFixed(2));
+          const flow = audited.historicalNetCashFlow;
+          const unrealizedGainLoss = Number((totalValue + flow).toFixed(2));
+          const denom = flow < 0 ? Math.abs(flow) : Math.max(pos.shares * audited.avgPrice, 1);
+          const unrealizedGainLossPct = Number(((unrealizedGainLoss / denom) * 100).toFixed(2));
+          return {
+            ...pos,
+            avgPrice: audited.avgPrice,
+            historicalNetCashFlow: flow,
+            unrealizedGainLoss,
+            unrealizedGainLossPct,
+          };
+        }
+      }
+      return pos;
+    });
+
+    if (!patched) return state;
+    return { ...state, positions: fixedPositions };
+  }
+
+  /**
    * Loads the active portfolio state (tries cloud first if configured, then localStorage)
    */
   public static async getPortfolioState(): Promise<PortfolioState> {
@@ -116,7 +157,7 @@ export class SupabaseService {
         if (res.ok) {
           const rows = await res.json();
           if (Array.isArray(rows) && rows.length > 0 && rows[0].state) {
-            const cloudState: PortfolioState = rows[0].state;
+            const cloudState = this.enforceAuditedDegiroData(rows[0].state as PortfolioState);
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cloudState));
             return cloudState;
           }
@@ -133,7 +174,7 @@ export class SupabaseService {
 
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        const parsed: PortfolioState = JSON.parse(stored);
+        const parsed = this.enforceAuditedDegiroData(JSON.parse(stored) as PortfolioState);
         const hasLegacyMergedPositions = parsed.positions?.some(
           p => p.id === 'pos-wt-gold-3x' || (p.isin === 'IE00B8HGT870' && p.shares === 155)
         );
