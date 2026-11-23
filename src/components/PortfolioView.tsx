@@ -41,6 +41,8 @@ import {
   ChevronDown,
   Check,
   TrendingUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -101,6 +103,33 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   // Selector estilo DEGIRO: Posiciones abiertas / Posiciones cerradas / Todas las posiciones
   const [positionViewMode, setPositionViewMode] = useState<'abiertas' | 'cerradas' | 'todas'>('abiertas');
   const [showViewDropdown, setShowViewDropdown] = useState(false);
+
+  // Modo de visualización táctil DEGIRO: 'dia' (Día +/-) o 'total' (Total +/- acumulado)
+  const [globalGainMode, setGlobalGainMode] = useState<'dia' | 'total'>('dia');
+  const [rowGainModes, setRowGainModes] = useState<Record<string, 'dia' | 'total'>>({});
+
+  const getRowGainMode = (id: string) => rowGainModes[id] || globalGainMode;
+
+  const toggleRowGainMode = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRowGainModes(prev => {
+      const current = prev[id] || globalGainMode;
+      const next = current === 'dia' ? 'total' : 'dia';
+      return { ...prev, [id]: next };
+    });
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(12); } catch {}
+    }
+  };
+
+  const toggleGlobalGainMode = () => {
+    const next = globalGainMode === 'dia' ? 'total' : 'dia';
+    setGlobalGainMode(next);
+    setRowGainModes({}); // Al pulsar en la cabecera sincronizamos todas las filas
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(20); } catch {}
+    }
+  };
 
   const closedPositions = (degiroData.closedPositions || []) as any[];
   const baseAccountSummary = degiroData.accountSummary || {
@@ -665,10 +694,32 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       </span>
                     </div>
 
+                    {/* Subcabecera estilo DEGIRO: Precio × Nº y selector táctil Día +/- ⇄ Total +/- */}
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 dark:text-slate-500 px-2 pb-1 select-none">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
+                        <ArrowDown className="w-3 h-3 text-sky-500" />
+                        <span>Precio × Nº</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={toggleGlobalGainMode}
+                        className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 hover:text-sky-700 font-extrabold text-[11px] active:scale-95 transition-all cursor-pointer py-0.5 px-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 shadow-2xs"
+                        title="Toca para alternar todas las posiciones entre Día +/- y Total +/-"
+                      >
+                        <span>{globalGainMode === 'dia' ? 'Día +/-' : 'Total +/-'}</span>
+                        <ArrowUpDown className="w-3 h-3 text-sky-500" />
+                      </button>
+                    </div>
+
                     <div className="space-y-1">
                       {stockPositions.length > 0 ? (
                         stockPositions.map(pos => {
-                          const isLoss = pos.dailyChangePct < 0;
+                          const mode = getRowGainMode(pos.id);
+                          const isDia = mode === 'dia';
+                          const amount = isDia ? pos.dailyChangeValue : (pos.unrealizedGainLoss || 0);
+                          const pct = isDia ? pos.dailyChangePct : (pos.unrealizedGainLossPct || 0);
+                          const isPos = amount >= 0;
+
                           return (
                             <div
                               key={pos.id}
@@ -698,9 +749,23 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 <div className="font-extrabold text-slate-900 dark:text-white text-xs">
                                   {formatEUR(pos.totalValue, hideFigures)}
                                 </div>
-                                <div className={`text-[11px] font-bold ${isLoss ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                  +{formatEUR(pos.dailyChangeValue, hideFigures)} (+{pos.dailyChangePct.toFixed(2)}%)
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleRowGainMode(pos.id, e)}
+                                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 mt-0.5 rounded-lg border transition-all active:scale-95 cursor-pointer select-none shadow-2xs ${
+                                    isPos
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-900/60'
+                                  }`}
+                                  title={`Toca con el dedo para cambiar a ${isDia ? 'Total acumulado' : 'Día +/-'}`}
+                                >
+                                  <span>
+                                    {amount > 0 ? '+' : ''}{formatEUR(amount, hideFigures)} ({pct > 0 ? '+' : ''}{pct.toFixed(2)}%)
+                                  </span>
+                                  <span className="text-[9px] font-semibold opacity-70 uppercase tracking-tight ml-0.5">
+                                    {isDia ? 'Día' : 'Tot'}
+                                  </span>
+                                </button>
                               </div>
                             </div>
                           );
@@ -774,11 +839,33 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       </span>
                     </div>
 
+                    {/* Subcabecera estilo DEGIRO: Precio × Nº y selector táctil Día +/- ⇄ Total +/- */}
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 dark:text-slate-500 px-2 pb-1 select-none">
+                      <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
+                        <ArrowDown className="w-3 h-3 text-sky-500" />
+                        <span>Precio × Nº</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={toggleGlobalGainMode}
+                        className="inline-flex items-center gap-1 text-sky-600 dark:text-sky-400 hover:text-sky-700 font-extrabold text-[11px] active:scale-95 transition-all cursor-pointer py-0.5 px-2 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 shadow-2xs"
+                        title="Toca para alternar todas las posiciones entre Día +/- y Total +/-"
+                      >
+                        <span>{globalGainMode === 'dia' ? 'Día +/-' : 'Total +/-'}</span>
+                        <ArrowUpDown className="w-3 h-3 text-sky-500" />
+                      </button>
+                    </div>
+
                     <div className="space-y-1">
                       {etfAndCryptoPositions.length > 0 ? (
                         etfAndCryptoPositions.map(pos => {
                           const isBitcoin = pos.type === 'Cripto' || pos.name.toUpperCase().includes('BITCOIN');
                           const displayFlag = isBitcoin ? '₿' : pos.countryFlag;
+                          const mode = getRowGainMode(pos.id);
+                          const isDia = mode === 'dia';
+                          const amount = isDia ? pos.dailyChangeValue : (pos.unrealizedGainLoss || 0);
+                          const pct = isDia ? pos.dailyChangePct : (pos.unrealizedGainLossPct || 0);
+                          const isPos = amount >= 0;
 
                           return (
                             <div
@@ -813,9 +900,23 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                                 <div className="font-extrabold text-slate-900 dark:text-white text-xs">
                                   {formatEUR(pos.totalValue, hideFigures)}
                                 </div>
-                                <div className="text-[11px] font-semibold text-slate-400">
-                                  0,00 (0,00%)
-                                </div>
+                                <button
+                                  type="button"
+                                  onClick={(e) => toggleRowGainMode(pos.id, e)}
+                                  className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 mt-0.5 rounded-lg border transition-all active:scale-95 cursor-pointer select-none shadow-2xs ${
+                                    isPos
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                                      : 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-100 dark:hover:bg-rose-900/60'
+                                  }`}
+                                  title={`Toca con el dedo para cambiar a ${isDia ? 'Total acumulado' : 'Día +/-'}`}
+                                >
+                                  <span>
+                                    {amount > 0 ? '+' : ''}{formatEUR(amount, hideFigures)} ({pct > 0 ? '+' : ''}{pct.toFixed(2)}%)
+                                  </span>
+                                  <span className="text-[9px] font-semibold opacity-70 uppercase tracking-tight ml-0.5">
+                                    {isDia ? 'Día' : 'Tot'}
+                                  </span>
+                                </button>
                               </div>
                             </div>
                           );
