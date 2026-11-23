@@ -176,7 +176,8 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     setPurchaseDate(today);
     setPriceInput(asset.price > 0 ? asset.price.toString() : '');
     setSharesInput(asset.type === 'Fondos' ? '1.000' : '10');
-    setAddMode('portfolio');
+    setAddMode(defaultAddMode);
+    setTargetListId(activeWatchlistListId || 'default');
 
     // Si es resultado online (o cualquier ticker con símbolo de Yahoo), intentar traer su precio actual en vivo
     if (asset.price === 0 || asset.yahooSymbol) {
