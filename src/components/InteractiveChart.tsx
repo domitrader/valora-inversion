@@ -8,6 +8,8 @@ interface InteractiveChartProps {
   selectedRange: TimeRange;
   onRangeChange: (range: TimeRange) => void;
   onExpand?: () => void;
+  onOpenChartsHub?: () => void;
+  subtitle?: string;
   hideFigures?: boolean;
 }
 
@@ -18,6 +20,8 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   selectedRange,
   onRangeChange,
   onExpand,
+  onOpenChartsHub,
+  subtitle,
   hideFigures = false,
 }) => {
   const [hoveredPoint, setHoveredPoint] = useState<ChartDataPoint | null>(null);
@@ -34,11 +38,11 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   // Determinar si la tendencia del rango es positiva o negativa
   const startVal = data[0].value;
   const currentVal = hoveredPoint ? hoveredPoint.value : data[data.length - 1].value;
-  const isPositive = currentVal >= startVal;
-  
-  // Color del trazo: salmón/rojo si baja (como en la captura 1), esmeralda si sube
+  const periodDelta = Number((currentVal - startVal).toFixed(2));
+  const isPositive = periodDelta >= 0;
+
+  // Color del trazo: esmeralda si sube, rojo si baja
   const strokeColor = isPositive ? '#10B981' : '#F87171';
-  const fillColor = isPositive ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
 
   // Dimensiones del SVG
   const width = 360;
@@ -51,7 +55,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
 
   // Puntos calculados
   const points = data.map((d, i) => {
-    const x = paddingX + (i / (data.length - 1)) * chartWidth;
+    const x = data.length === 1 ? paddingX : paddingX + (i / (data.length - 1)) * chartWidth;
     const y = paddingTop + chartHeight - ((d.value - minVal) / range) * chartHeight;
     return { x, y, point: d };
   });
@@ -59,7 +63,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const pathD = points.map((p, i) => (i === 0 ? `M ${p.x.toFixed(1)} ${p.y.toFixed(1)}` : `L ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)).join(' ');
   const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height - paddingBottom} L ${points[0].x.toFixed(1)} ${height - paddingBottom} Z`;
 
-  // Baseline del valor inicial (línea discontinua horizontal como en la captura)
+  // Baseline del valor inicial
   const baselineY = paddingTop + chartHeight - ((startVal - minVal) / range) * chartHeight;
 
   // Manejador táctil y de ratón
@@ -67,8 +71,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
     const rect = e.currentTarget.getBoundingClientRect();
     const clientX = e.clientX - rect.left;
     const relativeX = (clientX / rect.width) * width;
-    
-    // Encontrar el punto más cercano
+
     let closest = points[0];
     let minDist = Math.abs(points[0].x - relativeX);
     for (let i = 1; i < points.length; i++) {
@@ -87,15 +90,32 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
 
   return (
     <div className="w-full select-none">
+      {/* Cabecera compacta indicando datos 100% reales y variación del periodo */}
+      {subtitle && (
+        <div className="flex items-center justify-between px-4 mb-1">
+          <span className="text-[10px] font-bold text-[#16325C]/70 dark:text-slate-400 truncate">
+            {subtitle}
+          </span>
+          <span
+            className={`text-[10px] font-black shrink-0 ml-2 ${
+              isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'
+            }`}
+          >
+            {periodDelta > 0 ? '+' : ''}
+            {formatEUR(periodDelta, hideFigures)}
+          </span>
+        </div>
+      )}
+
       {/* Contenedor del gráfico con posición relativa para el botón de ampliar */}
       <div className="relative w-full h-[148px]">
         {/* Tooltip flotante si está en hover */}
         {hoveredPoint && (
-          <div className="absolute top-1 left-4 z-10 bg-slate-900/90 text-white text-xs px-2.5 py-1 rounded-md shadow-md backdrop-blur-sm pointer-events-none flex items-center gap-2">
-            <span className="text-slate-300">{hoveredPoint.label}:</span>
-            <span className="font-semibold">{formatEUR(hoveredPoint.value, hideFigures)}</span>
-            {hoveredPoint.changePct !== undefined && (
-              <span className={`text-[11px] ${hoveredPoint.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <div className="absolute top-1 left-4 z-10 bg-[#0B2246]/95 text-white text-xs px-2.5 py-1 rounded-lg shadow-md backdrop-blur-sm pointer-events-none flex items-center gap-2">
+            <span className="text-sky-200 font-semibold">{hoveredPoint.label}:</span>
+            <span className="font-black">{formatEUR(hoveredPoint.value, hideFigures)}</span>
+            {hoveredPoint.changePct !== undefined && hoveredPoint.changePct !== 0 && (
+              <span className={`text-[11px] font-bold ${hoveredPoint.changePct >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {formatPercent(hoveredPoint.changePct)}
               </span>
             )}
@@ -215,11 +235,17 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           })}
         </div>
 
-        {/* Icono de rueda de ajustes circular */}
+        {/* Icono de rueda de ajustes circular -> abre Zona de Gráficos */}
         <button
-          onClick={() => alert('Opciones de visualización: Escala logarítmica, Benchmark S&P 500 y Días de cierre configurables.')}
+          onClick={() => {
+            if (onOpenChartsHub) {
+              onOpenChartsHub();
+            } else {
+              alert('Gráfico construido con datos históricos reales auditados (2018–2026) y cotizaciones en vivo.');
+            }
+          }}
           className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-xs text-[#16325C]/80 dark:text-slate-300 hover:text-sky-600 flex items-center justify-center active:rotate-45 transition-all shrink-0"
-          title="Configuración de gráfico"
+          title="Abrir Zona de Gráficos completa"
         >
           <Settings className="w-3.5 h-3.5" />
         </button>

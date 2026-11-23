@@ -14,7 +14,7 @@ import {
   formatPercent,
   calculatePortfolioMetrics,
 } from '../utils/calculations';
-import { MOCK_CHART_DATA } from '../data/mockPortfolio';
+import { buildRealDegiroChartData } from '../utils/realPortfolioChartBuilder';
 import { Sparkline } from './Sparkline';
 import { InteractiveChart } from './InteractiveChart';
 import { HistoricalAssetModal } from './HistoricalAssetModal';
@@ -217,21 +217,37 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     totalBpDegiro: liveTotalBp,
   };
 
-  // Métricas calculadas
+  // Métricas calculadas y serie de gráfico 100% real (sin datos simulados)
   const metrics = calculatePortfolioMetrics(positions, cash);
-  const rawChartPoints = MOCK_CHART_DATA[selectedTimeRange] || MOCK_CHART_DATA['1D'];
-  const chartPoints = isDefaultDegiroPortfolio
-    ? rawChartPoints.length > 0
-      ? rawChartPoints.map((pt, idx) =>
-          idx === rawChartPoints.length - 1
-            ? { ...pt, value: liveCuentaCompleta, change: selectedTimeRange === '1D' ? liveDiaBp : liveTotalBp }
-            : pt
-        )
-      : rawChartPoints
-    : [
-        { date: 'Inicio', label: 'Inicio', value: Math.max(liveCuentaCompleta - liveTotalBp, 0), change: 0, changePct: 0 },
-        { date: 'Hoy', label: 'Hoy', value: liveCuentaCompleta, change: liveTotalBp, changePct: liveDiaBpPct },
-      ];
+  const realDegiroChart = isDefaultDegiroPortfolio
+    ? buildRealDegiroChartData(
+        selectedTimeRange,
+        liveCuentaCompleta,
+        liveDiaBp,
+        liveDiaBpPct,
+        liveTotalBp
+      )
+    : {
+        subtitle: `Evolución real · ${activePortfolio.name}`,
+        points: [
+          {
+            date: 'Inicio',
+            label: 'Invertido',
+            value: Number(Math.max(liveCuentaCompleta - liveTotalBp, 0).toFixed(2)),
+            change: 0,
+            changePct: 0,
+          },
+          {
+            date: 'Hoy',
+            label: 'Hoy (vivo)',
+            value: liveCuentaCompleta,
+            change: liveTotalBp,
+            changePct: liveDiaBpPct,
+          },
+        ],
+      };
+  const chartPoints = realDegiroChart.points;
+  const chartSubtitle = realDegiroChart.subtitle;
 
   // Formato cabecera idéntico al de la captura de pantalla con cifras dinámicas en vivo
   const headerFormatted = formatHeaderEUR(accountSummary.cuentaCompleta, hideFigures);
@@ -669,16 +685,20 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             )}
           </section>
 
-          {/* 4. Gráfico interactivo con selector de rango */}
-          <section className="mt-1 mb-4">
-            <InteractiveChart
-              data={chartPoints}
-              selectedRange={selectedTimeRange}
-              onRangeChange={onSelectTimeRange}
-              onExpand={() => setShowChartModal(true)}
-              hideFigures={hideFigures}
-            />
-          </section>
+          {/* 4. Gráfico interactivo 100% real (oculto en carteras nuevas vacías) */}
+          {(isDefaultDegiroPortfolio || positions.length > 0 || cash > 0) && (
+            <section className="mt-2 mb-4">
+              <InteractiveChart
+                data={chartPoints}
+                selectedRange={selectedTimeRange}
+                onRangeChange={onSelectTimeRange}
+                onExpand={() => setShowChartModal(true)}
+                onOpenChartsHub={() => setActiveSubTab('graficos')}
+                subtitle={chartSubtitle}
+                hideFigures={hideFigures}
+              />
+            </section>
+          )}
 
           {/* 5. Tarjetas horizontales pastel luminosas ("Analíticas", "Efectivo", "Meta") */}
           <section className="px-4 mb-4">
