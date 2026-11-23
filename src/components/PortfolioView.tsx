@@ -154,27 +154,49 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     }
   };
 
-  const closedPositions = (degiroData.closedPositions || []) as any[];
-  const baseAccountSummary = degiroData.accountSummary || {
-    cuentaCompleta: 17544.78,
-    cartera: 17124.86,
-    efectivoEur: 419.92,
-    margenLibre: 954.81,
-    diaBp: 1939.91,
-    diaBpPct: 12.43,
-    totalBpDegiro: 15493.45,
-    historicoCerradoPnl: 23915.65,
-  };
+  const isDefaultDegiroPortfolio =
+    activePortfolio.isDefault === true ||
+    activePortfolio.id === (portfolios[0]?.id || 'port-main');
 
-  // Dinámicas en tiempo real a partir de las cotizaciones y posiciones actuales
-  const liveCarteraVal = positions.reduce((acc, p) => acc + (p.totalValue || 0), 0);
-  const liveEfectivoEur = cash !== undefined ? cash : baseAccountSummary.efectivoEur;
+  const closedPositions = isDefaultDegiroPortfolio
+    ? ((degiroData.closedPositions || []) as any[])
+    : [];
+
+  const baseAccountSummary = isDefaultDegiroPortfolio
+    ? degiroData.accountSummary || {
+        cuentaCompleta: 17544.78,
+        cartera: 17124.86,
+        efectivoEur: 419.92,
+        margenLibre: 954.81,
+        diaBp: 1939.91,
+        diaBpPct: 12.43,
+        totalBpDegiro: 15493.45,
+        historicoCerradoPnl: 23915.65,
+        totalTrades: 0,
+      }
+    : {
+        cuentaCompleta: 0,
+        cartera: 0,
+        efectivoEur: 0,
+        margenLibre: 0,
+        diaBp: 0,
+        diaBpPct: 0,
+        totalBpDegiro: 0,
+        historicoCerradoPnl: 0,
+        totalTrades: 0,
+      };
+
+  // Dinámicas en tiempo real a partir de las cotizaciones y posiciones actuales de ESTA cartera
+  const liveCarteraVal = Number(positions.reduce((acc, p) => acc + (p.totalValue || 0), 0).toFixed(2));
+  const liveEfectivoEur = Number((cash || 0).toFixed(2));
   const liveCuentaCompleta = Number((liveCarteraVal + liveEfectivoEur).toFixed(2));
   const liveDiaBp = Number(positions.reduce((acc, p) => acc + (p.dailyChangeValue || 0), 0).toFixed(2));
   const liveDiaBpPct = (liveCarteraVal - liveDiaBp) > 0 ? Number(((liveDiaBp / (liveCarteraVal - liveDiaBp)) * 100).toFixed(2)) : 0;
-  // Total B/P oficial DEGIRO = Cuenta Completa actual - Capital Neto Histórico en Cuenta (2.051,33 € verificado al céntimo en todas las capturas de DEGIRO)
-  const liveTotalBp = Number((liveCuentaCompleta - 2051.33).toFixed(2));
-  const liveMargenLibre = Number((liveEfectivoEur * 2.274).toFixed(2)); // 954.81 en captura
+  // Total B/P: solo usa la fórmula histórica DEGIRO en la cartera DEGIRO; en cualquier cartera nueva (MyInvestor, etc.) usa el P/G real de sus posiciones
+  const liveTotalBp = isDefaultDegiroPortfolio
+    ? Number((liveCuentaCompleta - 2051.33).toFixed(2))
+    : Number(positions.reduce((acc, p) => acc + (p.unrealizedGainLoss || 0), 0).toFixed(2));
+  const liveMargenLibre = isDefaultDegiroPortfolio ? Number((liveEfectivoEur * 2.274).toFixed(2)) : 0;
 
   const accountSummary = {
     ...baseAccountSummary,
@@ -190,13 +212,18 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   // Métricas calculadas
   const metrics = calculatePortfolioMetrics(positions, cash);
   const rawChartPoints = MOCK_CHART_DATA[selectedTimeRange] || MOCK_CHART_DATA['1D'];
-  const chartPoints = rawChartPoints.length > 0
-    ? rawChartPoints.map((pt, idx) =>
-        idx === rawChartPoints.length - 1
-          ? { ...pt, value: liveCuentaCompleta, change: selectedTimeRange === '1D' ? liveDiaBp : liveTotalBp }
-          : pt
-      )
-    : rawChartPoints;
+  const chartPoints = isDefaultDegiroPortfolio
+    ? rawChartPoints.length > 0
+      ? rawChartPoints.map((pt, idx) =>
+          idx === rawChartPoints.length - 1
+            ? { ...pt, value: liveCuentaCompleta, change: selectedTimeRange === '1D' ? liveDiaBp : liveTotalBp }
+            : pt
+        )
+      : rawChartPoints
+    : [
+        { date: 'Inicio', label: 'Inicio', value: Math.max(liveCuentaCompleta - liveTotalBp, 0), change: 0, changePct: 0 },
+        { date: 'Hoy', label: 'Hoy', value: liveCuentaCompleta, change: liveTotalBp, changePct: liveDiaBpPct },
+      ];
 
   // Formato cabecera idéntico al de la captura de pantalla con cifras dinámicas en vivo
   const headerFormatted = formatHeaderEUR(accountSummary.cuentaCompleta, hideFigures);
@@ -507,18 +534,22 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               </span>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <span className={`inline-flex items-center gap-1 ${accountSummary.totalBpDegiro >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold'}`}>
-                <span>Total B/P (DEGIRO):</span>
+                <span>{isDefaultDegiroPortfolio ? 'Total B/P (DEGIRO):' : 'Total B/P:'}</span>
                 <span>{accountSummary.totalBpDegiro > 0 ? '+' : ''}{formatEUR(accountSummary.totalBpDegiro, hideFigures)}</span>
               </span>
             </div>
 
-            {/* Fila de desglose DEGIRO: Cartera + EUR + Margen Libre */}
+            {/* Fila de desglose: Cartera + EUR (+ Margen Libre solo en DEGIRO) */}
             <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
               <span>Cartera: <strong className="text-slate-800 dark:text-slate-200">{formatEUR(accountSummary.cartera, hideFigures)}</strong></span>
               <span>•</span>
               <span>EUR: <strong className="text-emerald-500">{formatEUR(accountSummary.efectivoEur, hideFigures)}</strong></span>
-              <span>•</span>
-              <span>Margen libre: <strong className="text-slate-700 dark:text-slate-300">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong></span>
+              {isDefaultDegiroPortfolio && (
+                <>
+                  <span>•</span>
+                  <span>Margen libre: <strong className="text-slate-700 dark:text-slate-300">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong></span>
+                </>
+              )}
             </div>
 
             {/* Indicador de actualización de cotizaciones en tiempo real */}
@@ -645,8 +676,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
           </section>
 
-          {/* Historial Global DEGIRO & Rendimiento Realizado */}
-          {tradingAnalytics && (
+          {/* Historial Global DEGIRO & Rendimiento Realizado (solo en cartera DEGIRO) */}
+          {isDefaultDegiroPortfolio && tradingAnalytics && (
             <section className="px-4 mb-4">
               <div className="bg-gradient-to-br from-slate-900 to-slate-950 dark:from-slate-900/90 dark:to-slate-950/90 text-white rounded-3xl p-4 shadow-xl border border-slate-800">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
@@ -1158,7 +1189,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   </div>
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 block font-semibold">Total Operaciones</span>
-                    <span className="text-xs font-bold text-slate-200">{accountSummary.totalTrades} trades (2018–2026)</span>
+                    <span className="text-xs font-bold text-slate-200">
+                      {accountSummary.totalTrades} trades{isDefaultDegiroPortfolio ? ' (2018–2026)' : ''}
+                    </span>
                   </div>
                 </div>
 

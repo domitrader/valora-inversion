@@ -142,6 +142,7 @@ export interface PortfolioMeta {
   currency: 'EUR' | 'USD' | 'GBP';
   createdAt: string;
   isDefault?: boolean;
+  cash?: number;
 }
 
 export interface TradingAnalytics {

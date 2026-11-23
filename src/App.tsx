@@ -208,12 +208,20 @@ export const App: React.FC = () => {
     }));
   };
 
-  // Update available cash
+  // Update available cash independently per portfolio
   const handleUpdateCash = (newCash: number) => {
-    setPortfolioState((prev) => ({
-      ...prev,
-      cash: Math.max(0, newCash),
-    }));
+    const cleanCash = Math.max(0, newCash);
+    setPortfolioState((prev) => {
+      const defaultPortId = prev.portfolios[0]?.id || 'port-main';
+      const isDefault = prev.activePortfolioId === defaultPortId;
+      return {
+        ...prev,
+        cash: isDefault ? cleanCash : prev.cash,
+        portfolios: prev.portfolios.map((p) =>
+          p.id === prev.activePortfolioId ? { ...p, cash: cleanCash } : p
+        ),
+      };
+    });
   };
 
   // Update an existing position
@@ -423,7 +431,7 @@ export const App: React.FC = () => {
     }));
   };
 
-  // Add new portfolio
+  // Add new portfolio (siempre empieza 100% limpia con 0,00 € de efectivo)
   const handleAddPortfolio = (name: string) => {
     const clean = name.trim();
     if (!clean) return;
@@ -432,6 +440,7 @@ export const App: React.FC = () => {
       name: clean,
       currency: portfolioState.currency,
       createdAt: new Date().toISOString(),
+      cash: 0,
     };
     setPortfolioState((prev) => ({
       ...prev,
@@ -515,7 +524,14 @@ export const App: React.FC = () => {
               onAddPortfolio={handleAddPortfolio}
               onRenamePortfolio={handleRenamePortfolio}
               onDeletePortfolio={handleDeletePortfolio}
-              cash={portfolioState.cash}
+              cash={(() => {
+                const defaultPortId = portfolioState.portfolios[0]?.id || 'port-main';
+                const activePort = portfolioState.portfolios.find(p => p.id === portfolioState.activePortfolioId);
+                if (portfolioState.activePortfolioId === defaultPortId) {
+                  return activePort?.cash !== undefined ? activePort.cash : portfolioState.cash;
+                }
+                return activePort?.cash ?? 0;
+              })()}
               goalAmount={portfolioState.goalAmount}
               hideFigures={portfolioState.hideFigures}
               selectedTimeRange={portfolioState.selectedTimeRange}
