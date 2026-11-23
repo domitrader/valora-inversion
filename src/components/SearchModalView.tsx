@@ -147,10 +147,10 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     });
   }, [searchTerm, selectedFilter, onlyZeroDoubleTax, onlyDegiroCore]);
 
-  // Filtrado de resultados online según la pestaña seleccionada
+  // Buscador global sin filtros: muestra todos los resultados encontrados online (acciones, ETFs, fondos, cripto)
   const filteredOnlineResults = useMemo(() => {
-    return onlineResults.filter(a => selectedFilter === 'Todos' || a.type === selectedFilter);
-  }, [onlineResults, selectedFilter]);
+    return onlineResults;
+  }, [onlineResults]);
 
   // Agrupación para la vista de inicio vacía
   const accionesList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'Acciones'), []);

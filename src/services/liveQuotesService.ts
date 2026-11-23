@@ -347,14 +347,15 @@ export const liveQuotesService = {
   },
 
   /**
-   * Busca activos globales en tiempo real desde 1 sola letra (ej. "v" -> Visa, Vanguard VOO, VWCE, Verizon, Vidrala...)
-   * Conecta en paralelo a 2 APIs gratuitas:
-   *  1) TradingView Global Scanner (CORS nativo, bolsas principales EE.UU. y Europa, precios en vivo, soporte Acciones y ETFs)
-   *  2) Yahoo Finance Global Search + CoinGecko Search (cobertura extra de ETFs UCITS, ISINs, fondos y cripto)
+   * Buscador global SIN FILTROS restrictivos: encuentra acciones, ETFs, ETNs, fondos y cripto en TODAS las bolsas del mundo
+   * desde 1 sola letra (ej. "v", "AIFSG", "AIFS", "QQQ3", "IE000X59ZHE2").
+   * Conecta en paralelo a:
+   *  1) TradingView Global Scanner (SIN filtro de bolsas ni tipos, precios en vivo)
+   *  2) Yahoo Finance Global Search + CoinGecko Search
    */
   async searchGlobalMarketAssets(
     query: string,
-    filterType: 'Todos' | 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Todos'
+    _filterType: 'Todos' | 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Todos'
   ): Promise<Array<{
     symbol: string;
     yahooSymbol: string;
@@ -372,31 +373,24 @@ export const liveQuotesService = {
     const upperClean = clean.toUpperCase();
     const isSingleChar = clean.length === 1;
     const matchPattern = isSingleChar ? `^${clean}` : clean;
-    const majorExchanges = ['NYSE', 'NASDAQ', 'AMEX', 'ARCA', 'BME', 'XETR', 'EURONEXT', 'LSE', 'MIL', 'SIX'];
 
-    const runTvScan = async (
-      field: 'name' | 'description',
-      assetKind: 'stock' | 'etf'
-    ) => {
+    // Detectar tickers estilo Investing/Reuters Alemania que acaban en 'G' (ej. AIFSG -> AIFS en Xetra)
+    const strippedGermanTicker =
+      clean.length >= 5 && upperClean.endsWith('G') && !clean.includes(' ')
+        ? clean.slice(0, -1)
+        : null;
+
+    const runTvScan = async (field: 'name' | 'description', term: string) => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
       try {
-        const isEtf = assetKind === 'etf';
         const res = await fetch('https://scanner.tradingview.com/global/scan', {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
           body: JSON.stringify({
-            filter: [
-              { left: field, operation: 'match', right: matchPattern },
-              { left: 'exchange', operation: 'in_range', right: majorExchanges },
-            ],
-            symbols: { query: { types: isEtf ? ['fund'] : ['stock', 'dr'] } },
+            filter: [{ left: field, operation: 'match', right: term }],
             columns: ['name', 'description', 'exchange', 'close', 'change', 'currency', 'type'],
-            sort: {
-              sortBy: isEtf ? 'aum' : 'market_cap_basic',
-              sortOrder: 'desc',
-            },
-            range: [0, 30],
+            range: [0, 40],
           }),
           signal: controller.signal,
         });
@@ -410,11 +404,11 @@ export const liveQuotesService = {
       }
     };
 
-    const runYahooSearch = async (): Promise<any[]> => {
+    const runYahooSearch = async (term: string): Promise<any[]> => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 4500);
       try {
-        const yUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=20&newsCount=0&enableFuzzyQuery=false`;
+        const yUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(term)}&quotesCount=25&newsCount=0&enableFuzzyQuery=true`;
         const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yUrl)}`, {
           signal: controller.signal,
         });
@@ -429,7 +423,6 @@ export const liveQuotesService = {
     };
 
     const runCoinGeckoSearch = async (): Promise<any[]> => {
-      if (filterType !== 'Todos' && filterType !== 'Cripto') return [];
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 4000);
       try {
@@ -446,21 +439,27 @@ export const liveQuotesService = {
       }
     };
 
-    const tvTasks: Promise<any[]>[] = [];
-    if (filterType === 'Todos' || filterType === 'Acciones') {
-      tvTasks.push(runTvScan('name', 'stock'), runTvScan('description', 'stock'));
-    }
-    if (filterType === 'Todos' || filterType === 'ETFs' || filterType === 'Fondos') {
-      tvTasks.push(runTvScan('name', 'etf'), runTvScan('description', 'etf'));
+    const tvTasks: Promise<any[]>[] = [
+      runTvScan('name', matchPattern),
+      runTvScan('description', matchPattern),
+    ];
+    if (strippedGermanTicker) {
+      tvTasks.push(runTvScan('name', strippedGermanTicker));
     }
 
-    const [tvGroups, yahooQuotes, cgCoins] = await Promise.all([
+    const yahooTasks: Promise<any[]>[] = [runYahooSearch(clean)];
+    if (strippedGermanTicker) {
+      yahooTasks.push(runYahooSearch(strippedGermanTicker));
+    }
+
+    const [tvGroups, yahooGroups, cgCoins] = await Promise.all([
       Promise.all(tvTasks),
-      runYahooSearch(),
+      Promise.all(yahooTasks),
       runCoinGeckoSearch(),
     ]);
 
     const combinedTv = tvGroups.flat();
+    const yahooQuotes = yahooGroups.flat();
     const seen = new Set<string>();
     const results: Array<{
       symbol: string;
@@ -472,7 +471,10 @@ export const liveQuotesService = {
       assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto';
       priceEUR: number;
       changePct: number;
+      _priority: number;
     }> = [];
+
+    const majorExchSet = new Set(['NYSE', 'NASDAQ', 'AMEX', 'ARCA', 'BME', 'XETR', 'EURONEXT', 'LSE', 'MIL', 'SIX', 'FWB', 'GETTEX', 'TRADEGATE']);
 
     for (const item of combinedTv) {
       const s = String(item?.s || '');
@@ -486,6 +488,8 @@ export const liveQuotesService = {
       const rawChange = Number(d[4] || 0);
       const currency = String(d[5] || 'EUR');
       const tvType = String(d[6] || 'stock').toLowerCase();
+
+      if (tvType === 'economic' || exch === 'ECONOMICS') continue;
 
       if (isSingleChar && !ticker.startsWith(upperClean) && !desc.toUpperCase().startsWith(upperClean)) {
         continue;
@@ -517,8 +521,9 @@ export const liveQuotesService = {
       }
 
       const fullSym = ticker.includes('.') || ticker.includes('-') ? ticker : `${ticker}${yahooSuffix}`;
-      if (seen.has(fullSym)) continue;
-      seen.add(fullSym);
+      const dedupeKey = `${exch}:${ticker}`;
+      if (seen.has(dedupeKey)) continue;
+      seen.add(dedupeKey);
 
       let priceEUR = rawClose;
       if (currency === 'USD') {
@@ -536,7 +541,12 @@ export const liveQuotesService = {
         assetType = 'Cripto';
       }
 
-      if (filterType !== 'Todos' && assetType !== filterType) continue;
+      const targetUpper = strippedGermanTicker ? strippedGermanTicker.toUpperCase() : upperClean;
+      let priority = majorExchSet.has(exch) ? 20 : 0;
+      if (ticker === upperClean || ticker === targetUpper) priority += 50;
+      else if (ticker.startsWith(upperClean)) priority += 25;
+      else if (desc.toUpperCase().startsWith(upperClean)) priority += 15;
+      if (rawClose > 0) priority += 5;
 
       results.push({
         symbol: fullSym,
@@ -548,6 +558,7 @@ export const liveQuotesService = {
         assetType,
         priceEUR: Number(priceEUR.toFixed(2)),
         changePct: Number(rawChange.toFixed(2)),
+        _priority: priority,
       });
     }
 
@@ -555,21 +566,18 @@ export const liveQuotesService = {
       const sym = String(q?.symbol || '').toUpperCase();
       const name = String(q?.longname || q?.shortname || sym);
       const qType = String(q?.quoteType || '').toUpperCase();
-      if (!sym || seen.has(sym)) continue;
-      if (!['EQUITY', 'ETF', 'MUTUALFUND', 'CRYPTOCURRENCY'].includes(qType)) continue;
+      if (!sym || seen.has(`YF:${sym}`)) continue;
 
       if (isSingleChar && !sym.startsWith(upperClean) && !name.toUpperCase().startsWith(upperClean)) {
         continue;
       }
 
       let assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Acciones';
-      if (qType === 'ETF') assetType = 'ETFs';
+      if (qType === 'ETF' || name.toUpperCase().includes('ETF') || name.toUpperCase().includes('UCITS')) assetType = 'ETFs';
       else if (qType === 'MUTUALFUND') assetType = 'Fondos';
       else if (qType === 'CRYPTOCURRENCY') assetType = 'Cripto';
 
-      if (filterType !== 'Todos' && assetType !== filterType) continue;
-
-      seen.add(sym);
+      seen.add(`YF:${sym}`);
       let countryFlag = '🌐';
       if (sym.endsWith('.MC')) countryFlag = '🇪🇸';
       else if (sym.endsWith('.DE') || sym.endsWith('.F')) countryFlag = '🇩🇪';
@@ -584,22 +592,23 @@ export const liveQuotesService = {
         yahooSymbol: sym,
         name,
         exchange: String(q?.exchDisp || q?.exchange || 'Global'),
-        quoteType: qType,
+        quoteType: qType || 'EQUITY',
         countryFlag,
         assetType,
         priceEUR: 0,
         changePct: 0,
+        _priority: sym.split('.')[0] === upperClean ? 45 : 10,
       });
     }
 
     for (const c of cgCoins) {
       const sym = String(c?.symbol || '').toUpperCase();
       const name = String(c?.name || sym);
-      if (!sym || seen.has(`${sym}-EUR`)) continue;
+      if (!sym || seen.has(`CG:${sym}`)) continue;
       if (isSingleChar && !sym.startsWith(upperClean) && !name.toUpperCase().startsWith(upperClean)) {
         continue;
       }
-      seen.add(`${sym}-EUR`);
+      seen.add(`CG:${sym}`);
       results.push({
         symbol: `${sym}-EUR`,
         yahooSymbol: `${sym}-EUR`,
@@ -610,17 +619,11 @@ export const liveQuotesService = {
         assetType: 'Cripto',
         priceEUR: 0,
         changePct: 0,
+        _priority: sym === upperClean ? 40 : 5,
       });
     }
 
-    results.sort((a, b) => {
-      const aExact = a.symbol.split('.')[0] === upperClean ? 3 : a.symbol.startsWith(upperClean) ? 2 : a.name.toUpperCase().startsWith(upperClean) ? 1 : 0;
-      const bExact = b.symbol.split('.')[0] === upperClean ? 3 : b.symbol.startsWith(upperClean) ? 2 : b.name.toUpperCase().startsWith(upperClean) ? 1 : 0;
-      if (bExact !== aExact) return bExact - aExact;
-      if ((b.priceEUR > 0 ? 1 : 0) !== (a.priceEUR > 0 ? 1 : 0)) return (b.priceEUR > 0 ? 1 : 0) - (a.priceEUR > 0 ? 1 : 0);
-      return 0;
-    });
-
-    return results.slice(0, 45);
+    results.sort((a, b) => b._priority - a._priority);
+    return results.slice(0, 60).map(({ _priority, ...rest }) => rest);
   },
 };
