@@ -345,14 +345,32 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-xs font-extrabold shadow-xs active:scale-95 transition"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          <span>Añadir activo</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          {activeList.id !== 'default' && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm(`¿Eliminar la lista "${activeList.name}" y sus activos?`)) {
+                  onDeleteList(activeList.id);
+                }
+              }}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-xs font-bold hover:bg-rose-100 active:scale-95 transition"
+              title={`Eliminar lista "${activeList.name}"`}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Borrar</span>
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-xs font-extrabold shadow-xs active:scale-95 transition"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Añadir activo</span>
+          </button>
+        </div>
       </div>
 
       {/* 5. Lista de Activos en la Cartera/Lista Activa */}
