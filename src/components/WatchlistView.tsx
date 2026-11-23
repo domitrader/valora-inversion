@@ -23,6 +23,7 @@ interface WatchlistViewProps {
   activeListId: string;
   onSelectList: (listId: string) => void;
   onCreateList: (name: string) => void;
+  onRenameList: (listId: string, newName: string) => void;
   onDeleteList: (listId: string) => void;
   onUpdateWatchlistItem: (updated: WatchlistItem) => void;
   onOpenSearch: () => void;
@@ -44,6 +45,7 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   activeListId,
   onSelectList,
   onCreateList,
+  onRenameList,
   onDeleteList,
   onUpdateWatchlistItem,
   onOpenSearch,
@@ -308,6 +310,22 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
                         <span className="text-[10px] opacity-75">({count})</span>
                       </span>
                       {isSelected && <Check className="w-4 h-4 stroke-[2.5] shrink-0" />}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation();
+                        const nextName = prompt('Nuevo nombre para esta lista:', list.name);
+                        if (nextName && nextName.trim()) {
+                          onRenameList(list.id, nextName.trim());
+                          setShowListDropdown(false);
+                        }
+                      }}
+                      className="p-2.5 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/40 transition shrink-0"
+                      title={`Renombrar "${list.name}"`}
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
                     </button>
 
                     {list.id !== 'default' && (

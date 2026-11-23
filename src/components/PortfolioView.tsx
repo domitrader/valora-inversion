@@ -6,6 +6,7 @@ import {
   AssetType,
   FinancialEvent,
   TradingAnalytics,
+  PortfolioMeta,
 } from '../types/portfolio';
 import {
   formatEUR,
@@ -49,10 +50,17 @@ import {
   Menu,
   Briefcase,
   Coins,
+  Edit3,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
   positions: PositionItem[];
+  portfolios?: PortfolioMeta[];
+  activePortfolioId?: string;
+  onSwitchPortfolio?: (id: string) => void;
+  onAddPortfolio?: (name: string) => void;
+  onRenamePortfolio?: (id: string, newName: string) => void;
+  onDeletePortfolio?: (id: string) => void;
   cash: number;
   goalAmount: number;
   hideFigures: boolean;
@@ -74,6 +82,12 @@ interface PortfolioViewProps {
 
 export const PortfolioView: React.FC<PortfolioViewProps> = ({
   positions,
+  portfolios = [],
+  activePortfolioId = 'port-main',
+  onSwitchPortfolio,
+  onAddPortfolio,
+  onRenamePortfolio,
+  onDeletePortfolio,
   cash,
   goalAmount,
   hideFigures,
@@ -92,6 +106,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   isRefreshingLive = false,
   lastUpdatedTime,
 }) => {
+  const activePortfolio = portfolios.find(p => p.id === activePortfolioId) || portfolios[0] || { id: 'port-main', name: 'DEGIRO', currency: 'EUR', createdAt: '' };
   const [activeSubTab, setActiveSubTab] = useState<InicioSubTab>('portafolio');
   const [selectedAssetFilter, setSelectedAssetFilter] = useState<'Todos' | AssetType>('Todos');
   const [showSortMenu, setShowSortMenu] = useState(false);
@@ -253,7 +268,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </h1>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
               {activeSubTab === 'portafolio'
-                ? 'DEGIRO · Cartera en vivo'
+                ? `${activePortfolio.name} · Cartera en vivo`
                 : activeSubTab === 'dividendos'
                   ? 'Auditoría 2018–2026 y Mapa Futuro'
                   : 'Mapa de Calor y Rendimiento Real'}
@@ -305,12 +320,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               </button>
             </div>
 
-            <nav className="space-y-1.5 flex-1">
+            <nav className="space-y-1.5 flex-1 overflow-y-auto">
               {(
                 [
                   {
                     id: 'portafolio' as InicioSubTab,
-                    label: 'Portafolio (DEGIRO)',
+                    label: `Portafolio (${activePortfolio.name})`,
                     subtitle: 'Posiciones, Día +/- y Total +/- en vivo',
                     icon: Briefcase,
                     color: 'text-sky-500',
@@ -367,10 +382,95 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   </button>
                 );
               })}
+
+              {/* SECCIÓN: MIS CARTERAS (CREAR, CAMBIAR, RENOMBRAR Y ELIMINAR) */}
+              {portfolios.length > 0 && (
+                <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      Mis Carteras ({portfolios.length})
+                    </span>
+                    {onAddPortfolio && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = prompt('Nombre de la nueva cartera (ej. MyInvestor, Trade Republic):');
+                          if (name && name.trim()) {
+                            onAddPortfolio(name.trim());
+                            setActiveSubTab('portafolio');
+                            setHomeDrawerOpen(false);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-extrabold text-sky-600 dark:text-sky-400 hover:underline"
+                      >
+                        <Plus className="w-3 h-3" />
+                        Nueva cartera
+                      </button>
+                    )}
+                  </div>
+
+                  {portfolios.map(port => {
+                    const isSelected = port.id === activePortfolio.id;
+                    return (
+                      <div key={port.id} className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onSwitchPortfolio?.(port.id);
+                            setActiveSubTab('portafolio');
+                            setHomeDrawerOpen(false);
+                          }}
+                          className={`flex-1 flex items-center justify-between px-3 py-2 rounded-xl text-xs font-extrabold transition ${
+                            isSelected
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <span className="truncate">{port.name}</span>
+                          {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
+                        </button>
+
+                        {onRenamePortfolio && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              const nextName = prompt('Nuevo nombre para esta cartera:', port.name);
+                              if (nextName && nextName.trim()) {
+                                onRenamePortfolio(port.id, nextName.trim());
+                              }
+                            }}
+                            className="p-2 rounded-xl text-slate-500 hover:text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-950/40 transition shrink-0"
+                            title={`Renombrar "${port.name}"`}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {onDeletePortfolio && portfolios.length > 1 && !port.isDefault && (
+                          <button
+                            type="button"
+                            onClick={e => {
+                              e.stopPropagation();
+                              if (confirm(`¿Eliminar la cartera "${port.name}" y sus posiciones?`)) {
+                                onDeletePortfolio(port.id);
+                              }
+                            }}
+                            className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition shrink-0"
+                            title={`Eliminar "${port.name}"`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </nav>
 
             <div className="pt-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-slate-400 text-center">
-              Cartera DEGIRO · Domingo (2018–2026)
+              {activePortfolio.name} · Domingo
             </div>
           </aside>
         </div>

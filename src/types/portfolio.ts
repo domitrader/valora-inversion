@@ -69,6 +69,7 @@ export interface PositionItem {
   nextEarningsDate?: string;
   status?: 'Abierta' | 'Cerrada';
   broker?: string;
+  portfolioId?: string;
 }
 
 export interface WatchlistItem {

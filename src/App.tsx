@@ -248,8 +248,11 @@ export const App: React.FC = () => {
     >
   ) => {
     setPortfolioState((prev) => {
+      const defaultPortId = prev.portfolios[0]?.id || 'port-main';
       const existingIndex = prev.positions.findIndex(
-        (p) => p.ticker.toUpperCase() === rawPos.ticker.toUpperCase()
+        (p) =>
+          p.ticker.toUpperCase() === rawPos.ticker.toUpperCase() &&
+          (p.portfolioId || defaultPortId) === prev.activePortfolioId
       );
 
       let updatedPositions: PositionItem[];
@@ -285,6 +288,7 @@ export const App: React.FC = () => {
         const newPosition: PositionItem = {
           ...rawPos,
           id: `pos-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          portfolioId: prev.activePortfolioId,
           totalValue: Number(totalValue.toFixed(2)),
           unrealizedGainLoss: Number(unrealizedGainLoss.toFixed(2)),
           unrealizedGainLossPct: Number(unrealizedGainLossPct.toFixed(2)),
@@ -395,6 +399,22 @@ export const App: React.FC = () => {
     }));
   };
 
+  // Rename watchlist list
+  const handleRenameWatchlistList = (listId: string, newName: string) => {
+    const clean = newName.trim();
+    if (!clean) return;
+    setPortfolioState((prev) => {
+      const base =
+        prev.watchlistLists && prev.watchlistLists.length > 0
+          ? prev.watchlistLists
+          : [{ id: 'default', name: 'Favoritos', createdAt: '2026-01-01' }];
+      return {
+        ...prev,
+        watchlistLists: base.map((l) => (l.id === listId ? { ...l, name: clean } : l)),
+      };
+    });
+  };
+
   // Portfolio switching
   const handleSwitchPortfolio = (portfolioId: string) => {
     setPortfolioState((prev) => ({
@@ -405,9 +425,11 @@ export const App: React.FC = () => {
 
   // Add new portfolio
   const handleAddPortfolio = (name: string) => {
+    const clean = name.trim();
+    if (!clean) return;
     const newPort = {
       id: `port-${Date.now()}`,
-      name,
+      name: clean,
       currency: portfolioState.currency,
       createdAt: new Date().toISOString(),
     };
@@ -416,6 +438,31 @@ export const App: React.FC = () => {
       portfolios: [...prev.portfolios, newPort],
       activePortfolioId: newPort.id,
     }));
+  };
+
+  // Rename any main portfolio (including DEGIRO)
+  const handleRenamePortfolio = (portfolioId: string, newName: string) => {
+    const clean = newName.trim();
+    if (!clean) return;
+    setPortfolioState((prev) => ({
+      ...prev,
+      portfolios: prev.portfolios.map((p) => (p.id === portfolioId ? { ...p, name: clean } : p)),
+    }));
+  };
+
+  // Delete extra main portfolio
+  const handleDeletePortfolio = (portfolioId: string) => {
+    setPortfolioState((prev) => {
+      if (prev.portfolios.length <= 1) return prev;
+      const remaining = prev.portfolios.filter((p) => p.id !== portfolioId);
+      const nextActive = prev.activePortfolioId === portfolioId ? remaining[0].id : prev.activePortfolioId;
+      return {
+        ...prev,
+        portfolios: remaining,
+        activePortfolioId: nextActive,
+        positions: prev.positions.filter((pos) => pos.portfolioId !== portfolioId),
+      };
+    });
   };
 
   // Theme change
@@ -457,7 +504,17 @@ export const App: React.FC = () => {
         <main className="flex-1">
           {activeTab === 'inicio' && (
             <PortfolioView
-              positions={portfolioState.positions}
+              positions={portfolioState.positions.filter(
+                (p) =>
+                  (p.portfolioId || portfolioState.portfolios[0]?.id || 'port-main') ===
+                  portfolioState.activePortfolioId
+              )}
+              portfolios={portfolioState.portfolios}
+              activePortfolioId={portfolioState.activePortfolioId}
+              onSwitchPortfolio={handleSwitchPortfolio}
+              onAddPortfolio={handleAddPortfolio}
+              onRenamePortfolio={handleRenamePortfolio}
+              onDeletePortfolio={handleDeletePortfolio}
               cash={portfolioState.cash}
               goalAmount={portfolioState.goalAmount}
               hideFigures={portfolioState.hideFigures}
@@ -501,6 +558,7 @@ export const App: React.FC = () => {
               activeListId={activeWatchlistListId}
               onSelectList={setActiveWatchlistListId}
               onCreateList={handleCreateWatchlistList}
+              onRenameList={handleRenameWatchlistList}
               onDeleteList={handleDeleteWatchlistList}
               onUpdateWatchlistItem={handleUpdateWatchlistItem}
               onOpenSearch={() => handleOpenSearch()}
