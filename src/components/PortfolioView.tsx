@@ -304,7 +304,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         style={{ backgroundImage: `url(${earthGlobeHeader})` }}
         aria-hidden="true"
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-100/20 via-white/30 to-white dark:from-slate-950/70 dark:via-slate-950/85 dark:to-[#0B0F19]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-50/15 via-white/55 to-white dark:from-slate-950/70 dark:via-slate-950/85 dark:to-[#0B0F19]" />
       </div>
 
       {/* 1. Cabecera con Menú Lateral Izquierdo (☰), Sección Activa, Lupa y Avatar Dorado */}
@@ -313,32 +313,33 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           <button
             type="button"
             onClick={() => setHomeDrawerOpen(true)}
-            className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-100 shadow-[0_4px_14px_rgba(14,165,233,0.2)] hover:bg-white active:scale-95 transition-all shrink-0"
+            className="w-10 h-10 rounded-full bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0B2246] dark:text-slate-100 shadow-[0_4px_14px_rgba(14,165,233,0.2)] hover:bg-white active:scale-95 transition-all shrink-0"
             title="Abrir menú de Inicio"
           >
-            <Menu className="w-5 h-5 stroke-[2.3]" />
+            <Menu className="w-5 h-5 stroke-[2.4]" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-[20px] font-black tracking-tight text-[#0B2246] dark:text-white leading-tight truncate drop-shadow-[0_1px_4px_rgba(255,255,255,0.85)] dark:drop-shadow-none">
+            <h1 className="text-[20px] font-black tracking-tight text-[#061838] dark:text-white leading-tight truncate drop-shadow-[0_1px_6px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
               {activeSubTab === 'portafolio'
                 ? 'Portafolio'
                 : activeSubTab === 'dividendos'
                   ? 'Dividendos'
                   : 'Zona de Gráficos'}
             </h1>
-            <p className="text-[11px] text-[#173A6A]/85 dark:text-slate-300 font-bold truncate flex items-center gap-1.5 mt-0.5 drop-shadow-[0_1px_3px_rgba(255,255,255,0.85)] dark:drop-shadow-none">
+            <p className="text-[11px] text-[#0B2246] dark:text-slate-200 font-extrabold truncate flex items-center gap-1.5 mt-0.5 drop-shadow-[0_1px_5px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
               {activeSubTab === 'portafolio' ? (
                 (() => {
                   const norm = activePortfolio.name.toLowerCase().replace(/\s+/g, '');
-                  const brokerLogo = norm.includes('myinvestor')
-                    ? logoMyInvestor
-                    : norm.includes('degiro') || isDefaultDegiroPortfolio
-                      ? logoDegiro
-                      : null;
+                  const brokerLogo =
+                    norm.includes('myinvestor') || norm.includes('myivestor')
+                      ? logoMyInvestor
+                      : norm.includes('degiro') || isDefaultDegiroPortfolio
+                        ? logoDegiro
+                        : null;
                   return (
                     <>
                       {brokerLogo ? (
-                        <span className="inline-flex items-center bg-white/92 px-2 py-0.5 rounded-md shadow-2xs border border-sky-100/80">
+                        <span className="inline-flex items-center bg-white/95 px-2 py-0.5 rounded-md shadow-xs border border-sky-200/80">
                           <img
                             src={brokerLogo}
                             alt={activePortfolio.name}
@@ -348,7 +349,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                       ) : (
                         <span>{activePortfolio.name}</span>
                       )}
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 inline-block shrink-0" />
                       <span className="truncate">Cartera en vivo</span>
                     </>
                   );
@@ -498,11 +499,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   {portfolios.map(port => {
                     const isSelected = port.id === activePortfolio.id;
                     const normPort = port.name.toLowerCase().replace(/\s+/g, '');
-                    const portLogo = normPort.includes('myinvestor')
-                      ? logoMyInvestor
-                      : normPort.includes('degiro') || port.isDefault
-                        ? logoDegiro
-                        : null;
+                    const portLogo =
+                      normPort.includes('myinvestor') || normPort.includes('myivestor')
+                        ? logoMyInvestor
+                        : normPort.includes('degiro') || port.isDefault
+                          ? logoDegiro
+                          : null;
                     return (
                       <div key={port.id} className="flex items-center gap-1">
                         <button
@@ -579,12 +581,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         <>
           {/* 3. Bloque "VALOR DE MERCADO" sobre el horizonte del globo terráqueo */}
           <section className="relative z-10 text-center px-4 pt-2 pb-1">
-            <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-extrabold tracking-widest text-[#16325C] dark:text-slate-200 uppercase mb-0.5 drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)] dark:drop-shadow-none">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500 stroke-[2.6]" />
+            <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-black tracking-widest text-[#081C3E] dark:text-slate-100 uppercase mb-0.5 drop-shadow-[0_1px_6px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 stroke-[2.8]" />
               <span>VALOR DE MERCADO</span>
               <button
                 onClick={onToggleHideFigures}
-                className="text-[#16325C]/80 dark:text-slate-300 hover:text-sky-700 p-0.5 transition-colors"
+                className="text-[#081C3E] dark:text-slate-200 hover:text-sky-700 p-0.5 transition-colors"
                 title={hideFigures ? 'Mostrar cifras' : 'Ocultar cifras'}
               >
                 {hideFigures ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -592,69 +594,72 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
 
             {/* Cifra grande principal formateada: €18.233,10 */}
-            <div className="flex items-baseline justify-center tracking-tight text-[#081C3E] dark:text-white font-black text-[42px] sm:text-[48px] leading-none my-1 drop-shadow-[0_2px_10px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
+            <div className="flex items-baseline justify-center tracking-tight text-[#051430] dark:text-white font-black text-[42px] sm:text-[48px] leading-none my-1 drop-shadow-[0_2px_12px_rgba(255,255,255,0.98)] dark:drop-shadow-none">
               <span className="text-3xl sm:text-4xl font-extrabold mr-0.5">€</span>
               <span>{headerFormatted.integerPart}</span>
               <span className="text-2xl sm:text-3xl font-extrabold">,{headerFormatted.decimalPart}</span>
             </div>
 
-            {/* Fila 1: Día B/P y Total B/P separados limpiamente */}
+            {/* Fila 1: Día B/P y Total B/P con alto contraste y moneda dorada € */}
             <div className="flex items-center justify-center gap-3 text-xs mt-3 px-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/70 flex items-center justify-center shrink-0">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300/90 dark:border-emerald-700/80 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 stroke-[2.3]" />
                 </span>
                 <div className="text-left leading-tight">
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Día B/P</span>
-                  <span className={`text-[11px] font-black ${accountSummary.diaBp >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                  <span className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 block">Día B/P</span>
+                  <span className={`text-[12px] font-black ${accountSummary.diaBp >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {accountSummary.diaBp > 0 ? '+' : ''}{formatEUR(accountSummary.diaBp, hideFigures)} ({accountSummary.diaBpPct > 0 ? '+' : ''}{accountSummary.diaBpPct.toFixed(2)}%)
                   </span>
                 </div>
               </div>
 
-              <span className="h-7 w-px bg-sky-200/80 dark:bg-slate-800" />
+              <span className="h-8 w-px bg-sky-200 dark:bg-slate-700" />
 
               <div className="flex items-center gap-1.5">
-                <span className="w-6 h-6 rounded-full bg-blue-600 text-amber-300 text-[10px] font-black flex items-center justify-center shadow-xs shrink-0">
-                  {isDefaultDegiroPortfolio ? '🇪🇺' : '€'}
+                <span
+                  className="w-7 h-7 rounded-full bg-gradient-to-br from-yellow-300 via-amber-400 to-amber-500 text-[#0B2246] text-sm font-black flex items-center justify-center shadow-[0_3px_10px_rgba(245,158,11,0.45)] ring-2 ring-amber-200/90 border border-yellow-100 shrink-0"
+                  title="Beneficio / Pérdida Total en Euros"
+                >
+                  €
                 </span>
                 <div className="text-left leading-tight">
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                  <span className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 block">
                     {isDefaultDegiroPortfolio ? 'Total B/P (DEGIRO)' : 'Total B/P'}
                   </span>
-                  <span className={`text-[11px] font-black ${accountSummary.totalBpDegiro >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                  <span className={`text-[12px] font-black ${accountSummary.totalBpDegiro >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                     {accountSummary.totalBpDegiro > 0 ? '+' : ''}{formatEUR(accountSummary.totalBpDegiro, hideFigures)}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Fila 2: Desglose Cartera | EUR | Margen libre */}
-            <div className="flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 mt-2.5">
+            {/* Fila 2: Desglose Cartera | EUR | Margen libre con mayor nitidez */}
+            <div className="flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 mt-2.5">
               <span className="inline-flex items-center gap-1">
-                <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center text-[9px]">
+                <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center text-[9px]">
                   <Coins className="w-2.5 h-2.5" />
                 </span>
                 <span>Cartera:</span>
-                <strong className="text-[#0B2246] dark:text-slate-100">{formatEUR(accountSummary.cartera, hideFigures)}</strong>
+                <strong className="text-[#061838] dark:text-white font-extrabold">{formatEUR(accountSummary.cartera, hideFigures)}</strong>
               </span>
-              <span className="text-sky-200 dark:text-slate-700">|</span>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-4 h-4 rounded-full bg-sky-100 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center text-[9px] font-black">
+                <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center text-[9px] font-black">
                   €
                 </span>
                 <span>EUR:</span>
-                <strong className="text-emerald-600 dark:text-emerald-400">{formatEUR(accountSummary.efectivoEur, hideFigures)}</strong>
+                <strong className="text-emerald-700 dark:text-emerald-400 font-extrabold">{formatEUR(accountSummary.efectivoEur, hideFigures)}</strong>
               </span>
               {isDefaultDegiroPortfolio && (
                 <>
-                  <span className="text-sky-200 dark:text-slate-700">|</span>
+                  <span className="text-slate-300 dark:text-slate-700">|</span>
                   <span className="inline-flex items-center gap-1">
-                    <span className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-500 flex items-center justify-center">
+                    <span className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center">
                       <PieChart className="w-2.5 h-2.5" />
                     </span>
                     <span>Margen libre:</span>
-                    <strong className="text-[#0B2246] dark:text-slate-200">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong>
+                    <strong className="text-[#061838] dark:text-slate-100 font-extrabold">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong>
                   </span>
                 </>
               )}
