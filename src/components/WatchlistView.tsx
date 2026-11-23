@@ -178,24 +178,24 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
   };
 
   return (
-    <div className="pb-28 pt-2 px-4 max-w-md mx-auto relative min-h-screen">
-      {/* 1. Cabecera */}
-      <header className="flex items-center justify-between pt-1 pb-3">
+    <div className="pb-28 pt-2 px-4 max-w-md mx-auto relative min-h-screen bg-gradient-to-b from-[#E6F4FE] via-[#F5FAFF] to-white dark:from-[#0B1221] dark:via-[#0B0F19] dark:to-[#0B0F19]">
+      {/* 1. Cabecera azulada luminosa */}
+      <header className="flex items-center justify-between pt-2 pb-3 mb-2 border-b border-sky-100/80 dark:border-slate-800/80 -mx-4 px-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-slate-950 dark:text-white leading-tight">
+          <h1 className="text-2xl font-black tracking-tight text-[#081C3E] dark:text-white leading-tight">
             Seguimiento
           </h1>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+          <p className="text-[11px] text-[#173A6A]/80 dark:text-slate-400 font-semibold">
             Listas de favoritos y carteras simuladas por fecha
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsEditMode(!isEditMode)}
-            className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors border ${
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors border shadow-xs ${
               isEditMode
-                ? 'bg-slate-900 text-white border-slate-900'
-                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100'
+                ? 'bg-sky-600 text-white border-sky-600'
+                : 'bg-white/95 dark:bg-slate-900 border-sky-200/90 dark:border-slate-700 text-[#0F2952] dark:text-slate-200 hover:bg-white'
             }`}
             title="Editar / Eliminar elementos"
           >
@@ -203,14 +203,14 @@ export const WatchlistView: React.FC<WatchlistViewProps> = ({
           </button>
           <button
             onClick={onOpenSearch}
-            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition-colors"
+            className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900 border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-200 shadow-xs hover:bg-white transition-colors"
             title="Buscar activos globalmente"
           >
             <Search className="w-4 h-4 stroke-[2.2]" />
           </button>
           <button
             onClick={onGoToProfile}
-            className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center shadow-xs"
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0F2952] via-[#173566] to-[#0B1D3B] text-white font-black text-xs flex items-center justify-center ring-2 ring-amber-400 border border-amber-200/90 shadow-[0_0_12px_rgba(251,191,36,0.5)] active:scale-95 transition-all"
           >
             DO
           </button>

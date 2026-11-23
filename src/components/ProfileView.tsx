@@ -168,26 +168,26 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   };
 
   return (
-    <div className="pb-28 pt-2 px-4 max-w-md mx-auto">
+    <div className="pb-28 pt-2 px-4 max-w-md mx-auto min-h-screen bg-gradient-to-b from-[#E6F4FE] via-[#F5FAFF] to-white dark:from-[#0B1221] dark:via-[#0B0F19] dark:to-[#0B0F19]">
       {/* 1. Cabecera */}
-      <header className="pt-1 pb-4">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-950">Perfil & Ajustes</h1>
-        <p className="text-xs text-slate-500 font-medium">Configuración de cuenta, carteras y sincronización</p>
+      <header className="pt-2 pb-4">
+        <h1 className="text-3xl font-black tracking-tight text-[#081C3E] dark:text-white">Perfil & Ajustes</h1>
+        <p className="text-xs text-[#173A6A]/80 dark:text-slate-400 font-semibold">Configuración de cuenta, carteras y sincronización</p>
       </header>
 
-      {/* 2. Tarjeta de Usuario */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-4 mb-4 shadow-xs flex items-center gap-3.5">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-slate-900 to-slate-700 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
+      {/* 2. Tarjeta de Usuario con Avatar Dorado */}
+      <div className="fintech-card-blue border border-sky-200/80 dark:border-slate-800 rounded-3xl p-4 mb-4 flex items-center gap-3.5">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#0F2952] via-[#173566] to-[#0B1D3B] text-white font-black text-lg flex items-center justify-center ring-2 ring-amber-400 border-2 border-amber-200/90 shadow-[0_0_18px_rgba(251,191,36,0.55)] shrink-0">
           DO
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="font-extrabold text-slate-900 text-base">Domingo</h2>
-            <span className="text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-full">
+            <h2 className="font-black text-[#081C3E] dark:text-white text-base">Domingo</h2>
+            <span className="text-[10px] font-extrabold bg-sky-100/90 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800 px-2 py-0.5 rounded-full">
               Privada / Familiar
             </span>
           </div>
-          <span className="text-xs text-slate-400">domingo151@gmail.com</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">domingo151@gmail.com</span>
         </div>
       </div>
 

@@ -26,6 +26,7 @@ import { AssetHistoryModal, getAssetHistoryCount } from './AssetHistoryModal';
 import { ChartsHubView } from './ChartsHubView';
 import { formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import degiroData from '../data/degiroPositionsData.json';
+import earthGlobeHeader from '../assets/earth-globe-header.webp';
 import {
   Search,
   Eye,
@@ -42,15 +43,20 @@ import {
   Calendar,
   RefreshCw,
   ChevronDown,
+  ChevronRight,
   Check,
   TrendingUp,
   ArrowDown,
+  ArrowUp,
   ArrowUpDown,
   BarChart3,
   Menu,
   Briefcase,
   Coins,
   Edit3,
+  Zap,
+  Trophy,
+  FileCheck2,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -273,32 +279,47 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const upcomingDividends = events.filter(e => e.type === 'pago-dividendo' || e.type === 'ex-dividend');
 
   return (
-    <div className="pb-24 pt-2">
-      {/* 1. Cabecera con Menú Lateral Izquierdo (☰), Sección Activa, Lupa y Avatar */}
-      <header className="flex items-center justify-between px-4 pt-1 pb-3 sticky top-0 z-20 bg-[#F8FAFC]/95 dark:bg-[#0B0F19]/95 backdrop-blur-md">
+    <div className="pb-28 relative overflow-x-clip">
+      {/* Fondo fotográfico del globo terráqueo azulado en la parte superior */}
+      <div
+        className="pointer-events-none absolute top-0 left-0 right-0 h-[250px] bg-cover bg-top bg-no-repeat select-none"
+        style={{ backgroundImage: `url(${earthGlobeHeader})` }}
+        aria-hidden="true"
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-100/20 via-white/30 to-white dark:from-slate-950/70 dark:via-slate-950/85 dark:to-[#0B0F19]" />
+      </div>
+
+      {/* 1. Cabecera con Menú Lateral Izquierdo (☰), Sección Activa, Lupa y Avatar Dorado */}
+      <header className="relative z-20 flex items-center justify-between px-4 pt-3.5 pb-2.5 sticky top-0 backdrop-blur-[2px]">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
             onClick={() => setHomeDrawerOpen(true)}
-            className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-800 dark:text-slate-100 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shrink-0"
+            className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-100 shadow-[0_4px_14px_rgba(14,165,233,0.2)] hover:bg-white active:scale-95 transition-all shrink-0"
             title="Abrir menú de Inicio"
           >
             <Menu className="w-5 h-5 stroke-[2.3]" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white leading-tight truncate">
+            <h1 className="text-[20px] font-black tracking-tight text-[#0B2246] dark:text-white leading-tight truncate drop-shadow-[0_1px_4px_rgba(255,255,255,0.85)] dark:drop-shadow-none">
               {activeSubTab === 'portafolio'
                 ? 'Portafolio'
                 : activeSubTab === 'dividendos'
                   ? 'Dividendos'
                   : 'Zona de Gráficos'}
             </h1>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
-              {activeSubTab === 'portafolio'
-                ? `${activePortfolio.name} · Cartera en vivo`
-                : activeSubTab === 'dividendos'
-                  ? 'Auditoría 2018–2026 y Mapa Futuro'
-                  : 'Mapa de Calor y Rendimiento Real'}
+            <p className="text-[11px] text-[#173A6A]/85 dark:text-slate-300 font-bold truncate flex items-center gap-1 drop-shadow-[0_1px_3px_rgba(255,255,255,0.85)] dark:drop-shadow-none">
+              {activeSubTab === 'portafolio' ? (
+                <>
+                  <span>{activePortfolio.name}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                  <span>Cartera en vivo</span>
+                </>
+              ) : activeSubTab === 'dividendos' ? (
+                'Auditoría 2018–2026 y Mapa Futuro'
+              ) : (
+                'Mapa de Calor y Rendimiento Real'
+              )}
             </p>
           </div>
         </div>
@@ -306,14 +327,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onOpenSearch}
-            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-200 shadow-[0_4px_14px_rgba(14,165,233,0.18)] hover:bg-white active:scale-95 transition-all"
             title="Buscar activos"
           >
-            <Search className="w-4 h-4 stroke-[2.2]" />
+            <Search className="w-4 h-4 stroke-[2.3]" />
           </button>
           <button
             onClick={onGoToProfile}
-            className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center shadow-xs"
+            className="w-10 h-10 rounded-full bg-gradient-to-br from-[#0F2952] via-[#173566] to-[#0B1D3B] text-white font-black text-xs flex items-center justify-center ring-2 ring-amber-400 border border-amber-200/90 shadow-[0_0_16px_rgba(251,191,36,0.55)] active:scale-95 transition-all"
             title="Perfil de usuario"
           >
             DO
@@ -506,76 +527,116 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       {/* CONTENIDO SEGÚN LA SUB-PESTAÑA ACTIVA */}
       {activeSubTab === 'portafolio' && (
         <>
-          {/* 3. Bloque "VALOR DE MERCADO" con ojo, variación diaria y P/G abierto */}
-          <section className="text-center px-4 pt-1 pb-2">
-            <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-bold tracking-wider text-slate-700 dark:text-slate-300 uppercase mb-0.5">
+          {/* 3. Bloque "VALOR DE MERCADO" sobre el horizonte del globo terráqueo */}
+          <section className="relative z-10 text-center px-4 pt-2 pb-1">
+            <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-extrabold tracking-widest text-[#16325C] dark:text-slate-200 uppercase mb-0.5 drop-shadow-[0_1px_4px_rgba(255,255,255,0.9)] dark:drop-shadow-none">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-500 stroke-[2.6]" />
               <span>VALOR DE MERCADO</span>
               <button
                 onClick={onToggleHideFigures}
-                className="text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 p-0.5 transition-colors"
+                className="text-[#16325C]/80 dark:text-slate-300 hover:text-sky-700 p-0.5 transition-colors"
                 title={hideFigures ? 'Mostrar cifras' : 'Ocultar cifras'}
               >
                 {hideFigures ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
 
-            {/* Cifra grande principal formateada: €15.046,85 */}
-            <div className="flex items-baseline justify-center tracking-tight text-slate-950 dark:text-white font-black text-4xl sm:text-5xl my-0.5">
-              <span className="text-2xl sm:text-3xl font-bold mr-0.5">€</span>
+            {/* Cifra grande principal formateada: €18.233,10 */}
+            <div className="flex items-baseline justify-center tracking-tight text-[#081C3E] dark:text-white font-black text-[42px] sm:text-[48px] leading-none my-1 drop-shadow-[0_2px_10px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
+              <span className="text-3xl sm:text-4xl font-extrabold mr-0.5">€</span>
               <span>{headerFormatted.integerPart}</span>
-              <span className="text-2xl sm:text-3xl font-bold">,{headerFormatted.decimalPart}</span>
+              <span className="text-2xl sm:text-3xl font-extrabold">,{headerFormatted.decimalPart}</span>
             </div>
 
-            {/* Métricas Oficiales DEGIRO (Screenshot 1 & 2) */}
-            <div className="flex items-center justify-center gap-3 text-xs font-semibold mt-1.5">
-              <span className={`inline-flex items-center gap-1 ${accountSummary.diaBp >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}`}>
-                <span>Día B/P:</span>
-                <span>{accountSummary.diaBp > 0 ? '+' : ''}{formatEUR(accountSummary.diaBp, hideFigures)} ({accountSummary.diaBpPct > 0 ? '+' : ''}{accountSummary.diaBpPct.toFixed(2)}%)</span>
-              </span>
-              <span className="text-slate-300 dark:text-slate-700">•</span>
-              <span className={`inline-flex items-center gap-1 ${accountSummary.totalBpDegiro >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold'}`}>
-                <span>{isDefaultDegiroPortfolio ? 'Total B/P (DEGIRO):' : 'Total B/P:'}</span>
-                <span>{accountSummary.totalBpDegiro > 0 ? '+' : ''}{formatEUR(accountSummary.totalBpDegiro, hideFigures)}</span>
-              </span>
+            {/* Fila 1: Día B/P y Total B/P separados limpiamente */}
+            <div className="flex items-center justify-center gap-3 text-xs mt-3 px-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-6 h-6 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/70 flex items-center justify-center shrink-0">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                </span>
+                <div className="text-left leading-tight">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Día B/P</span>
+                  <span className={`text-[11px] font-black ${accountSummary.diaBp >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                    {accountSummary.diaBp > 0 ? '+' : ''}{formatEUR(accountSummary.diaBp, hideFigures)} ({accountSummary.diaBpPct > 0 ? '+' : ''}{accountSummary.diaBpPct.toFixed(2)}%)
+                  </span>
+                </div>
+              </div>
+
+              <span className="h-7 w-px bg-sky-200/80 dark:bg-slate-800" />
+
+              <div className="flex items-center gap-1.5">
+                <span className="w-6 h-6 rounded-full bg-blue-600 text-amber-300 text-[10px] font-black flex items-center justify-center shadow-xs shrink-0">
+                  {isDefaultDegiroPortfolio ? '🇪🇺' : '€'}
+                </span>
+                <div className="text-left leading-tight">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">
+                    {isDefaultDegiroPortfolio ? 'Total B/P (DEGIRO)' : 'Total B/P'}
+                  </span>
+                  <span className={`text-[11px] font-black ${accountSummary.totalBpDegiro >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
+                    {accountSummary.totalBpDegiro > 0 ? '+' : ''}{formatEUR(accountSummary.totalBpDegiro, hideFigures)}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Fila de desglose: Cartera + EUR (+ Margen Libre solo en DEGIRO) */}
-            <div className="flex items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-              <span>Cartera: <strong className="text-slate-800 dark:text-slate-200">{formatEUR(accountSummary.cartera, hideFigures)}</strong></span>
-              <span>•</span>
-              <span>EUR: <strong className="text-emerald-500">{formatEUR(accountSummary.efectivoEur, hideFigures)}</strong></span>
+            {/* Fila 2: Desglose Cartera | EUR | Margen libre */}
+            <div className="flex items-center justify-center flex-wrap gap-x-2.5 gap-y-1 text-[11px] text-slate-600 dark:text-slate-400 mt-2.5">
+              <span className="inline-flex items-center gap-1">
+                <span className="w-4 h-4 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 flex items-center justify-center text-[9px]">
+                  <Coins className="w-2.5 h-2.5" />
+                </span>
+                <span>Cartera:</span>
+                <strong className="text-[#0B2246] dark:text-slate-100">{formatEUR(accountSummary.cartera, hideFigures)}</strong>
+              </span>
+              <span className="text-sky-200 dark:text-slate-700">|</span>
+              <span className="inline-flex items-center gap-1">
+                <span className="w-4 h-4 rounded-full bg-sky-100 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center text-[9px] font-black">
+                  €
+                </span>
+                <span>EUR:</span>
+                <strong className="text-emerald-600 dark:text-emerald-400">{formatEUR(accountSummary.efectivoEur, hideFigures)}</strong>
+              </span>
               {isDefaultDegiroPortfolio && (
                 <>
-                  <span>•</span>
-                  <span>Margen libre: <strong className="text-slate-700 dark:text-slate-300">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong></span>
+                  <span className="text-sky-200 dark:text-slate-700">|</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="w-4 h-4 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-500 flex items-center justify-center">
+                      <PieChart className="w-2.5 h-2.5" />
+                    </span>
+                    <span>Margen libre:</span>
+                    <strong className="text-[#0B2246] dark:text-slate-200">{formatEUR(accountSummary.margenLibre, hideFigures)}</strong>
+                  </span>
                 </>
               )}
             </div>
 
-            {/* Indicador de actualización de cotizaciones en tiempo real */}
+            {/* Píldora flotante de Cotizaciones en vivo */}
             {onRefreshLiveQuotes && (
-              <div className="flex items-center justify-center gap-2 mt-2">
+              <div className="flex items-center justify-center mt-2.5">
                 <button
                   onClick={onRefreshLiveQuotes}
                   disabled={isRefreshingLive}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-slate-200/80 dark:border-slate-700/80 shadow-2xs disabled:opacity-60"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-bold bg-white/95 dark:bg-slate-900/90 text-[#16325C] dark:text-slate-200 hover:bg-sky-50 dark:hover:bg-slate-800 transition-all border border-sky-100 dark:border-slate-700 shadow-[0_6px_18px_-6px_rgba(14,165,233,0.28)] disabled:opacity-60 active:scale-95"
                   title="Actualizar cotizaciones en vivo con Yahoo Finance y CoinGecko"
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse" />
                   <span>{isRefreshingLive ? 'Actualizando...' : 'Cotizaciones en vivo'}</span>
-                  <RefreshCw className={`w-3 h-3 ${isRefreshingLive ? 'animate-spin text-emerald-500' : 'text-slate-400'}`} />
+                  <RefreshCw className={`w-3 h-3 ${isRefreshingLive ? 'animate-spin text-emerald-500' : 'text-[#16325C]/70 dark:text-slate-400'}`} />
+                  {lastUpdatedTime && (
+                    <>
+                      <span className="h-3 w-px bg-sky-200 dark:bg-slate-700" />
+                      <span className="text-[10px] font-extrabold text-[#16325C]/80 dark:text-slate-300">
+                        {lastUpdatedTime}
+                      </span>
+                    </>
+                  )}
                 </button>
-                {lastUpdatedTime && (
-                  <span className="text-[10px] text-slate-400">
-                    {lastUpdatedTime}
-                  </span>
-                )}
               </div>
             )}
           </section>
 
           {/* 4. Gráfico interactivo con selector de rango */}
-          <section className="mt-2 mb-4">
+          <section className="mt-1 mb-4">
             <InteractiveChart
               data={chartPoints}
               selectedRange={selectedTimeRange}
@@ -585,154 +646,172 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             />
           </section>
 
-          {/* 5. Tarjetas horizontales ("Analíticas", "Efectivo", "Meta") */}
-          <section className="px-4 mb-5">
+          {/* 5. Tarjetas horizontales pastel luminosas ("Analíticas", "Efectivo", "Meta") */}
+          <section className="px-4 mb-4">
             <div className="grid grid-cols-3 gap-2.5">
-              {/* Tarjeta 1: Analíticas con gráfico circular tipo donut */}
+              {/* Tarjeta 1: Analíticas (azul cielo pastel) */}
               <button
                 onClick={() => setShowAnalyticsModal(true)}
-                className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs flex flex-col justify-between h-24"
+                className="fintech-card-blue border border-sky-200/80 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-sky-300 dark:hover:border-slate-700 transition-all active:scale-[0.98] flex flex-col justify-between h-[106px]"
               >
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Analíticas</span>
-                <div className="flex items-center justify-between">
-                  {/* Donut mini SVG */}
-                  <svg className="w-8 h-8 -rotate-90" viewBox="0 0 36 36">
-                    <circle cx="18" cy="18" r="14" fill="none" stroke="#E2E8F0" strokeWidth="4" className="dark:stroke-slate-800" />
+                <div className="flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <span className="text-[11px] font-extrabold text-[#0F2952] dark:text-slate-200 truncate">Analíticas</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <svg className="w-10 h-10 -rotate-90 drop-shadow-xs" viewBox="0 0 36 36">
+                    <circle cx="18" cy="18" r="13.5" fill="none" stroke="#E2EEF9" strokeWidth="4.5" className="dark:stroke-slate-800" />
                     <circle
                       cx="18"
                       cy="18"
-                      r="14"
+                      r="13.5"
                       fill="none"
                       stroke="#3B82F6"
-                      strokeWidth="4"
+                      strokeWidth="4.5"
                       strokeDasharray={`${accionesPct} 100`}
                     />
                     <circle
                       cx="18"
                       cy="18"
-                      r="14"
+                      r="13.5"
                       fill="none"
-                      stroke="#EAB308"
-                      strokeWidth="4"
+                      stroke="#F59E0B"
+                      strokeWidth="4.5"
                       strokeDasharray={`${etfsPct} 100`}
                       strokeDashoffset={`-${accionesPct}`}
                     />
                     <circle
                       cx="18"
                       cy="18"
-                      r="14"
+                      r="13.5"
                       fill="none"
-                      stroke="#A855F7"
-                      strokeWidth="4"
+                      stroke="#10B981"
+                      strokeWidth="4.5"
                       strokeDasharray={`${criptoPct} 100`}
                       strokeDashoffset={`-${accionesPct + etfsPct}`}
                     />
                   </svg>
-                  <span className="text-[10px] text-slate-400 font-medium">Ver</span>
+                  <span className="inline-flex items-center text-[10px] text-sky-700 dark:text-sky-400 font-extrabold">
+                    Ver
+                    <ChevronRight className="w-3 h-3" />
+                  </span>
                 </div>
               </button>
 
-              {/* Tarjeta 2: Efectivo */}
+              {/* Tarjeta 2: Efectivo (menta pastel) */}
               <button
                 onClick={() => setShowCashModal(true)}
-                className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs flex flex-col justify-between h-24"
+                className="fintech-card-mint border border-emerald-200/80 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-emerald-300 dark:hover:border-slate-700 transition-all active:scale-[0.98] flex flex-col justify-between h-[106px]"
               >
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Efectivo</span>
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5 text-emerald-500 fill-emerald-500 shrink-0" />
+                  <span className="text-[11px] font-extrabold text-[#0F2952] dark:text-slate-200 truncate">Efectivo</span>
+                </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  <div className="text-[14px] font-black text-[#081C3E] dark:text-white truncate">
                     {formatEUR(cash, hideFigures)}
                   </div>
-                  <span className="text-[10px] text-emerald-500 font-semibold">+ Ajustar</span>
+                  <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold mt-0.5">
+                    <ArrowUp className="w-3 h-3 stroke-[2.5]" />
+                    Ajustar
+                  </span>
                 </div>
               </button>
 
-              {/* Tarjeta 3: Meta de inversión */}
+              {/* Tarjeta 3: Meta de inversión (dorado pastel) */}
               <button
                 onClick={() => alert(`Meta de ahorro e inversión: ${goalProgress}% alcanzado de ${formatEUR(goalAmount, hideFigures)}`)}
-                className="bg-white dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-all shadow-xs flex flex-col justify-between h-24"
+                className="fintech-card-gold border border-amber-200/80 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-amber-300 dark:hover:border-slate-700 transition-all active:scale-[0.98] flex flex-col justify-between h-[106px]"
               >
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Meta</span>
+                <div className="flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="text-[11px] font-extrabold text-[#0F2952] dark:text-slate-200 truncate">Meta</span>
+                </div>
                 <div className="flex items-center justify-between">
-                  {/* Circular progress */}
-                  <div className="relative w-7 h-7 flex items-center justify-center">
-                    <svg className="w-7 h-7 -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="14" fill="none" stroke="#F1F5F9" strokeWidth="4" className="dark:stroke-slate-800" />
+                  <div className="relative w-10 h-10 flex items-center justify-center">
+                    <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                      <circle cx="18" cy="18" r="13.5" fill="none" stroke="#FDE68A" strokeWidth="4" className="dark:stroke-slate-800" />
                       <circle
                         cx="18"
                         cy="18"
-                        r="14"
+                        r="13.5"
                         fill="none"
-                        stroke="#F97316"
+                        stroke="#F59E0B"
                         strokeWidth="4"
                         strokeDasharray={`${goalProgress} 100`}
                         strokeLinecap="round"
                       />
                     </svg>
-                    <span className="text-[9px] font-extrabold text-slate-700 dark:text-slate-200">{goalProgress}%</span>
+                    <span className="absolute text-[9px] font-black text-[#081C3E] dark:text-slate-100">{goalProgress}%</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-medium">{formatEUR(goalAmount, true)}</span>
+                  <span className="text-[10px] text-[#0F2952]/70 dark:text-slate-400 font-extrabold tracking-tight">
+                    {formatEUR(goalAmount, true)}
+                  </span>
                 </div>
               </button>
             </div>
           </section>
 
-          {/* Historial Global DEGIRO & Rendimiento Realizado (solo en cartera DEGIRO) */}
+          {/* Historial Global DEGIRO & Rendimiento Realizado (tarjeta luminosa azul-menta, solo en cartera DEGIRO) */}
           {isDefaultDegiroPortfolio && tradingAnalytics && (
             <section className="px-4 mb-4">
-              <div className="bg-gradient-to-br from-slate-900 to-slate-950 dark:from-slate-900/90 dark:to-slate-950/90 text-white rounded-3xl p-4 shadow-xl border border-slate-800">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-800/80">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
-                      📈
+              <div className="bg-gradient-to-br from-white via-[#F0F9FF] to-[#E6FBF2] dark:from-slate-900 dark:to-slate-950 rounded-3xl p-4 shadow-[0_10px_28px_-12px_rgba(14,165,233,0.28)] border border-sky-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between pb-3 border-b border-sky-100 dark:border-slate-800/80 gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200/80 dark:border-sky-800/60 text-[#16325C] dark:text-sky-300 flex items-center justify-center shrink-0 shadow-2xs">
+                      <FileCheck2 className="w-5 h-5 text-sky-600 dark:text-sky-400" />
                     </div>
-                    <div>
-                      <h3 className="font-extrabold text-sm text-white">Historial Financiero DEGIRO</h3>
-                      <p className="text-[10px] text-slate-400">
-                        {tradingAnalytics.startDate} al {tradingAnalytics.endDate} • {tradingAnalytics.totalTrades.toLocaleString('es-ES')} operaciones
+                    <div className="min-w-0">
+                      <h3 className="font-black text-[13px] text-[#081C3E] dark:text-white leading-tight truncate">
+                        Historial Financiero <span className="text-emerald-600 dark:text-emerald-400">DEGIRO</span>
+                      </h3>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold truncate mt-0.5">
+                        {tradingAnalytics.startDate} al {tradingAnalytics.endDate} • {tradingAnalytics.totalTrades.toLocaleString('es-ES')} ops
                       </p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black px-3 py-1.5 rounded-full bg-gradient-to-b from-emerald-500 to-emerald-700 text-white shadow-[0_4px_12px_rgba(16,185,129,0.4)] shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
                     Auditado
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
-                  {/* 1. Casilla Beneficio Cerrado -> Abre ventana de beneficio cerrado */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3">
+                  {/* 1. Casilla Beneficio Cerrado */}
                   <button
                     type="button"
                     onClick={() => setShowClosedModal(true)}
-                    className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                    className="bg-white/85 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-sky-100 dark:border-slate-700/60 cursor-pointer group shadow-2xs focus:outline-none"
                     title="Ver detalle de beneficio cerrado y posiciones ganadoras/perdedoras"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-slate-400 block">Beneficio Cerrado</span>
-                      <span className="text-[10px] text-slate-500 group-hover:text-emerald-400 transition">↗</span>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Beneficio Cerrado</span>
+                      <span className="text-[10px] text-sky-500 group-hover:text-emerald-600 transition">↗</span>
                     </div>
-                    <span className="text-sm font-extrabold text-emerald-400 mt-0.5 block">
+                    <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">
                       +{formatEUR(tradingAnalytics.totalRealizedPnl, hideFigures)}
                     </span>
                   </button>
 
-                  {/* 2. Casilla Flujo Neto Retirado -> Abre ventana de flujo neto y transferencias */}
+                  {/* 2. Casilla Flujo Neto Retirado */}
                   {tradingAnalytics.netCashFlow !== undefined && (
                     <button
                       type="button"
                       onClick={() => setShowNetCashFlowModal(true)}
-                      className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                      className="bg-white/85 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-sky-100 dark:border-slate-700/60 cursor-pointer group shadow-2xs focus:outline-none"
                       title="Ver detalle de depósitos, retiradas a banco y saldo neto extraído"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-semibold text-slate-400 block">Flujo Neto Retirado</span>
-                        <span className="text-[10px] text-slate-500 group-hover:text-emerald-300 transition">↗</span>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Flujo Neto Retirado</span>
+                        <span className="text-[10px] text-sky-500 group-hover:text-emerald-600 transition">↗</span>
                       </div>
-                      <span className="text-sm font-extrabold text-emerald-300 mt-0.5 block">
+                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-300 mt-0.5 block">
                         +{formatEUR(tradingAnalytics.netCashFlow, hideFigures)}
                       </span>
                     </button>
                   )}
 
-                  {/* 3. Casilla Dividendos Netos -> Navega directamente a la página de dividendos */}
+                  {/* 3. Casilla Dividendos Netos */}
                   {tradingAnalytics.totalDividendsReceived !== undefined && (
                     <button
                       type="button"
@@ -740,31 +819,31 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                         setActiveSubTab('dividendos');
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                      className="bg-white/85 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-sky-100 dark:border-slate-700/60 cursor-pointer group shadow-2xs focus:outline-none"
                       title="Ir a la página y desglose de dividendos"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-semibold text-slate-400 block">Dividendos Netos</span>
-                        <span className="text-[10px] text-slate-500 group-hover:text-white transition">➔</span>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Dividendos Netos</span>
+                        <span className="text-[10px] text-sky-500 group-hover:text-[#081C3E] dark:group-hover:text-white transition">➔</span>
                       </div>
-                      <span className="text-sm font-extrabold text-white mt-0.5 block">
+                      <span className="text-sm font-black text-[#081C3E] dark:text-white mt-0.5 block">
                         +{formatEUR(tradingAnalytics.totalDividendsReceived, hideFigures)}
                       </span>
                     </button>
                   )}
 
-                  {/* 4. Casilla Comisiones DEGIRO -> Abre ventana con todas las comisiones reflejadas */}
+                  {/* 4. Casilla Comisiones DEGIRO */}
                   <button
                     type="button"
                     onClick={() => setShowCommissionsModal(true)}
-                    className="bg-slate-800/50 hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-slate-700/50 cursor-pointer group focus:outline-none"
+                    className="bg-white/85 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-800 transition-all active:scale-[0.98] text-left rounded-2xl p-2.5 border border-sky-100 dark:border-slate-700/60 cursor-pointer group shadow-2xs focus:outline-none"
                     title="Ver desglose completo de comisiones de corretaje, conectividad y cambio"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-semibold text-slate-400 block">Comisiones DEGIRO</span>
-                      <span className="text-[10px] text-slate-500 group-hover:text-amber-400 transition">↗</span>
+                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 block">Comisiones DEGIRO</span>
+                      <span className="text-[10px] text-sky-500 group-hover:text-amber-500 transition">↗</span>
                     </div>
-                    <span className="text-sm font-extrabold text-slate-300 mt-0.5 block">
+                    <span className="text-sm font-black text-slate-700 dark:text-slate-300 mt-0.5 block">
                       {formatEUR(tradingAnalytics.totalFeesPaid, hideFigures)}
                     </span>
                   </button>
@@ -773,7 +852,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 {/* Botón para ver desglose de beneficio por activo (117 activos) */}
                 <button
                   onClick={() => setShowHistoricalModal(true)}
-                  className="w-full mt-3 py-2 px-3 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                  className="w-full mt-3 py-2.5 px-3 bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-500 hover:to-blue-600 rounded-2xl text-xs font-extrabold text-white flex items-center justify-center gap-2 shadow-[0_6px_16px_-6px_rgba(2,132,199,0.55)] transition-all active:scale-[0.99]"
                 >
                   <span>📊</span>
                   <span>Ver Beneficio Histórico por Acción & ETF (117 activos)</span>

@@ -110,12 +110,27 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
         >
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={strokeColor} stopOpacity="0.22" />
+              <stop offset="0%" stopColor={strokeColor} stopOpacity="0.34" />
+              <stop offset="75%" stopColor={strokeColor} stopOpacity="0.08" />
               <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
-          {/* Línea horizontal de referencia inicial (discontinua como en Stock Events) */}
+          {/* Cuadrícula sutil azulada de fondo */}
+          {[0.25, 0.5, 0.75].map((ratio) => (
+            <line
+              key={`h-${ratio}`}
+              x1={paddingX}
+              y1={paddingTop + chartHeight * ratio}
+              x2={width - paddingX}
+              y2={paddingTop + chartHeight * ratio}
+              stroke="#E2EEF9"
+              strokeWidth="0.7"
+              className="dark:stroke-slate-800/70"
+            />
+          ))}
+
+          {/* Línea horizontal de referencia inicial */}
           <line
             x1={paddingX}
             y1={baselineY}
@@ -124,6 +139,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             stroke="#CBD5E1"
             strokeWidth="1"
             strokeDasharray="2 3"
+            className="dark:stroke-slate-700"
           />
 
           {/* Relleno con degradado */}
@@ -134,7 +150,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             d={pathD}
             fill="none"
             stroke={strokeColor}
-            strokeWidth="2.2"
+            strokeWidth="2.6"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -156,7 +172,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
                 <circle
                   cx={pt.x}
                   cy={pt.y}
-                  r="4"
+                  r="4.5"
                   fill="#FFFFFF"
                   stroke={strokeColor}
                   strokeWidth="2.5"
@@ -166,31 +182,31 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           })()}
         </svg>
 
-        {/* Botón flotante para ampliar el gráfico (como el botón circular en la captura) */}
+        {/* Botón flotante para ampliar el gráfico */}
         <button
           onClick={onExpand}
           title="Ampliar gráfico"
-          className="absolute right-4 bottom-2 w-8 h-8 rounded-full bg-white/90 border border-slate-200/80 shadow-sm flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-white active:scale-95 transition-all"
+          className="absolute right-4 bottom-2 w-8 h-8 rounded-full bg-white/95 dark:bg-slate-900/90 border border-sky-100 dark:border-slate-700 shadow-[0_4px_12px_rgba(14,165,233,0.16)] flex items-center justify-center text-[#16325C] dark:text-slate-200 hover:bg-sky-50 active:scale-95 transition-all"
         >
           <Maximize2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Selector de rango temporal idéntico al de la captura de pantalla */}
-      <div className="flex items-center justify-between px-3 mt-1.5 pb-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+      {/* Selector de rango temporal en cápsula azulada con píldora activa brillante */}
+      <div className="flex items-center justify-between gap-2 px-4 mt-2 pb-1">
+        <div className="flex-1 flex items-center justify-between bg-[#F2F8FE] dark:bg-slate-900/90 border border-sky-100/90 dark:border-slate-800 rounded-full p-1 shadow-inner overflow-x-auto no-scrollbar">
           {TIME_RANGES.map(range => {
             const isActive = selectedRange === range;
             return (
               <button
                 key={range}
                 onClick={() => onRangeChange(range)}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all duration-150 ${
+                className={`text-[11px] font-extrabold px-2.5 py-1 rounded-full transition-all duration-150 ${
                   isActive
                     ? isPositive
-                      ? 'bg-emerald-500 text-white shadow-sm'
-                      : 'bg-rose-500 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                      ? 'bg-gradient-to-b from-emerald-400 to-emerald-600 text-white shadow-[0_4px_12px_rgba(16,185,129,0.45)]'
+                      : 'bg-gradient-to-b from-rose-400 to-rose-600 text-white shadow-[0_4px_12px_rgba(244,63,94,0.4)]'
+                    : 'text-[#16325C]/75 dark:text-slate-400 hover:text-sky-700 dark:hover:text-white'
                 }`}
               >
                 {range}
@@ -199,10 +215,10 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
           })}
         </div>
 
-        {/* Icono de rueda de ajustes al final */}
+        {/* Icono de rueda de ajustes circular */}
         <button
           onClick={() => alert('Opciones de visualización: Escala logarítmica, Benchmark S&P 500 y Días de cierre configurables.')}
-          className="text-slate-400 hover:text-slate-700 p-1 rounded-full active:rotate-45 transition-transform"
+          className="w-8 h-8 rounded-full bg-white dark:bg-slate-900 border border-sky-100 dark:border-slate-800 shadow-xs text-[#16325C]/80 dark:text-slate-300 hover:text-sky-600 flex items-center justify-center active:rotate-45 transition-all shrink-0"
           title="Configuración de gráfico"
         >
           <Settings className="w-3.5 h-3.5" />

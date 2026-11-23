@@ -8,10 +8,32 @@
   }
 
   body {
-    background-color: #F1F5F9;
+    background: linear-gradient(180deg, #E8F4FD 0%, #F4F9FE 40%, #F1F5F9 100%);
     color: #0F172A;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
+}
+
+.fintech-card-blue {
+  background: linear-gradient(145deg, #FFFFFF 0%, #EFF7FF 60%, #E0F1FF 100%);
+  box-shadow: 0 6px 20px -8px rgba(14, 165, 233, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.fintech-card-mint {
+  background: linear-gradient(145deg, #FFFFFF 0%, #ECFDF5 65%, #D1FAE5 100%);
+  box-shadow: 0 6px 20px -8px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.fintech-card-gold {
+  background: linear-gradient(145deg, #FFFFFF 0%, #FFFBEB 60%, #FEF3C7 100%);
+  box-shadow: 0 6px 20px -8px rgba(245, 158, 11, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.dark .fintech-card-blue,
+.dark .fintech-card-mint,
+.dark .fintech-card-gold {
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 6px 20px -8px rgba(0, 0, 0, 0.45);
 }
 
 /* Custom subtle scrollbar */

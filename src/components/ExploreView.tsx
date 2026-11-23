@@ -219,23 +219,23 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
   const activeMeta = MENU_ITEMS.find(m => m.id === activeSection) || MENU_ITEMS[0];
 
   return (
-    <div className="pb-28 pt-2 px-4 max-w-md mx-auto min-h-screen">
-      {/* Cabecera superior con botón Menú Lateral (☰), Título de Sección y Refrescar */}
-      <header className="flex items-center justify-between pt-1 pb-3 sticky top-0 z-20 bg-[#F8FAFC]/95 dark:bg-[#0B0F19]/95 backdrop-blur-md">
+    <div className="pb-28 pt-2 px-4 max-w-md mx-auto min-h-screen bg-gradient-to-b from-[#E6F4FE] via-[#F5FAFF] to-white dark:from-[#0B1221] dark:via-[#0B0F19] dark:to-[#0B0F19]">
+      {/* Cabecera superior con botón Menú Lateral (☰), Título de Sección y Avatar Dorado */}
+      <header className="flex items-center justify-between pt-2 pb-3 sticky top-0 z-20 bg-[#EAF5FE]/90 dark:bg-[#0B0F19]/90 backdrop-blur-md -mx-4 px-4 border-b border-sky-100/80 dark:border-slate-800/80 mb-3">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-800 dark:text-slate-100 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all shrink-0"
+            className="w-10 h-10 rounded-full bg-white/95 dark:bg-slate-900 border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-100 shadow-[0_4px_12px_rgba(14,165,233,0.16)] hover:bg-white active:scale-95 transition-all shrink-0"
             title="Abrir menú de secciones"
           >
             <Menu className="w-5 h-5 stroke-[2.3]" />
           </button>
           <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-950 dark:text-white leading-tight truncate">
+            <h1 className="text-base font-black text-[#081C3E] dark:text-white leading-tight truncate">
               {activeMeta.label}
             </h1>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+            <p className="text-[11px] text-[#173A6A]/80 dark:text-slate-400 font-semibold truncate">
               {lastUpdated ? `En vivo · ${lastUpdated}` : activeMeta.subtitle}
             </p>
           </div>
@@ -245,7 +245,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
           <button
             type="button"
             onClick={onOpenSearch}
-            className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900 border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-300 shadow-xs hover:bg-white transition-colors"
             title="Buscador global en vivo"
           >
             <Search className="w-4 h-4" />
@@ -255,7 +255,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               type="button"
               onClick={loadSectionData}
               disabled={loading}
-              className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+              className="w-9 h-9 rounded-full bg-white/95 dark:bg-slate-900 border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-300 shadow-xs hover:bg-white transition-colors disabled:opacity-50"
               title="Actualizar datos en vivo"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-sky-500' : ''}`} />
@@ -264,7 +264,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
           <button
             type="button"
             onClick={onGoToProfile}
-            className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center shadow-xs"
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-[#0F2952] via-[#173566] to-[#0B1D3B] text-white font-black text-xs flex items-center justify-center ring-2 ring-amber-400 border border-amber-200/90 shadow-[0_0_12px_rgba(251,191,36,0.5)] active:scale-95 transition-all"
             title="Perfil"
           >
             DO
