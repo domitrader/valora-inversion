@@ -347,10 +347,15 @@ export const liveQuotesService = {
   },
 
   /**
-   * Busca activos globales en tiempo real (acciones, ETFs, fondos de todas las bolsas del mundo: BME, MIL, XETR, EURONEXT, LSE, NYSE, NASDAQ)
-   * Usa TradingView Global Scanner (CORS nativo, 0€ gratis, sin bloqueos) + precio en vivo incluido.
+   * Busca activos globales en tiempo real desde 1 sola letra (ej. "v" -> Visa, Vanguard VOO, VWCE, Verizon, Vidrala...)
+   * Conecta en paralelo a 2 APIs gratuitas:
+   *  1) TradingView Global Scanner (CORS nativo, bolsas principales EE.UU. y Europa, precios en vivo, soporte Acciones y ETFs)
+   *  2) Yahoo Finance Global Search + CoinGecko Search (cobertura extra de ETFs UCITS, ISINs, fondos y cripto)
    */
-  async searchGlobalMarketAssets(query: string): Promise<Array<{
+  async searchGlobalMarketAssets(
+    query: string,
+    filterType: 'Todos' | 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Todos'
+  ): Promise<Array<{
     symbol: string;
     yahooSymbol: string;
     name: string;
@@ -362,19 +367,36 @@ export const liveQuotesService = {
     changePct: number;
   }>> {
     const clean = query.trim();
-    if (clean.length < 2) return [];
+    if (clean.length < 1) return [];
 
-    const runTvScan = async (field: 'name' | 'description') => {
+    const upperClean = clean.toUpperCase();
+    const isSingleChar = clean.length === 1;
+    const matchPattern = isSingleChar ? `^${clean}` : clean;
+    const majorExchanges = ['NYSE', 'NASDAQ', 'AMEX', 'ARCA', 'BME', 'XETR', 'EURONEXT', 'LSE', 'MIL', 'SIX'];
+
+    const runTvScan = async (
+      field: 'name' | 'description',
+      assetKind: 'stock' | 'etf'
+    ) => {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 5000);
       try {
+        const isEtf = assetKind === 'etf';
         const res = await fetch('https://scanner.tradingview.com/global/scan', {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
           body: JSON.stringify({
-            filter: [{ left: field, operation: 'match', right: clean }],
+            filter: [
+              { left: field, operation: 'match', right: matchPattern },
+              { left: 'exchange', operation: 'in_range', right: majorExchanges },
+            ],
+            symbols: { query: { types: isEtf ? ['fund'] : ['stock', 'dr'] } },
             columns: ['name', 'description', 'exchange', 'close', 'change', 'currency', 'type'],
-            range: [0, 20],
+            sort: {
+              sortBy: isEtf ? 'aum' : 'market_cap_basic',
+              sortOrder: 'desc',
+            },
+            range: [0, 30],
           }),
           signal: controller.signal,
         });
@@ -388,8 +410,57 @@ export const liveQuotesService = {
       }
     };
 
-    const [byName, byDesc] = await Promise.all([runTvScan('name'), runTvScan('description')]);
-    const combined = [...byName, ...byDesc];
+    const runYahooSearch = async (): Promise<any[]> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4500);
+      try {
+        const yUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(clean)}&quotesCount=20&newsCount=0&enableFuzzyQuery=false`;
+        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yUrl)}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) return [];
+        const json = await res.json();
+        return Array.isArray(json?.quotes) ? json.quotes : [];
+      } catch {
+        clearTimeout(timer);
+        return [];
+      }
+    };
+
+    const runCoinGeckoSearch = async (): Promise<any[]> => {
+      if (filterType !== 'Todos' && filterType !== 'Cripto') return [];
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+      try {
+        const res = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(clean)}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (!res.ok) return [];
+        const json = await res.json();
+        return Array.isArray(json?.coins) ? json.coins.slice(0, 10) : [];
+      } catch {
+        clearTimeout(timer);
+        return [];
+      }
+    };
+
+    const tvTasks: Promise<any[]>[] = [];
+    if (filterType === 'Todos' || filterType === 'Acciones') {
+      tvTasks.push(runTvScan('name', 'stock'), runTvScan('description', 'stock'));
+    }
+    if (filterType === 'Todos' || filterType === 'ETFs' || filterType === 'Fondos') {
+      tvTasks.push(runTvScan('name', 'etf'), runTvScan('description', 'etf'));
+    }
+
+    const [tvGroups, yahooQuotes, cgCoins] = await Promise.all([
+      Promise.all(tvTasks),
+      runYahooSearch(),
+      runCoinGeckoSearch(),
+    ]);
+
+    const combinedTv = tvGroups.flat();
     const seen = new Set<string>();
     const results: Array<{
       symbol: string;
@@ -403,11 +474,10 @@ export const liveQuotesService = {
       changePct: number;
     }> = [];
 
-    for (const item of combined) {
+    for (const item of combinedTv) {
       const s = String(item?.s || '');
       const d = item?.d;
-      if (!s || !Array.isArray(d) || seen.has(s)) continue;
-      seen.add(s);
+      if (!s || !Array.isArray(d)) continue;
 
       const ticker = String(d[0] || '').toUpperCase();
       const desc = String(d[1] || ticker);
@@ -417,7 +487,10 @@ export const liveQuotesService = {
       const currency = String(d[5] || 'EUR');
       const tvType = String(d[6] || 'stock').toLowerCase();
 
-      // Determinar bandera y sufijo Yahoo según bolsa
+      if (isSingleChar && !ticker.startsWith(upperClean) && !desc.toUpperCase().startsWith(upperClean)) {
+        continue;
+      }
+
       let countryFlag = '🌐';
       let yahooSuffix = '';
       if (exch === 'BME' || exch === 'MADRID') {
@@ -443,9 +516,10 @@ export const liveQuotesService = {
         yahooSuffix = '';
       }
 
-      const yahooSymbol = ticker.includes('.') || ticker.includes('-') ? ticker : `${ticker}${yahooSuffix}`;
+      const fullSym = ticker.includes('.') || ticker.includes('-') ? ticker : `${ticker}${yahooSuffix}`;
+      if (seen.has(fullSym)) continue;
+      seen.add(fullSym);
 
-      // Convertir precio a EUR
       let priceEUR = rawClose;
       if (currency === 'USD') {
         priceEUR = rawClose / this.eurUsdRate;
@@ -462,9 +536,11 @@ export const liveQuotesService = {
         assetType = 'Cripto';
       }
 
+      if (filterType !== 'Todos' && assetType !== filterType) continue;
+
       results.push({
-        symbol: `${ticker}${yahooSuffix}`,
-        yahooSymbol,
+        symbol: fullSym,
+        yahooSymbol: fullSym,
         name: desc,
         exchange: exch || 'Global',
         quoteType: tvType.toUpperCase(),
@@ -475,6 +551,76 @@ export const liveQuotesService = {
       });
     }
 
-    return results;
+    for (const q of yahooQuotes) {
+      const sym = String(q?.symbol || '').toUpperCase();
+      const name = String(q?.longname || q?.shortname || sym);
+      const qType = String(q?.quoteType || '').toUpperCase();
+      if (!sym || seen.has(sym)) continue;
+      if (!['EQUITY', 'ETF', 'MUTUALFUND', 'CRYPTOCURRENCY'].includes(qType)) continue;
+
+      if (isSingleChar && !sym.startsWith(upperClean) && !name.toUpperCase().startsWith(upperClean)) {
+        continue;
+      }
+
+      let assetType: 'Acciones' | 'ETFs' | 'Fondos' | 'Cripto' = 'Acciones';
+      if (qType === 'ETF') assetType = 'ETFs';
+      else if (qType === 'MUTUALFUND') assetType = 'Fondos';
+      else if (qType === 'CRYPTOCURRENCY') assetType = 'Cripto';
+
+      if (filterType !== 'Todos' && assetType !== filterType) continue;
+
+      seen.add(sym);
+      let countryFlag = '🌐';
+      if (sym.endsWith('.MC')) countryFlag = '🇪🇸';
+      else if (sym.endsWith('.DE') || sym.endsWith('.F')) countryFlag = '🇩🇪';
+      else if (sym.endsWith('.MI')) countryFlag = '🇮🇹';
+      else if (sym.endsWith('.PA') || sym.endsWith('.AS')) countryFlag = '🇪🇺';
+      else if (sym.endsWith('.L')) countryFlag = '🇬🇧';
+      else if (sym.endsWith('.SW')) countryFlag = '🇨🇭';
+      else if (!sym.includes('.')) countryFlag = '🇺🇸';
+
+      results.push({
+        symbol: sym,
+        yahooSymbol: sym,
+        name,
+        exchange: String(q?.exchDisp || q?.exchange || 'Global'),
+        quoteType: qType,
+        countryFlag,
+        assetType,
+        priceEUR: 0,
+        changePct: 0,
+      });
+    }
+
+    for (const c of cgCoins) {
+      const sym = String(c?.symbol || '').toUpperCase();
+      const name = String(c?.name || sym);
+      if (!sym || seen.has(`${sym}-EUR`)) continue;
+      if (isSingleChar && !sym.startsWith(upperClean) && !name.toUpperCase().startsWith(upperClean)) {
+        continue;
+      }
+      seen.add(`${sym}-EUR`);
+      results.push({
+        symbol: `${sym}-EUR`,
+        yahooSymbol: `${sym}-EUR`,
+        name,
+        exchange: 'Crypto',
+        quoteType: 'CRYPTO',
+        countryFlag: '₿',
+        assetType: 'Cripto',
+        priceEUR: 0,
+        changePct: 0,
+      });
+    }
+
+    results.sort((a, b) => {
+      const aExact = a.symbol.split('.')[0] === upperClean ? 3 : a.symbol.startsWith(upperClean) ? 2 : a.name.toUpperCase().startsWith(upperClean) ? 1 : 0;
+      const bExact = b.symbol.split('.')[0] === upperClean ? 3 : b.symbol.startsWith(upperClean) ? 2 : b.name.toUpperCase().startsWith(upperClean) ? 1 : 0;
+      if (bExact !== aExact) return bExact - aExact;
+      if ((b.priceEUR > 0 ? 1 : 0) !== (a.priceEUR > 0 ? 1 : 0)) return (b.priceEUR > 0 ? 1 : 0) - (a.priceEUR > 0 ? 1 : 0);
+      return 0;
+    });
+
+    return results.slice(0, 45);
   },
 };

@@ -29,6 +29,7 @@ interface SearchModalViewProps {
   onAddToPortfolio: (position: Omit<PositionItem, 'id' | 'totalValue' | 'unrealizedGainLoss' | 'unrealizedGainLossPct' | 'dailyChangeValue' | 'sparkline'>) => void;
   onAddToWatchlist: (item: Omit<WatchlistItem, 'id' | 'sparkline' | 'dailyChangeValue'>) => void;
   initialCategory?: AssetType;
+  defaultAddMode?: 'portfolio' | 'watchlist';
 }
 
 export const SearchModalView: React.FC<SearchModalViewProps> = ({
@@ -36,6 +37,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   onAddToPortfolio,
   onAddToWatchlist,
   initialCategory,
+  defaultAddMode = 'portfolio',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'Todos' | AssetType>(initialCategory || 'Todos');
@@ -47,7 +49,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   const [purchaseDate, setPurchaseDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [sharesInput, setSharesInput] = useState('10');
   const [priceInput, setPriceInput] = useState('');
-  const [addMode, setAddMode] = useState<'portfolio' | 'watchlist'>('portfolio');
+  const [addMode, setAddMode] = useState<'portfolio' | 'watchlist'>(defaultAddMode);
   const [addedSuccessMsg, setAddedSuccessMsg] = useState('');
 
   // Modal para añadir activo 100% manual si no está en catálogo
@@ -60,13 +62,13 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   const [customCountryFlag, setCustomCountryFlag] = useState('🇪🇸');
   const [customPrice, setCustomPrice] = useState('10.00');
 
-  // Búsqueda global online en tiempo real (Yahoo Finance - todas las bolsas del mundo: .MI, .DE, .L, .PA, .MC, NYSE, NASDAQ)
+  // Búsqueda global online en tiempo real desde 1 sola letra (TradingView + Yahoo Finance + CoinGecko)
   const [onlineResults, setOnlineResults] = useState<CatalogAsset[]>([]);
   const [isSearchingOnline, setIsSearchingOnline] = useState(false);
 
   useEffect(() => {
     const clean = searchTerm.trim();
-    if (clean.length < 2) {
+    if (clean.length < 1) {
       setOnlineResults([]);
       setIsSearchingOnline(false);
       return;
@@ -77,7 +79,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
 
     const timer = setTimeout(async () => {
       try {
-        const remote = await liveQuotesService.searchGlobalMarketAssets(clean);
+        const remote = await liveQuotesService.searchGlobalMarketAssets(clean, selectedFilter);
         if (cancelled) return;
 
         // Excluir duplicados exactos que ya están en el catálogo local
@@ -109,13 +111,13 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
       } finally {
         if (!cancelled) setIsSearchingOnline(false);
       }
-    }, 350);
+    }, 250);
 
     return () => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [searchTerm]);
+  }, [searchTerm, selectedFilter]);
 
   // Filtrado de activos reactivo y veloz (Catálogo Local)
   const filteredAssets = useMemo(() => {
@@ -127,6 +129,13 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
 
       if (!matchesFilter || !matchesZeroTax || !matchesDegiroCore) return false;
       if (!term) return true;
+
+      if (term.length === 1) {
+        return (
+          asset.ticker.toLowerCase().startsWith(term) ||
+          asset.name.toLowerCase().startsWith(term)
+        );
+      }
 
       const matchesSearch =
         asset.name.toLowerCase().includes(term) ||

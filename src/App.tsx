@@ -493,6 +493,7 @@ export const App: React.FC = () => {
           <SearchModalView
             onClose={() => setIsSearchOpen(false)}
             initialCategory={searchInitialCategory}
+            defaultAddMode={activeTab === 'seguimiento' ? 'watchlist' : 'portfolio'}
             onAddToPortfolio={handleAddToPortfolio}
             onAddToWatchlist={handleAddToWatchlist}
           />
