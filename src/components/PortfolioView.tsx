@@ -27,6 +27,8 @@ import { ChartsHubView } from './ChartsHubView';
 import { formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import degiroData from '../data/degiroPositionsData.json';
 import earthGlobeHeader from '../assets/earth-globe-header.webp';
+import logoDegiro from '../assets/logo-degiro.png';
+import logoMyInvestor from '../assets/logo-myinvestor.png';
 import {
   Search,
   Eye,
@@ -308,13 +310,33 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   ? 'Dividendos'
                   : 'Zona de Gráficos'}
             </h1>
-            <p className="text-[11px] text-[#173A6A]/85 dark:text-slate-300 font-bold truncate flex items-center gap-1 drop-shadow-[0_1px_3px_rgba(255,255,255,0.85)] dark:drop-shadow-none">
+            <p className="text-[11px] text-[#173A6A]/85 dark:text-slate-300 font-bold truncate flex items-center gap-1.5 mt-0.5 drop-shadow-[0_1px_3px_rgba(255,255,255,0.85)] dark:drop-shadow-none">
               {activeSubTab === 'portafolio' ? (
-                <>
-                  <span>{activePortfolio.name}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                  <span>Cartera en vivo</span>
-                </>
+                (() => {
+                  const norm = activePortfolio.name.toLowerCase().replace(/\s+/g, '');
+                  const brokerLogo = norm.includes('myinvestor')
+                    ? logoMyInvestor
+                    : norm.includes('degiro') || isDefaultDegiroPortfolio
+                      ? logoDegiro
+                      : null;
+                  return (
+                    <>
+                      {brokerLogo ? (
+                        <span className="inline-flex items-center bg-white/92 px-2 py-0.5 rounded-md shadow-2xs border border-sky-100/80">
+                          <img
+                            src={brokerLogo}
+                            alt={activePortfolio.name}
+                            className="h-3.5 w-auto object-contain"
+                          />
+                        </span>
+                      ) : (
+                        <span>{activePortfolio.name}</span>
+                      )}
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
+                      <span className="truncate">Cartera en vivo</span>
+                    </>
+                  );
+                })()
               ) : activeSubTab === 'dividendos' ? (
                 'Auditoría 2018–2026 y Mapa Futuro'
               ) : (
@@ -459,6 +481,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                   {portfolios.map(port => {
                     const isSelected = port.id === activePortfolio.id;
+                    const normPort = port.name.toLowerCase().replace(/\s+/g, '');
+                    const portLogo = normPort.includes('myinvestor')
+                      ? logoMyInvestor
+                      : normPort.includes('degiro') || port.isDefault
+                        ? logoDegiro
+                        : null;
                     return (
                       <div key={port.id} className="flex items-center gap-1">
                         <button
@@ -474,7 +502,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                               : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                           }`}
                         >
-                          <span className="truncate">{port.name}</span>
+                          {portLogo ? (
+                            <span className="inline-flex items-center bg-white/95 px-2 py-0.5 rounded-md border border-slate-100 shadow-2xs">
+                              <img src={portLogo} alt={port.name} className="h-3.5 w-auto object-contain" />
+                            </span>
+                          ) : (
+                            <span className="truncate">{port.name}</span>
+                          )}
                           {isSelected && <Check className="w-3.5 h-3.5 shrink-0" />}
                         </button>
 
