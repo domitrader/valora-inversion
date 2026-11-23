@@ -103,7 +103,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [showViewDropdown, setShowViewDropdown] = useState(false);
 
   const closedPositions = (degiroData.closedPositions || []) as any[];
-  const accountSummary = degiroData.accountSummary || {
+  const baseAccountSummary = degiroData.accountSummary || {
     cuentaCompleta: 15604.96,
     cartera: 15185.04,
     efectivoEur: 419.92,
@@ -114,11 +114,31 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
     historicoCerradoPnl: 28145.97,
   };
 
+  // Dinámicas en tiempo real a partir de las cotizaciones y posiciones actuales
+  const liveCarteraVal = positions.reduce((acc, p) => acc + (p.totalValue || 0), 0);
+  const liveEfectivoEur = cash !== undefined ? cash : baseAccountSummary.efectivoEur;
+  const liveCuentaCompleta = Number((liveCarteraVal + liveEfectivoEur).toFixed(2));
+  const liveDiaBp = Number(positions.reduce((acc, p) => acc + (p.dailyChangeValue || 0), 0).toFixed(2));
+  const liveDiaBpPct = (liveCarteraVal - liveDiaBp) > 0 ? Number(((liveDiaBp / (liveCarteraVal - liveDiaBp)) * 100).toFixed(2)) : 0;
+  const liveTotalBp = Number(positions.reduce((acc, p) => acc + (p.unrealizedGainLoss || 0), 0).toFixed(2));
+  const liveMargenLibre = Number((liveEfectivoEur * 1.935).toFixed(2));
+
+  const accountSummary = {
+    ...baseAccountSummary,
+    cuentaCompleta: liveCuentaCompleta,
+    cartera: liveCarteraVal,
+    efectivoEur: liveEfectivoEur,
+    margenLibre: liveMargenLibre,
+    diaBp: liveDiaBp,
+    diaBpPct: liveDiaBpPct,
+    totalBpDegiro: liveTotalBp,
+  };
+
   // Métricas calculadas
   const metrics = calculatePortfolioMetrics(positions, cash);
   const chartPoints = MOCK_CHART_DATA[selectedTimeRange] || MOCK_CHART_DATA['1D'];
 
-  // Formato cabecera idéntico al de la captura de pantalla (€15.604,96)
+  // Formato cabecera idéntico al de la captura de pantalla con cifras dinámicas en vivo
   const headerFormatted = formatHeaderEUR(accountSummary.cuentaCompleta, hideFigures);
 
   // Filtrado y ordenación de posiciones abiertas
@@ -234,14 +254,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
             {/* Métricas Oficiales DEGIRO (Screenshot 1 & 2) */}
             <div className="flex items-center justify-center gap-3 text-xs font-semibold mt-1.5">
-              <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
+              <span className={`inline-flex items-center gap-1 ${accountSummary.diaBp >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}`}>
                 <span>Día B/P:</span>
-                <span>+{formatEUR(accountSummary.diaBp, hideFigures)} (+{accountSummary.diaBpPct.toFixed(2)}%)</span>
+                <span>{accountSummary.diaBp > 0 ? '+' : ''}{formatEUR(accountSummary.diaBp, hideFigures)} ({accountSummary.diaBpPct > 0 ? '+' : ''}{accountSummary.diaBpPct.toFixed(2)}%)</span>
               </span>
               <span className="text-slate-300 dark:text-slate-700">•</span>
-              <span className="inline-flex items-center gap-1 text-emerald-500 font-extrabold">
+              <span className={`inline-flex items-center gap-1 ${accountSummary.totalBpDegiro >= 0 ? 'text-emerald-500 font-extrabold' : 'text-rose-500 font-extrabold'}`}>
                 <span>Total B/P (DEGIRO):</span>
-                <span>+{formatEUR(accountSummary.totalBpDegiro, hideFigures)}</span>
+                <span>{accountSummary.totalBpDegiro > 0 ? '+' : ''}{formatEUR(accountSummary.totalBpDegiro, hideFigures)}</span>
               </span>
             </div>
 

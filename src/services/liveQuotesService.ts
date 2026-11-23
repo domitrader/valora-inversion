@@ -18,96 +18,82 @@ export interface LiveMarketQuote {
 export const liveQuotesService = {
   eurUsdRate: 1.085, // Tasa de respaldo
   eurGbpRate: 0.85,  // Tasa de respaldo EUR/GBP
-
   /**
-   * Obtiene la tasa de cambio EUR/USD en tiempo real
+   * Obtiene la tasa de cambio EUR/USD y EUR/GBP en tiempo real vía TradingView
    */
   async getLiveEurUsdRate(): Promise<number> {
     try {
-      const url = '/api/finance/v8/finance/chart/EURUSD=X?interval=1d&range=1d';
-      const res = await fetch(url);
+      const res = await fetch('https://scanner.tradingview.com/global/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          symbols: { tickers: ['FX_IDC:EURUSD', 'FX_IDC:EURGBP'] },
+          columns: ['name', 'close'],
+        }),
+      });
       if (res.ok) {
         const data = await res.json();
-        const rate = data.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (rate && rate > 0) {
-          this.eurUsdRate = rate;
-          return rate;
+        for (const r of data?.data || []) {
+          const rate = Number(r.d?.[1]);
+          if (r.s === 'FX_IDC:EURUSD' && rate > 0) this.eurUsdRate = rate;
+          if (r.s === 'FX_IDC:EURGBP' && rate > 0) this.eurGbpRate = rate;
         }
+        return this.eurUsdRate;
       }
-    } catch (e) {
+    } catch {
       console.warn('Usando tasa EUR/USD de referencia:', this.eurUsdRate);
     }
     return this.eurUsdRate;
   },
 
   /**
-   * Consulta una cotización individual de Yahoo Finance (en servidor local o con proxy de respaldo)
+   * Consulta una cotización individual (vía TradingView Global Scanner y catálogo)
    */
   async fetchStockQuote(symbol: string): Promise<LiveMarketQuote | null> {
     try {
-      // Limpiar ticker (ej: "NVDA / US67066G1040" -> "NVDA")
-      let cleanSymbol = symbol.split(/[\s/|]/)[0].trim().toUpperCase();
+      let cleanSymbol = symbol.split(/[\s/|()]/)[0].trim().toUpperCase();
 
-      // Buscar si el activo tiene símbolo específico de Yahoo en nuestro catálogo completo
+      // Buscar coincidencia en catálogo
       const catalogMatch = COMPREHENSIVE_CATALOG.find(
         c => c.ticker.toUpperCase() === cleanSymbol || (c.yahooSymbol && c.yahooSymbol.toUpperCase() === cleanSymbol)
       );
       if (catalogMatch?.yahooSymbol) {
-        cleanSymbol = catalogMatch.yahooSymbol;
-      } else {
-        // Mapeos comunes de respaldo (DEGIRO + MyInvestor BME/Xetra/Euronext)
-        const fallbackMap: Record<string, string> = {
-          ENG: 'ENG.MC', SAN: 'SAN.MC', ITX: 'ITX.MC', LOG: 'LOG.MC',
-          MVC: 'MVC.MC', IBE: 'IBE.MC', SAB: 'SAB.MC', VIS: 'VIS.MC',
-          MAP: 'MAP.MC', RED: 'RED.MC',
-          SELD: 'SELD.DE', ISPA: 'ISPA.DE', '8PSG': '8PSG.DE', IQQD: 'IQQD.DE',
-          VDIV: 'VDIV.DE', SPYW: 'SPYW.DE', XEON: 'XEON.DE', ZPRR: 'ZPRR.DE',
-          VUSA: 'VUSA.AS', VHYL: 'VHYL.AS', ERNE: 'ERNE.AS',
-        };
-        if (fallbackMap[cleanSymbol]) {
-          cleanSymbol = fallbackMap[cleanSymbol];
-        }
+        cleanSymbol = catalogMatch.yahooSymbol.split('.')[0];
       }
 
-      // 1. Intentar a través del proxy local de Vite
-      let res = await fetch(`/api/finance/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`).catch(() => null);
-      
-      // 2. Si no responde por estar fuera de Vite (GitHub Pages), usar proxies CORS gratuitos
-      if (!res || !res.ok) {
-        const yahooChartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`;
-        res = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(yahooChartUrl)}`).catch(() => null);
-      }
-      if (!res || !res.ok) {
-        const yahooChartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${cleanSymbol}?interval=1d&range=1d`;
-        res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(yahooChartUrl)}`).catch(() => null);
-      }
+      // Probar TradingView primero con bolsas comunes
+      const candidateTickers = [
+        `NASDAQ:${cleanSymbol}`, `NYSE:${cleanSymbol}`,
+        `BME:${cleanSymbol}`, `XETR:${cleanSymbol}`,
+        `EURONEXT:${cleanSymbol}`, `MIL:${cleanSymbol}`, `LSE:${cleanSymbol}`
+      ];
+      if (cleanSymbol === 'QQQ3') candidateTickers.unshift('EURONEXT:QQQ3-ETFP');
 
-      if (res && res.ok) {
-        const data = await res.json();
-        const meta = data.chart?.result?.[0]?.meta;
-        if (meta && meta.regularMarketPrice) {
-          const rawPrice = meta.regularMarketPrice;
-          const rawCurrency = meta.currency || 'USD';
-          const currency = rawCurrency.toUpperCase();
-          const prevClose = meta.chartPreviousClose || rawPrice;
-          const changePct = prevClose > 0 ? ((rawPrice - prevClose) / prevClose) * 100 : 0;
-
-          // Convertir a EUR según divisa (USD, GBP o peniques GBp)
+      const tvRes = await fetch('https://scanner.tradingview.com/global/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({
+          symbols: { tickers: candidateTickers },
+          columns: ['name', 'close', 'change', 'currency'],
+        }),
+      });
+      if (tvRes.ok) {
+        const data = await tvRes.json();
+        const row = (data?.data || []).find((r: any) => Number(r.d?.[1]) > 0);
+        if (row) {
+          const rawPrice = Number(row.d[1]);
+          const changePct = Number(row.d[2] || 0);
+          const cur = String(row.d[3] || 'EUR');
           let priceEUR = rawPrice;
-          if (currency === 'USD') {
-            priceEUR = rawPrice / this.eurUsdRate;
-          } else if (rawCurrency === 'GBp' || rawCurrency === 'GBX') {
-            // Londres cotiza muchas acciones en peniques (GBp = 0.01 GBP)
-            priceEUR = (rawPrice / 100) / this.eurGbpRate;
-          } else if (currency === 'GBP') {
-            priceEUR = rawPrice / this.eurGbpRate;
-          }
+          if (cur === 'USD') priceEUR = rawPrice / this.eurUsdRate;
+          else if (cur === 'GBP') priceEUR = rawPrice / this.eurGbpRate;
+          else if (cur === 'GBX' || cur === 'GBp') priceEUR = (rawPrice / 100) / this.eurGbpRate;
 
           return {
             ticker: cleanSymbol,
             priceEUR: Number(priceEUR.toFixed(2)),
             originalPrice: rawPrice,
-            currency,
+            currency: cur,
             changePct: Number(changePct.toFixed(2)),
           };
         }
@@ -119,59 +105,60 @@ export const liveQuotesService = {
   },
 
   /**
-   * Consulta en lote vía TradingView Global Scanner (CORS nativo, 0€ gratis, ultra rápido)
+   * Consulta en lote vía TradingView Global Scanner con mapeo inteligente de múltiples mercados
    */
   async fetchBatchTradingViewQuotes(positions: PositionItem[]): Promise<Record<string, { priceEUR: number; changePct: number }>> {
-    const tvSymbols: string[] = [];
-    const tvToPosId: Record<string, string[]> = {};
-
     const exchMap: Record<string, string> = {
-      BMA: 'BME', BME: 'BME',
-      XETR: 'XETR', XETRA: 'XETR', TDG: 'XETR', FRA: 'XETR',
-      AEX: 'EURONEXT', EAM: 'EURONEXT', EPA: 'EURONEXT', EURONEXT: 'EURONEXT',
-      MIL: 'MIL', NSY: 'NYSE', NYSE: 'NYSE', NDQ: 'NASDAQ', NASDAQ: 'NASDAQ',
-      LSE: 'LSE',
+      BMA: 'BME', BME: 'BME', MAD: 'BME', MCE: 'BME',
+      XET: 'XETR', XETR: 'XETR', XETRA: 'XETR', TDG: 'XETR', FRA: 'XETR',
+      AEX: 'EURONEXT', EAM: 'EURONEXT', EPA: 'EURONEXT', EURONEXT: 'EURONEXT', XAMS: 'EURONEXT', XPAR: 'EURONEXT',
+      MIL: 'MIL', MILAN: 'MIL',
+      NSY: 'NYSE', NYSE: 'NYSE', NDQ: 'NASDAQ', NASDAQ: 'NASDAQ',
+      LSE: 'LSE', KRAKEN: 'KRAKEN', BINANCE: 'BINANCE',
     };
 
+    const tvSymbols = new Set<string>();
+    const posCandidateMap: Record<string, string[]> = {};
+
     for (const pos of positions) {
-      if (pos.type === 'Fondos' || pos.broker === 'Urbanitae') continue;
-      const baseTicker = pos.ticker.split(/[\s./|]/)[0].trim().toUpperCase();
+      if (pos.type === 'Fondos' || pos.broker === 'Urbanitae' || pos.ticker === 'PPI') continue;
+      const baseTicker = pos.ticker.split(/[\s./|()]/)[0].trim().toUpperCase();
       const exchUpper = (pos.exchange || '').toUpperCase();
-      let tvExch = exchMap[exchUpper];
+      const primaryExch = exchMap[exchUpper];
 
-      if (!tvExch) {
-        if (pos.ticker.endsWith('.MC')) tvExch = 'BME';
-        else if (pos.ticker.endsWith('.DE')) tvExch = 'XETR';
-        else if (pos.ticker.endsWith('.AS') || pos.ticker.endsWith('.PA')) tvExch = 'EURONEXT';
-        else if (pos.ticker.endsWith('.MI')) tvExch = 'MIL';
-        else if (pos.ticker.endsWith('.L')) tvExch = 'LSE';
-        else if (baseTicker === 'V') tvExch = 'NYSE';
+      const candidates: string[] = [];
+      const isCryptoSpot = (pos.type === 'Cripto' || exchUpper === 'KRAKEN' || exchUpper === 'BINANCE') && !['2BTC', 'VBTC'].includes(baseTicker);
+
+      if (isCryptoSpot) {
+        candidates.push(`KRAKEN:${baseTicker}EUR`, `KRAKEN:${baseTicker}USD`, `BINANCE:${baseTicker}EUR`, `BINANCE:${baseTicker}USDT`);
+      } else {
+        if (primaryExch) candidates.push(`${primaryExch}:${baseTicker}`);
+        // Fallbacks comunes en Europa y Wall Street
+        ['XETR', 'EURONEXT', 'BME', 'MIL', 'LSE', 'NYSE', 'NASDAQ'].forEach(e => {
+          candidates.push(`${e}:${baseTicker}`);
+        });
+        if (baseTicker === 'QQQ3') candidates.push('EURONEXT:QQQ3-ETFP');
       }
 
-      if (tvExch && baseTicker) {
-        const tvKey = `${tvExch}:${baseTicker}`;
-        if (!tvToPosId[tvKey]) {
-          tvToPosId[tvKey] = [];
-          tvSymbols.push(tvKey);
-        }
-        tvToPosId[tvKey].push(pos.id);
-      }
+      posCandidateMap[pos.id] = candidates;
+      candidates.forEach(c => tvSymbols.add(c));
     }
 
-    if (tvSymbols.length === 0) return {};
+    if (tvSymbols.size === 0) return {};
 
     try {
       const res = await fetch('https://scanner.tradingview.com/global/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify({
-          symbols: { tickers: tvSymbols },
+          symbols: { tickers: Array.from(tvSymbols) },
           columns: ['name', 'close', 'change', 'currency'],
         }),
       });
       if (!res.ok) return {};
       const data = await res.json();
-      const out: Record<string, { priceEUR: number; changePct: number }> = {};
+      const quoteMap: Record<string, { price: number; change: number; currency: string }> = {};
+
       for (const row of data?.data || []) {
         const tvKey = String(row.s || '');
         const d = row.d;
@@ -179,18 +166,30 @@ export const liveQuotesService = {
         const rawPrice = Number(d[1] || 0);
         const changePct = Number(d[2] || 0);
         const cur = String(d[3] || 'EUR');
-        if (rawPrice <= 0) continue;
+        if (rawPrice > 0) {
+          quoteMap[tvKey] = { price: rawPrice, change: changePct, currency: cur };
+        }
+      }
 
-        let priceEUR = rawPrice;
-        if (cur === 'USD') priceEUR = rawPrice / this.eurUsdRate;
-        else if (cur === 'GBX' || cur === 'GBp') priceEUR = (rawPrice / 100) / this.eurGbpRate;
-        else if (cur === 'GBP') priceEUR = rawPrice / this.eurGbpRate;
+      const out: Record<string, { priceEUR: number; changePct: number }> = {};
+      for (const pos of positions) {
+        const candidates = posCandidateMap[pos.id] || [];
+        let match: { price: number; change: number; currency: string } | null = null;
+        for (const c of candidates) {
+          if (quoteMap[c]) {
+            match = quoteMap[c];
+            break;
+          }
+        }
+        if (match) {
+          let priceEUR = match.price;
+          if (match.currency === 'USD') priceEUR = priceEUR / this.eurUsdRate;
+          else if (match.currency === 'GBP') priceEUR = priceEUR / this.eurGbpRate;
+          else if (match.currency === 'GBX' || match.currency === 'GBp') priceEUR = (priceEUR / 100) / this.eurGbpRate;
 
-        const posIds = tvToPosId[tvKey] || [];
-        for (const pid of posIds) {
-          out[pid] = {
+          out[pos.id] = {
             priceEUR: Number(priceEUR.toFixed(3)),
-            changePct: Number(changePct.toFixed(2)),
+            changePct: Number(match.change.toFixed(2)),
           };
         }
       }
@@ -199,7 +198,6 @@ export const liveQuotesService = {
       return {};
     }
   },
-
   /**
    * Obtiene cotizaciones de criptoactivos desde CoinGecko en EUR
    */

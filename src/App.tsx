@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   PortfolioState,
   MainTab,
@@ -95,15 +95,67 @@ export const App: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [pinCode]);
 
-  // Initial load from storage / service
+  // Initial load from storage / service + auto-refresh live quotes
   useEffect(() => {
     async function loadData() {
       const loaded = await SupabaseService.getPortfolioState();
       setPortfolioState(loaded);
       setIsLoaded(true);
+
+      // Auto-actualización inmediata en segundo plano con precios en vivo
+      if (loaded.positions && loaded.positions.length > 0) {
+        setIsRefreshingLive(true);
+        liveQuotesService
+          .updateAllPositionsWithLiveMarketData(loaded.positions)
+          .then(res => {
+            if (res.updatedPositions && res.updatedPositions.length > 0) {
+              setPortfolioState(prev => ({
+                ...prev,
+                positions: res.updatedPositions,
+              }));
+              setLastUpdatedTime(res.timestamp);
+            }
+          })
+          .catch(err => console.warn('Error en auto-refresh inicial:', err))
+          .finally(() => setIsRefreshingLive(false));
+      }
     }
     loadData();
   }, []);
+
+  // Auto-refresco en segundo plano cada 60 segundos mientras la app está abierta o al volver a la pestaña
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const runAutoRefresh = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await liveQuotesService.updateAllPositionsWithLiveMarketData(portfolioState.positions);
+        if (res.updatedPositions && res.updatedPositions.length > 0) {
+          setPortfolioState(prev => ({
+            ...prev,
+            positions: res.updatedPositions,
+          }));
+          setLastUpdatedTime(res.timestamp);
+        }
+      } catch (err) {
+        console.warn('Error en auto-refresco periódico:', err);
+      }
+    };
+
+    const intervalId = window.setInterval(runAutoRefresh, 60000);
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        runAutoRefresh();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [isLoaded, portfolioState.positions]);
 
   // Sync dark mode class to document element
   useEffect(() => {
