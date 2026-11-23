@@ -89,6 +89,20 @@ export interface WatchlistItem {
   hasEarningsSoon?: boolean;
   hasDividendSoon?: boolean;
   customOrder?: number;
+  /** ID de la lista/cartera de favoritos a la que pertenece (por defecto 'default') */
+  listId?: string;
+  /** Fecha en que se añadió a la lista/cartera de seguimiento (YYYY-MM-DD) */
+  addedDate?: string;
+  /** Precio de entrada registrado en esa fecha para medir rentabilidad desde ese día */
+  entryPrice?: number;
+  /** Cantidad de títulos simulados para usar la lista como cartera de seguimiento */
+  shares?: number;
+}
+
+export interface WatchlistPortfolioMeta {
+  id: string;
+  name: string;
+  createdAt: string;
 }
 
 export interface FinancialEvent {
@@ -172,6 +186,7 @@ export interface PortfolioState {
   portfolios: PortfolioMeta[];
   positions: PositionItem[];
   watchlist: WatchlistItem[];
+  watchlistLists?: WatchlistPortfolioMeta[];
   events: FinancialEvent[];
   tradingAnalytics?: TradingAnalytics;
   historicalAssetStats?: HistoricalAssetStat[];

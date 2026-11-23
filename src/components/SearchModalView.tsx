@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { AssetType, PositionItem, WatchlistItem } from '../types/portfolio';
+import { AssetType, PositionItem, WatchlistItem, WatchlistPortfolioMeta } from '../types/portfolio';
 import { COMPREHENSIVE_CATALOG, CatalogAsset } from '../data/comprehensiveAssetCatalog';
 import { estimateHistoricalPrice, formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import { formatEUR } from '../utils/calculations';
@@ -30,6 +30,8 @@ interface SearchModalViewProps {
   onAddToWatchlist: (item: Omit<WatchlistItem, 'id' | 'sparkline' | 'dailyChangeValue'>) => void;
   initialCategory?: AssetType;
   defaultAddMode?: 'portfolio' | 'watchlist';
+  watchlistLists?: WatchlistPortfolioMeta[];
+  activeWatchlistListId?: string;
 }
 
 export const SearchModalView: React.FC<SearchModalViewProps> = ({
@@ -38,6 +40,8 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   onAddToWatchlist,
   initialCategory,
   defaultAddMode = 'portfolio',
+  watchlistLists = [],
+  activeWatchlistListId = 'default',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'Todos' | AssetType>(initialCategory || 'Todos');
@@ -45,11 +49,12 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   const [onlyDegiroCore, setOnlyDegiroCore] = useState(false);
   const [quickAddAsset, setQuickAddAsset] = useState<CatalogAsset | null>(null);
   
-  // Parámetros para añadir posición
+  // Parámetros para añadir posición o cartera de seguimiento
   const [purchaseDate, setPurchaseDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [sharesInput, setSharesInput] = useState('10');
   const [priceInput, setPriceInput] = useState('');
   const [addMode, setAddMode] = useState<'portfolio' | 'watchlist'>(defaultAddMode);
+  const [targetListId, setTargetListId] = useState<string>(activeWatchlistListId || 'default');
   const [addedSuccessMsg, setAddedSuccessMsg] = useState('');
 
   // Modal para añadir activo 100% manual si no está en catálogo
@@ -227,6 +232,8 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
       });
       setAddedSuccessMsg(`¡${quickAddAsset.ticker} añadido con fecha ${formatDateToSpanish(purchaseDate)}!`);
     } else {
+      const shares = parseFloat(sharesInput) || 1;
+      const entryPrice = parseFloat(priceInput) || quickAddAsset.price;
       onAddToWatchlist({
         name: quickAddAsset.name,
         ticker: quickAddAsset.ticker,
@@ -239,8 +246,13 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
         market: quickAddAsset.market,
         logoBg: quickAddAsset.logoBg,
         logoText: quickAddAsset.logoText,
+        listId: targetListId || 'default',
+        addedDate: purchaseDate,
+        entryPrice,
+        shares,
       });
-      setAddedSuccessMsg(`¡${quickAddAsset.ticker} añadido a seguimiento!`);
+      const listName = watchlistLists.find(l => l.id === targetListId)?.name || 'Favoritos';
+      setAddedSuccessMsg(`¡${quickAddAsset.ticker} añadido a "${listName}" (${formatDateToSpanish(purchaseDate)})!`);
     }
 
     setQuickAddAsset(null);
@@ -683,15 +695,33 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
               </button>
             </div>
 
-            {addMode === 'portfolio' && (
-              <div className="space-y-3 mb-4">
-                {/* 1. CAMPO: FECHA DE COMPRA (SOLICITADO POR EL USUARIO) */}
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[11px] font-black uppercase text-slate-700 flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Fecha de la compra</span>
-                    </label>
+            <div className="space-y-3 mb-4">
+              {addMode === 'watchlist' && watchlistLists.length > 0 && (
+                <div className="bg-indigo-50/70 p-3 rounded-2xl border border-indigo-200/80">
+                  <label className="text-[11px] font-black uppercase text-indigo-800 block mb-1.5">
+                    Lista / Cartera de Seguimiento
+                  </label>
+                  <select
+                    value={targetListId}
+                    onChange={e => setTargetListId(e.target.value)}
+                    className="w-full bg-white border border-indigo-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {watchlistLists.map(l => (
+                      <option key={l.id} value={l.id}>
+                        {l.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* 1. CAMPO: FECHA DE ENTRADA / COMPRA */}
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-black uppercase text-slate-700 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>{addMode === 'watchlist' ? 'Fecha de entrada en lista' : 'Fecha de la compra'}</span>
+                  </label>
                     <span className="text-[10px] text-emerald-700 font-bold">
                       {formatDateToSpanish(purchaseDate)}
                     </span>
@@ -794,7 +824,6 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
                   </span>
                 </div>
               </div>
-            )}
 
             <div className="flex gap-2">
               <button
