@@ -21,6 +21,7 @@ import { DividendAuditView } from './DividendAuditView';
 import { CommissionsModal } from './CommissionsModal';
 import { NetCashFlowModal } from './NetCashFlowModal';
 import { ClosedProfitsModal } from './ClosedProfitsModal';
+import { AssetHistoryModal, getAssetHistoryCount } from './AssetHistoryModal';
 import { formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import degiroData from '../data/degiroPositionsData.json';
 import {
@@ -43,6 +44,7 @@ import {
   TrendingUp,
   ArrowDown,
   ArrowUpDown,
+  BarChart3,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -91,6 +93,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [positionSort, setPositionSort] = useState<'degiro' | 'value-desc' | 'change-asc' | 'change-desc' | 'name-asc'>('degiro');
   const [selectedPosition, setSelectedPosition] = useState<PositionItem | null>(null);
+  const [historyModalPosition, setHistoryModalPosition] = useState<PositionItem | null>(null);
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashInput, setCashInput] = useState(cash.toString());
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
@@ -1132,7 +1135,24 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-2">
+            {getAssetHistoryCount(selectedPosition.id) > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const pos = selectedPosition;
+                  setSelectedPosition(null);
+                  setHistoryModalPosition(pos);
+                }}
+                className="w-full mb-2.5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-extrabold bg-sky-600 hover:bg-sky-700 text-white shadow-xs active:scale-[0.99] transition-all cursor-pointer"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>
+                  Historial y Estadísticas ({getAssetHistoryCount(selectedPosition.id)} ops)
+                </span>
+              </button>
+            )}
+
+            <div className="flex items-center gap-2 pt-1">
               <button
                 onClick={() => {
                   const newShares = prompt('Modificar número de títulos:', selectedPosition.shares.toString());
@@ -1165,6 +1185,15 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL HISTORIAL Y ESTADÍSTICAS DEL ACTIVO */}
+      {historyModalPosition && (
+        <AssetHistoryModal
+          position={historyModalPosition}
+          hideFigures={hideFigures}
+          onClose={() => setHistoryModalPosition(null)}
+        />
       )}
 
       {/* MODAL EDITAR EFECTIVO */}
