@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 185 40" fill="none">
+  <!-- Bitvavo iconic 3-step ascending mark -->
+  <path d="M4 31L13.5 14H20L10.5 31H4Z" fill="#0066FF"/>
+  <path d="M14.5 31L26.5 9H33L21 31H14.5Z" fill="#004CE6"/>
+  <path d="M25 31L31.5 19.5H38L31.5 31H25Z" fill="#002999"/>
+  <!-- Bitvavo wordmark -->
+  <text x="45" y="29" font-family="system-ui, -apple-system, 'Plus Jakarta Sans', sans-serif" font-size="25" font-weight="800" letter-spacing="-0.6" fill="#0B1B3B">bitvavo</text>
+</svg>

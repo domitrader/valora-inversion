@@ -30,6 +30,9 @@ import degiroData from '../data/degiroPositionsData.json';
 import earthGlobeHeader from '../assets/earth-globe-header.webp';
 import logoDegiro from '../assets/logo-degiro.png';
 import logoMyInvestor from '../assets/logo-myinvestor.png';
+import logoCoinbase from '../assets/logo-coinbase.svg';
+import logoBitvavo from '../assets/logo-bitvavo.svg';
+import logoBbva from '../assets/logo-bbva.svg';
 import {
   Search,
   Eye,
@@ -62,6 +65,16 @@ import {
   FileCheck2,
   Receipt,
 } from 'lucide-react';
+
+function getBrokerLogo(name: string, isDefault?: boolean): string | null {
+  const norm = (name || '').toLowerCase().replace(/\s+/g, '');
+  if (norm.includes('myinvestor') || norm.includes('myivestor')) return logoMyInvestor;
+  if (norm.includes('coinbase')) return logoCoinbase;
+  if (norm.includes('bitvavo')) return logoBitvavo;
+  if (norm.includes('bbva')) return logoBbva;
+  if (norm.includes('degiro') || isDefault) return logoDegiro;
+  return null;
+}
 
 interface PortfolioViewProps {
   positions: PositionItem[];
@@ -340,13 +353,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
             <p className="text-[11px] text-[#0B2246] dark:text-slate-200 font-extrabold truncate flex items-center gap-1.5 mt-0.5 drop-shadow-[0_1px_5px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
               {activeSubTab === 'portafolio' ? (
                 (() => {
-                  const norm = activePortfolio.name.toLowerCase().replace(/\s+/g, '');
-                  const brokerLogo =
-                    norm.includes('myinvestor') || norm.includes('myivestor')
-                      ? logoMyInvestor
-                      : norm.includes('degiro') || isDefaultDegiroPortfolio
-                        ? logoDegiro
-                        : null;
+                  const brokerLogo = getBrokerLogo(activePortfolio.name, isDefaultDegiroPortfolio);
                   return (
                     <>
                       {brokerLogo ? (
@@ -518,13 +525,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
                   {portfolios.map(port => {
                     const isSelected = port.id === activePortfolio.id;
-                    const normPort = port.name.toLowerCase().replace(/\s+/g, '');
-                    const portLogo =
-                      normPort.includes('myinvestor') || normPort.includes('myivestor')
-                        ? logoMyInvestor
-                        : normPort.includes('degiro') || port.isDefault
-                          ? logoDegiro
-                          : null;
+                    const portLogo = getBrokerLogo(port.name, port.isDefault);
                     return (
                       <div key={port.id} className="flex items-center gap-1">
                         <button
