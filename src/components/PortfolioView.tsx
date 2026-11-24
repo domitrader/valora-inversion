@@ -24,6 +24,7 @@ import { NetCashFlowModal } from './NetCashFlowModal';
 import { ClosedProfitsModal } from './ClosedProfitsModal';
 import { AssetHistoryModal, getAssetHistoryCount } from './AssetHistoryModal';
 import { ChartsHubView } from './ChartsHubView';
+import { BrokerFeesView } from './BrokerFeesView';
 import { formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import degiroData from '../data/degiroPositionsData.json';
 import earthGlobeHeader from '../assets/earth-globe-header.webp';
@@ -59,6 +60,7 @@ import {
   Zap,
   Trophy,
   FileCheck2,
+  Receipt,
 } from 'lucide-react';
 
 interface PortfolioViewProps {
@@ -331,7 +333,9 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 ? 'Portafolio'
                 : activeSubTab === 'dividendos'
                   ? 'Dividendos'
-                  : 'Zona de Gráficos'}
+                  : activeSubTab === 'tarifas'
+                    ? 'Tarifas y Buscadores'
+                    : 'Zona de Gráficos'}
             </h1>
             <p className="text-[11px] text-[#0B2246] dark:text-slate-200 font-extrabold truncate flex items-center gap-1.5 mt-0.5 drop-shadow-[0_1px_5px_rgba(255,255,255,0.95)] dark:drop-shadow-none">
               {activeSubTab === 'portafolio' ? (
@@ -363,6 +367,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 })()
               ) : activeSubTab === 'dividendos' ? (
                 'Auditoría 2018–2026 y Mapa Futuro'
+              ) : activeSubTab === 'tarifas' ? (
+                'DEGIRO · MyInvestor · Buscadores Oficiales'
               ) : (
                 'Mapa de Calor y Rendimiento Real'
               )}
@@ -437,6 +443,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     subtitle: 'Auditoría 2018–2026 y Mapa Futuro',
                     icon: Coins,
                     color: 'text-emerald-500',
+                  },
+                  {
+                    id: 'tarifas' as InicioSubTab,
+                    label: 'Tarifas y Buscadores',
+                    subtitle: 'DEGIRO, MyInvestor Fondos y Broker',
+                    icon: Receipt,
+                    color: 'text-amber-500',
                   },
                 ]
               ).map(item => {
@@ -1472,6 +1485,13 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
       {activeSubTab === 'graficos' && (
         <section className="relative z-10 pt-1">
           <ChartsHubView positions={positions} hideFigures={hideFigures} />
+        </section>
+      )}
+
+      {/* PESTAÑA: TARIFAS Y BUSCADORES OFICIALES */}
+      {activeSubTab === 'tarifas' && (
+        <section className="relative z-10 pt-1">
+          <BrokerFeesView showExtendedBrokers={false} />
         </section>
       )}
 
