@@ -143,6 +143,7 @@ export interface PortfolioMeta {
   createdAt: string;
   isDefault?: boolean;
   cash?: number;
+  goalAmount?: number;
 }
 
 export interface TradingAnalytics {

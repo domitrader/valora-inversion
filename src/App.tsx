@@ -224,6 +224,22 @@ export const App: React.FC = () => {
     });
   };
 
+  // Update investment goal independently per portfolio
+  const handleUpdateGoalAmount = (newGoal: number) => {
+    const cleanGoal = Math.max(100, newGoal);
+    setPortfolioState((prev) => {
+      const defaultPortId = prev.portfolios[0]?.id || 'port-main';
+      const isDefault = prev.activePortfolioId === defaultPortId;
+      return {
+        ...prev,
+        goalAmount: isDefault ? cleanGoal : prev.goalAmount,
+        portfolios: prev.portfolios.map((p) =>
+          p.id === prev.activePortfolioId ? { ...p, goalAmount: cleanGoal } : p
+        ),
+      };
+    });
+  };
+
   // Update an existing position
   const handleUpdatePosition = (position: PositionItem) => {
     setPortfolioState((prev) => ({
@@ -532,7 +548,10 @@ export const App: React.FC = () => {
                 }
                 return activePort?.cash ?? 0;
               })()}
-              goalAmount={portfolioState.goalAmount}
+              goalAmount={(() => {
+                const activePort = portfolioState.portfolios.find(p => p.id === portfolioState.activePortfolioId);
+                return activePort?.goalAmount ?? portfolioState.goalAmount;
+              })()}
               hideFigures={portfolioState.hideFigures}
               selectedTimeRange={portfolioState.selectedTimeRange}
               events={portfolioState.events}
@@ -542,6 +561,7 @@ export const App: React.FC = () => {
               onOpenSearch={() => handleOpenSearch()}
               onGoToProfile={() => handleTabChange('perfil')}
               onUpdateCash={handleUpdateCash}
+              onUpdateGoalAmount={handleUpdateGoalAmount}
               onUpdatePosition={handleUpdatePosition}
               onDeletePosition={handleDeletePosition}
               onOpenImport={() => setIsImportOpen(true)}

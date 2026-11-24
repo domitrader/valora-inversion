@@ -95,6 +95,7 @@ interface PortfolioViewProps {
   onOpenSearch: () => void;
   onGoToProfile: () => void;
   onUpdateCash: (newCash: number) => void;
+  onUpdateGoalAmount?: (newGoal: number) => void;
   onUpdatePosition: (position: PositionItem) => void;
   onDeletePosition: (id: string) => void;
   onOpenImport: () => void;
@@ -122,6 +123,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   onOpenSearch,
   onGoToProfile,
   onUpdateCash,
+  onUpdateGoalAmount,
   onUpdatePosition,
   onDeletePosition,
   onOpenImport,
@@ -139,6 +141,8 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   const [homeDrawerOpen, setHomeDrawerOpen] = useState(false);
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashInput, setCashInput] = useState(cash.toString());
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalInput, setGoalInput] = useState(goalAmount.toString());
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
   const [showHistoricalModal, setShowHistoricalModal] = useState(false);
@@ -798,17 +802,20 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                 </div>
               </button>
 
-              {/* Tarjeta 3: Meta de inversión (dorado pastel) */}
+              {/* Tarjeta 3: Meta de inversión editable por cartera (dorado pastel) */}
               <button
-                onClick={() => alert(`Meta de ahorro e inversión: ${goalProgress}% alcanzado de ${formatEUR(goalAmount, hideFigures)}`)}
+                onClick={() => {
+                  setGoalInput(String(goalAmount));
+                  setShowGoalModal(true);
+                }}
                 className="fintech-card-gold border border-amber-200/80 dark:border-slate-800 rounded-2xl p-3 text-left hover:border-amber-300 dark:hover:border-slate-700 transition-all active:scale-[0.98] flex flex-col justify-between h-[106px]"
               >
                 <div className="flex items-center gap-1">
                   <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span className="text-[11px] font-extrabold text-[#0F2952] dark:text-slate-200 truncate">Meta</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
+                <div className="flex items-center justify-between gap-1">
+                  <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
                     <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="13.5" fill="none" stroke="#FDE68A" strokeWidth="4" className="dark:stroke-slate-800" />
                       <circle
@@ -824,9 +831,16 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                     </svg>
                     <span className="absolute text-[9px] font-black text-[#081C3E] dark:text-slate-100">{goalProgress}%</span>
                   </div>
-                  <span className="text-[10px] text-[#0F2952]/70 dark:text-slate-400 font-extrabold tracking-tight">
-                    {formatEUR(goalAmount, true)}
-                  </span>
+                  <div className="text-right min-w-0">
+                    <span className="text-[11px] font-black text-[#081C3E] dark:text-slate-100 block truncate">
+                      {hideFigures
+                        ? '••••'
+                        : goalAmount >= 1000
+                          ? `${(goalAmount / 1000).toLocaleString('es-ES', { maximumFractionDigits: 1 })}k €`
+                          : `${goalAmount} €`}
+                    </span>
+                    <span className="text-[9px] text-amber-700 dark:text-amber-400 font-bold">Editar</span>
+                  </div>
                 </div>
               </button>
             </div>
@@ -1608,6 +1622,107 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
           onClose={() => setHistoryModalPosition(null)}
         />
       )}
+
+      {/* MODAL EDITAR META DE INVERSIÓN */}
+      {showGoalModal && (() => {
+        const currentVal = metrics.totalMarketValue;
+        const parsedGoal = Math.max(0, parseFloat(goalInput) || 0);
+        const previewProgress = parsedGoal > 0 ? Math.min(100, Math.round((currentVal / parsedGoal) * 100)) : 0;
+        const remaining = Math.max(0, parsedGoal - currentVal);
+        return (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl p-5 shadow-2xl border border-amber-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Trophy className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">Editar Meta de Inversión</h3>
+                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 truncate">
+                    Cartera: {activePortfolio.name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 mb-4 p-3 rounded-2xl bg-amber-50/70 dark:bg-slate-800/70 border border-amber-100 dark:border-slate-700">
+                <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
+                  <span className="text-slate-600 dark:text-slate-300">Progreso actual</span>
+                  <span className="text-amber-700 dark:text-amber-400 font-black">{previewProgress}%</span>
+                </div>
+                <div className="w-full h-2.5 bg-amber-200/70 dark:bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full transition-all duration-300"
+                    style={{ width: `${previewProgress}%` }}
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Actual: <strong className="text-slate-800 dark:text-slate-100">{formatEUR(currentVal, hideFigures)}</strong>
+                  </span>
+                  {parsedGoal > 0 && remaining === 0 ? (
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">🎉 ¡Meta lograda!</span>
+                  ) : (
+                    <span className="text-slate-600 dark:text-slate-300">
+                      Faltan <strong className="text-amber-700 dark:text-amber-400">{formatEUR(remaining, hideFigures)}</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">
+                Objetivo en euros (€)
+              </label>
+              <input
+                type="number"
+                step="any"
+                min="1"
+                value={goalInput}
+                onChange={e => setGoalInput(e.target.value)}
+                className="w-full text-2xl font-black text-slate-900 dark:text-white bg-white dark:bg-slate-950 border border-amber-300 dark:border-slate-700 rounded-xl px-3 py-2 text-center focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3"
+                placeholder="25000"
+              />
+
+              <div className="grid grid-cols-4 gap-1.5 mb-4">
+                {[10000, 25000, 50000, 100000].map(preset => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setGoalInput(String(preset))}
+                    className={`py-1.5 rounded-xl text-[11px] font-extrabold border transition-colors ${
+                      parsedGoal === preset
+                        ? 'bg-amber-500 text-white border-amber-500'
+                        : 'bg-amber-50/70 dark:bg-slate-800 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-slate-700 hover:bg-amber-100'
+                    }`}
+                  >
+                    {preset / 1000}k €
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowGoalModal(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    const val = parseFloat(goalInput);
+                    if (!isNaN(val) && val > 0 && onUpdateGoalAmount) {
+                      onUpdateGoalAmount(Math.round(val));
+                    }
+                    setShowGoalModal(false);
+                  }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-amber-500 text-white hover:bg-amber-600 shadow-sm"
+                >
+                  Guardar Meta
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* MODAL EDITAR EFECTIVO */}
       {showCashModal && (
