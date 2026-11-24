@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AssetType, PositionItem, WatchlistItem, WatchlistPortfolioMeta } from '../types/portfolio';
 import { COMPREHENSIVE_CATALOG, CatalogAsset } from '../data/comprehensiveAssetCatalog';
+import degiroCoreEtfsRaw from '../data/degiroCoreEtfs.json';
 import { estimateHistoricalPrice, formatDateToSpanish } from '../utils/historicalPriceEstimator';
 import { formatEUR } from '../utils/calculations';
 import { liveQuotesService } from '../services/liveQuotesService';
@@ -23,6 +24,68 @@ import {
   Globe,
   Loader2,
 } from 'lucide-react';
+
+interface DegiroCoreRaw {
+  isin: string;
+  name: string;
+  currency: string;
+  exchange: string;
+}
+
+const DEGIRO_CORE_LIST = degiroCoreEtfsRaw as DegiroCoreRaw[];
+const DEGIRO_CORE_ISINS = new Set(DEGIRO_CORE_LIST.map(e => e.isin.toUpperCase()));
+
+function buildMergedCatalog(): CatalogAsset[] {
+  const existingIsins = new Set<string>();
+  const base: CatalogAsset[] = COMPREHENSIVE_CATALOG.map(item => {
+    const up = (item.isin || '').toUpperCase();
+    if (up) existingIsins.add(up);
+    return up && DEGIRO_CORE_ISINS.has(up) ? { ...item, degiroCore1Eur: true } : item;
+  });
+
+  const extraCore: CatalogAsset[] = [];
+  for (const e of DEGIRO_CORE_LIST) {
+    const up = e.isin.toUpperCase();
+    if (existingIsins.has(up)) continue;
+    existingIsins.add(up);
+
+    const isIreland = up.startsWith('IE');
+    const flag = e.exchange.includes('Madrid')
+      ? '🇪🇸'
+      : e.exchange.includes('Paris')
+        ? '🇫🇷'
+        : e.exchange.includes('Amsterdam')
+          ? '🇳🇱'
+          : e.exchange.includes('Xetra')
+            ? '🇩🇪'
+            : e.exchange.includes('Italiana')
+              ? '🇮🇹'
+              : e.exchange.includes('London')
+                ? '🇬🇧'
+                : '🇪🇺';
+
+    extraCore.push({
+      name: e.name,
+      ticker: up,
+      yahooSymbol: up,
+      isin: up,
+      type: 'ETFs',
+      countryFlag: flag,
+      market: `DEGIRO Core (${e.exchange})`,
+      price: 0,
+      currency: (e.currency === 'USD' || e.currency === 'GBP' ? e.currency : 'EUR') as 'EUR' | 'USD' | 'GBP',
+      dailyChangePct: 0,
+      logoBg: 'bg-sky-700',
+      logoText: e.name.split(/\s+/)[0].slice(0, 4).toUpperCase(),
+      degiroCore1Eur: true,
+      zeroDoubleTax: isIreland,
+    });
+  }
+
+  return [...base, ...extraCore];
+}
+
+const FULL_CATALOG: CatalogAsset[] = buildMergedCatalog();
 
 interface SearchModalViewProps {
   onClose: () => void;
@@ -90,7 +153,7 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
 
         // Excluir duplicados exactos que ya están en el catálogo local
         const localSymbols = new Set(
-          COMPREHENSIVE_CATALOG.map(c => (c.yahooSymbol || c.ticker).toUpperCase())
+          FULL_CATALOG.map(c => (c.yahooSymbol || c.ticker).toUpperCase())
         );
 
         const mapped: CatalogAsset[] = remote
@@ -125,10 +188,10 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
     };
   }, [searchTerm, selectedFilter]);
 
-  // Filtrado de activos reactivo y veloz (Catálogo Local)
+  // Filtrado de activos reactivo y veloz (Catálogo Local + 200 ETFs DEGIRO Core Selection)
   const filteredAssets = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
-    return COMPREHENSIVE_CATALOG.filter(asset => {
+    return FULL_CATALOG.filter(asset => {
       const matchesFilter = selectedFilter === 'Todos' || asset.type === selectedFilter;
       const matchesZeroTax = !onlyZeroDoubleTax || asset.zeroDoubleTax === true;
       const matchesDegiroCore = !onlyDegiroCore || asset.degiroCore1Eur === true;
@@ -159,10 +222,10 @@ export const SearchModalView: React.FC<SearchModalViewProps> = ({
   }, [onlineResults]);
 
   // Agrupación para la vista de inicio vacía
-  const accionesList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'Acciones'), []);
-  const etfsList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'ETFs'), []);
-  const fondosList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'Fondos'), []);
-  const criptoList = useMemo(() => COMPREHENSIVE_CATALOG.filter(a => a.type === 'Cripto'), []);
+  const accionesList = useMemo(() => FULL_CATALOG.filter(a => a.type === 'Acciones'), []);
+  const etfsList = useMemo(() => FULL_CATALOG.filter(a => a.type === 'ETFs'), []);
+  const fondosList = useMemo(() => FULL_CATALOG.filter(a => a.type === 'Fondos'), []);
+  const criptoList = useMemo(() => FULL_CATALOG.filter(a => a.type === 'Cripto'), []);
 
   // Estimación de precio histórico según la fecha elegida
   const historicalEstimate = useMemo(() => {

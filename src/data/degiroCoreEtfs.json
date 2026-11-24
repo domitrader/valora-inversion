@@ -1,0 +1,1202 @@
+[
+  {
+    "isin": "LU1681046931",
+    "name": "AMUNDI ETF CAC 40",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681044480",
+    "name": "AMUNDI ETF EM ASIA",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681047236",
+    "name": "AMUNDI ETF ES50 C",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681045370",
+    "name": "AMUNDI ETF MSCI EM",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681043599",
+    "name": "AMUNDI ETF MSCI WR",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681048804",
+    "name": "AMUNDI ETF SP 500",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681040223",
+    "name": "AMUNDI ETF STOX600",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681042609",
+    "name": "AMUNDI MSCI EUROPE",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1681047079",
+    "name": "AMUNDIETF CAC40(D)",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "ES0105336038",
+    "name": "BBVA-ACCION IBEX 35 ETF",
+    "currency": "EUR",
+    "exchange": "Bolsa de Madrid"
+  },
+  {
+    "isin": "LU0488317701",
+    "name": "ComStage NYSE Arca Gold BUGS UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0779800910",
+    "name": "Db X Trackers Csi300 Index Etf",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0839027447",
+    "name": "DB X-TRACKERS NIKKEI 225 UCITS ETF (DR)",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BM67HM91",
+    "name": "DBX MSCI WORLD ENERGY ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BM67HK77",
+    "name": "DBX MSCI WORLD HEALTHCAREETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "DE000A0H0728",
+    "name": "DIVERS COMMODITY",
+    "currency": "USD",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "FR0012739431",
+    "name": "EASYETF STOXX 50",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE00BFYN8Y92",
+    "name": "EMQQ EM MKTS INTERNET&",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BYPLS672",
+    "name": "ETF Cyber Security",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BMW3QX54",
+    "name": "ETF Robotics",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "DE000ETFL037",
+    "name": "Etflab Stoxx Europe Strong Growth 20",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BG5J1M21",
+    "name": "HANetf Management Ltd.",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BDDRF924",
+    "name": "HAN-GINS CLOUD TECHNOL",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BDDRF700",
+    "name": "HAN-GINS INNOVAT TECHN",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00B44T3H88",
+    "name": "HSBC MSCI CHINA",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE00B4X9L533",
+    "name": "HSBC MSCI WORLD",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE00B5KQNG97",
+    "name": "HSBC SP 500 ETF",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE00BF11F565",
+    "name": "I CRE ECRP BD A",
+    "currency": "EUR",
+    "exchange": "London Stock Exchange"
+  },
+  {
+    "isin": "IE00BRKWGL70",
+    "name": "Invesco S&P 500 ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BWTN6Y99",
+    "name": "Invesco S&P 500 High Div Low Vol UCITS ETF Dis",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BSKRJZ44",
+    "name": "ISH $ TRESU 20+",
+    "currency": "USD",
+    "exchange": "London Stock Exchange"
+  },
+  {
+    "isin": "IE00B0M62Y33",
+    "name": "ISHARES AEX",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B14X4T88",
+    "name": "ISHARES ASIA PACIF",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BYZK4552",
+    "name": "iShares Automation & Robotics UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BYWZ0333",
+    "name": "iShares Automation & Robotics UCITS ETF USD (Dist)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B3DKXQ41",
+    "name": "ISHARES B E AGG",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B3F81R35",
+    "name": "ISHARES B E CORP",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B0M63516",
+    "name": "ISHARES BRAZIL",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1W57M07",
+    "name": "ISHARES BRIC 50",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B02KXK85",
+    "name": "ISHARES CHINA 25",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BYPC1H27",
+    "name": "iShares China CNY Bond UCITS ETF USD Dist",
+    "currency": "USD",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BJ5JPG56",
+    "name": "ISHARES CHINA U A",
+    "currency": "USD",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BDBRDM35",
+    "name": "iShares Core Glb Aggregate Bd UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B5BMR087",
+    "name": "iShares Core S&P 500 UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BG0J4841",
+    "name": "iShares Digital Security UCITS ETF USD (Dist)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BG0J4C88",
+    "name": "iShares Digital Security UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BYZK4883",
+    "name": "iShares Digitalisation UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BDFL4P12",
+    "name": "iShares Diverisified Comm SWAP UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE000A0H0728",
+    "name": "iShares Diversified Commodity Swap (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B57X3V84",
+    "name": "ISHARES DJ GLO SUS",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1FZS806",
+    "name": "ISHARES E GOV7-10",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B0M62X26",
+    "name": "ISHARES E INF-LINK",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BP3QZ825",
+    "name": "iShares Edge MSCI WrldMmtFactor UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BGL86Z12",
+    "name": "iShares El Vehicles and DrivTech UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B0M63177",
+    "name": "ISHARES EM MARKETS",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BKM4GZ66",
+    "name": "ISHARES EMIM",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B0M62S72",
+    "name": "ISHARES ESTOXX DIV",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE0008471009",
+    "name": "ISHARES EURO STX50",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1YZSC51",
+    "name": "ISHARES EUROPE",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE0005042456",
+    "name": "ISHARES FTSE 100",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1XNHC34",
+    "name": "iShares Global Clean Energy UCITS ETF USD (Dist)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B1TXK627",
+    "name": "iShares Global Water UCITS ETF USD (Dist)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B6R52036",
+    "name": "iShares Gold Producers UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BYZK4776",
+    "name": "iShares Healthcare Innovation UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B66F4759",
+    "name": "iShares High Yield Corp Bond UCITS ETF EUR(Dist)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B1FZS467",
+    "name": "ISHARES INFRA GLO",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B02KXH56",
+    "name": "ISHARES JAPAN",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B0M63391",
+    "name": "ISHARES KOREA",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B27YCK28",
+    "name": "ISHARES LATIN AM",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BQT3WG13",
+    "name": "iShares MSCI China A UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B4L5YC18",
+    "name": "ISHARES MSCI EM A",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BFNM3P36",
+    "name": "iShares MSCI EM IMI ESG Screened UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BFNM3N12",
+    "name": "iShares MSCI EM IMI ESG Scrnd UCITS ETF USD Dist",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BFNM3B99",
+    "name": "iShares MSCI EMU ESG Screened UCITS ETF EUR Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B4K48X80",
+    "name": "ISHARES MSCI EUR A",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BFNM3D14",
+    "name": "iShares MSCI Europe ESG Screened UCITS ETF EUR Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BZCQB185",
+    "name": "iShares MSCI India UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BFNM3G45",
+    "name": "iShares MSCI USA ESG Screened UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B4L5Y983",
+    "name": "ISHARES MSCI WOR A",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BHZPJ569",
+    "name": "iShares MSCI World ESG Enhanced UCITS ETF USD Dist",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BFNM3J75",
+    "name": "iShares MSCI World ESG Screened UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BF4RFH31",
+    "name": "iShares MSCI World Small Cap UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BYX2JD69",
+    "name": "iShares MSCI World SRI UCITS ETF EUR Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BYVQ9F29",
+    "name": "iShares NASDAQ 100 UCITS ETF USD (Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BYXG2H39",
+    "name": "iShares Nasdaq US Biotechnology ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE000A0F5UF5",
+    "name": "iShares NASDAQ-100 UCITS ETF (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B1TXHL60",
+    "name": "ISHARES PRIVATE EQ",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1FZS244",
+    "name": "ISHARES PROP ASIA",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B0M63284",
+    "name": "ISHARES PROP EURO",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1FZS350",
+    "name": "ISHARES PROP GLO",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B1FZSF77",
+    "name": "ISHARES PROP US",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE0031442068",
+    "name": "ISHARES S&P 500",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B3WJKG14",
+    "name": "iShares S&P 500 Inf Tech Sector UCITS ETF USD(Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE0008470928",
+    "name": "ISHARES STOXX 50",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "DE000A0H08M3",
+    "name": "iShares STOXX Europe 600 Oil & Gas UCITS ETF (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE000A0H08S0",
+    "name": "iShares STOXX Europe 600 Travel & Leisure (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE0002635307",
+    "name": "iShares STOXX Europe 600 UCITS ETF (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE0005933998",
+    "name": "iShares STOXX Europe Mid 200 (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE0002635299",
+    "name": "iShares STOXX Europe Select Dividend 30 (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE000A0F5UH1",
+    "name": "iShares STOXX Global Select Dividend 100 (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "DE0005933972",
+    "name": "iShares TecDAX UCITS ETF (DE)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B1FZS574",
+    "name": "ISHARES TURKEY",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B0M62Q58",
+    "name": "ISHARES WORLD",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B6R51Z18",
+    "name": "iSharesOil&Gas Exploration&Prod UCITS ETF USD(Acc)",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B53SZB19",
+    "name": "iSHR NASDAQ 100",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BFXR7892",
+    "name": "KRANE CSI INTERNET",
+    "currency": "USD",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BK5BCD43",
+    "name": "L&G Artificial Intelligence UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BF0M2Z96",
+    "name": "L&G BATTERY VALUE-CHAIN UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BK5BC891",
+    "name": "L&G Clean Water UCITS ETF Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU1781541179",
+    "name": "LYXOR CORE MSCI WORLD",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "FR0010405431",
+    "name": "LYXOR ETF ATHEX 20",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "FR0000021842",
+    "name": "LYXOR ETF BEL 20",
+    "currency": "EUR",
+    "exchange": "Euronext Brussels"
+  },
+  {
+    "isin": "FR0007052782",
+    "name": "LYXOR ETF CAC 40",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU0252633754",
+    "name": "LYXOR ETF DAX",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "FR0007054358",
+    "name": "LYXOR ETF ESTOXX50",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "FR0010251744",
+    "name": "LYXOR ETF IBEX 35",
+    "currency": "EUR",
+    "exchange": "Bolsa de Madrid"
+  },
+  {
+    "isin": "FR0010361683",
+    "name": "LYXOR ETF INDIA",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1923627092",
+    "name": "LYXOR ETF RUSSIA",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU0496786574",
+    "name": "LYXOR ETF SP500",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1287023185",
+    "name": "LYXOR EUROMTS 710Y",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1691909508",
+    "name": "Lyxor Global Gender Equality (DR) UCITS ETF - Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU2197908721",
+    "name": "Lyxor International Asset Management S.A.S.",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU1900066207",
+    "name": "LYXOR MSCI BRAZIL",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU2023678282",
+    "name": "LYXOR MSCI DISRU TECH",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "LU2023679090",
+    "name": "LYXOR MSCI FUTU MOBIL",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "LU1900067601",
+    "name": "LYXOR MSCI TURKEY",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1792117779",
+    "name": "Lyxor MSCI World ESG Trend Leaders (DR) UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "FR0010524777",
+    "name": "Lyxor New Energy UCITS ETF Dist",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU1838002480",
+    "name": "Lyxor Robotics & AI UCITS ETF - Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU1834988278",
+    "name": "LYXOR ST EU OILGAS",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU0908500753",
+    "name": "LYXOR STOXX EUROPE 600 (DR) UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "LU1834983477",
+    "name": "LYXOR STX EU BANKS",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1834986900",
+    "name": "LYXOR STX EU HLTHC",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "FR0010527275",
+    "name": "Lyxor World Water UCITS ETF - Dist",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B441G979",
+    "name": "MSCI WRD EH",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "LU1829218749",
+    "name": "MULTI LY COMMO CRB",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1829221024",
+    "name": "MULTI NASDAQ 100",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE0032077012",
+    "name": "PS EQQQ",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE00BJXRZJ40",
+    "name": "RIZE CYBERSECUR AND DA",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BJXRZ273",
+    "name": "Rize Med Cannabis and Life Scis UCITS ETF USD Acc",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BLRPQH31",
+    "name": "RIZE SUSTAINABLE FOOD",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00B3ZW0K18",
+    "name": "SP 500 EH",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BYSZ5V04",
+    "name": "SPDR Bloomberg Barclays 10+YUS Tr Bond UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B466KX20",
+    "name": "SPDR EM Asia",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "IE00BYTRR863",
+    "name": "SPDR MSCI W ENERGY",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BYTRRB94",
+    "name": "SPDR MSCI W HEALTH",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BYTRRD19",
+    "name": "SPDR MSCI W TECH",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BJ38QD84",
+    "name": "SPDR Russell 2000 US Small Cap UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B6YX5C33",
+    "name": "SPDR S&P 500 $",
+    "currency": "USD",
+    "exchange": "London Stock Exchange"
+  },
+  {
+    "isin": "IE00B5M1WJ87",
+    "name": "SPDR S&P Euro Dividend Aristocrats ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B9CQXS71",
+    "name": "SPDR S&P Gbl Div Aristocrats UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B6YX5D40",
+    "name": "SPDR S&P US Dividend Aristocrats ETF",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BWBXM492",
+    "name": "SPDR S&P US ENERGY SEL SECTOR UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BH4GPZ28",
+    "name": "SPDR SP 500ESG Acc",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BK5H8015",
+    "name": "SPDR STOXX ESG",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BWBXM948",
+    "name": "SPDR US TECH",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "FR0011550193",
+    "name": "STOXX 600 EasyETF",
+    "currency": "EUR",
+    "exchange": "Euronext Paris"
+  },
+  {
+    "isin": "LU1324516308",
+    "name": "UBS BARC USD EM MKT SOV UCITS ETF EU HED",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "LU1459801780",
+    "name": "UBS ETF BAR TIPS 1-10 EU HDG UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "LU0629460675",
+    "name": "UBS ETF ESREUA",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "LU0629459743",
+    "name": "UBS ETF MSCI World Socially Resp UCITS (USD) Ad",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0950674332",
+    "name": "UBS ETF MSCI World Socially Resp UCITS (USD) Ad",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0629460089",
+    "name": "UBS ETF-MSCI USA Socially Responsible U (USD)Ad",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU1048313891",
+    "name": "UBS MSCI EM MKTS SOCIALLY RESP UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "NL0009272749",
+    "name": "VanEck AEX",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BQQP9G91",
+    "name": "VANECK JUNIOR GOLD MINERS UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "NL0011683594",
+    "name": "VANECK MRNGSTR DV ETF",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "NL0010408704",
+    "name": "VANECK SUST WORLD ETF",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BMC38736",
+    "name": "VANECK VECTOR SEMICOND",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "NL0009690221",
+    "name": "VanEck Vectors Global Equal Weight UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "NL0009690239",
+    "name": "VanEck Vectors Global Real Estate UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BQQP9F84",
+    "name": "VANECK VECTORS GOLD MINERS UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BYWQWR46",
+    "name": "VanEck Vectors VideoGaming&eSports UCITS ETF USD A",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BZ163H91",
+    "name": "VANGUARD EURGVBD",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BK5BQT80",
+    "name": "Vanguard FTSE All-World UCITS ETF - (USD) Accumulating",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00B9F5YL18",
+    "name": "VANGUARD FTSE APXJ",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B3RBWM25",
+    "name": "VANGUARD FTSE AW",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B3VVMM84",
+    "name": "VANGUARD FTSE EM",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B945VV12",
+    "name": "VANGUARD FTSE EUR",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B8GKDB10",
+    "name": "VANGUARD FTSE HDY",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B3XXRP09",
+    "name": "VANGUARD S&P500",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00BZ163M45",
+    "name": "VANGUARD USDTRBOND",
+    "currency": "EUR",
+    "exchange": "Euronext Amsterdam"
+  },
+  {
+    "isin": "IE00B810Q511",
+    "name": "VANGUARDFTSE100",
+    "currency": "GBP",
+    "exchange": "London Stock Exchange"
+  },
+  {
+    "isin": "IE00BDVPNG13",
+    "name": "WISDOMTREE ARTIF INTEL",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BKLF1R75",
+    "name": "WISDOMTREE BATTERY SOL",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BJGWQN72",
+    "name": "WISDOMTREE CLOUD COMPU",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BZ56SW52",
+    "name": "WISDOMTREE GLOB QUAL DIV GROW UCITS ETF",
+    "currency": "EUR",
+    "exchange": "Borsa Italiana S.p.A."
+  },
+  {
+    "isin": "IE00BGV5VN51",
+    "name": "Xtrackers Artific Intellig and BigDataUCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BG370F43",
+    "name": "Xtrackers ESG MSCI Emerging Markets UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BZ02LR44",
+    "name": "Xtrackers ESG MSCI World UCITS ETF - 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BGV5VR99",
+    "name": "Xtrackers Future Mobility UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0484968812",
+    "name": "Xtrackers II ESG EUR Corporate Bond UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU1109942653",
+    "name": "Xtrackers II EUR High Yield Corp Bond UCITS ETF 1D",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0942970798",
+    "name": "Xtrackers II Glbal Aggregate Bnd Swap UCITS ETF 1D",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0378818131",
+    "name": "Xtrackers II Global Government Bond UCITS ETF 5C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "LU0514695690",
+    "name": "Xtrackers MSCI China UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BTJRMP35",
+    "name": "Xtrackers MSCI Emerging Markets UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BM67HT60",
+    "name": "Xtrackers MSCI World Information Tech UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BL25JP72",
+    "name": "Xtrackers MSCI World Momentum UCITS ETF 1C",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  },
+  {
+    "isin": "IE00BZ036J45",
+    "name": "Xtrackers USD Corporate Bond UCITS ETF 1D",
+    "currency": "EUR",
+    "exchange": "Xetra"
+  }
+]
