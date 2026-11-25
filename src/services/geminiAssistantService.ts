@@ -493,7 +493,99 @@ export async function validateGeminiApiKey(apiKey: string): Promise<{ valid: boo
 }
 
 /**
- * Envía la pregunta de Domingo a Gemini (con fallback automático entre modelos gratuitos y motor local).
+ * Contexto ultracompacto (<580 caracteres) con las cifras reales en vivo de Domingo
+ * para el motor IA en la nube sin clave (0 €, sin configuración).
+ */
+function buildCompactCloudContext(portfolioState: PortfolioState): string {
+  const defaultId = portfolioState.portfolios[0]?.id || 'port-main';
+  const active =
+    portfolioState.portfolios.find((p) => p.id === portfolioState.activePortfolioId) ||
+    portfolioState.portfolios[0];
+  const activePos = portfolioState.positions.filter(
+    (p) => (p.portfolioId || defaultId) === active?.id
+  );
+  const posVal = activePos.reduce((s, p) => s + (p.totalValue || 0), 0);
+  const cash =
+    active?.id === defaultId
+      ? active?.cash !== undefined
+        ? active.cash
+        : portfolioState.cash
+      : active?.cash ?? 0;
+  const totalVal = posVal + cash;
+  const dayBp = activePos.reduce((s, p) => s + (p.dailyChangeValue || 0), 0);
+  const topHoldings = [...activePos]
+    .sort((a, b) => (b.totalValue || 0) - (a.totalValue || 0))
+    .slice(0, 5)
+    .map((p) => `${p.ticker}:${Math.round(p.totalValue)}€(${p.dailyChangePct >= 0 ? '+' : ''}${p.dailyChangePct.toFixed(1)}%)`)
+    .join(', ');
+
+  return (
+    `Asistente financiero por voz de Domingo en España. Responde en español claro, directo y sin tablas Markdown. ` +
+    `Carteras: DEGIRO, MyInvestor, Coinbase, Bitvavo, BBVA. ` +
+    `Activa(${active?.name || 'DEGIRO'}): ${totalVal.toFixed(0)}€ (${posVal.toFixed(0)}€ inv + ${cash.toFixed(0)}€ efec), hoy ${dayBp >= 0 ? '+' : ''}${dayBp.toFixed(0)}€. ` +
+    `Top: ${topHoldings || 'sin pos'}. Hist DEGIRO 2018-26: +21989€ cerrados, div 533€.`
+  ).slice(0, 560);
+}
+
+/**
+ * Motor IA Generativo en la Nube SIN CLAVE (0 €, responde a cualquier pregunta abierta).
+ */
+async function askZeroKeyCloudAI(
+  userMessage: string,
+  history: AssistantChatMessage[],
+  portfolioState: PortfolioState
+): Promise<string | null> {
+  const compactSystem = buildCompactCloudContext(portfolioState);
+  const lastTurn = history
+    .filter((m) => m.id !== 'welcome-domingo')
+    .slice(-2)
+    .map((m) => ({
+      role: m.role === 'user' ? 'user' : 'assistant',
+      content: m.content.slice(0, 140),
+    }));
+
+  try {
+    const res = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai-fast',
+        messages: [
+          { role: 'system', content: compactSystem },
+          ...lastTurn,
+          { role: 'user', content: userMessage.slice(0, 350) },
+        ],
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const reply = data?.choices?.[0]?.message?.content?.trim();
+      if (reply) return reply;
+    }
+  } catch {
+    // probar respaldo GET directo
+  }
+
+  try {
+    const promptUrl = `https://text.pollinations.ai/${encodeURIComponent(
+      `${compactSystem}\nUsuario: ${userMessage.slice(0, 300)}`
+    )}`;
+    const getRes = await fetch(promptUrl);
+    if (getRes.ok) {
+      const plain = (await getRes.text()).trim();
+      if (plain && !plain.startsWith('<!DOCTYPE')) return plain;
+    }
+  } catch {
+    // ignore
+  }
+
+  return null;
+}
+
+/**
+ * Envía la pregunta de Domingo a Gemini (si hay clave) o a la IA en la nube gratuita sin clave,
+ * dejando el motor estático solo si no hay conexión a internet.
  */
 export async function askDomingoAssistant(params: {
   userMessage: string;
@@ -509,96 +601,102 @@ export async function askDomingoAssistant(params: {
   const { userMessage, history, portfolioState, lastUpdatedTime } = params;
   const apiKey = (portfolioState.geminiApiKey || getStoredGeminiApiKey()).trim();
 
-  if (!apiKey) {
-    const local = answerWithLocalAnalyst(userMessage, portfolioState);
-    return {
-      ...local,
-      source: 'local',
-      modelUsed: 'Analista Local Integrado (Gratis)',
-    };
-  }
+  if (apiKey) {
+    const preferredModel = getStoredGeminiModel();
+    const fallbackOrder: GeminiModelChoice[] = Array.from(
+      new Set<GeminiModelChoice>([
+        preferredModel,
+        'gemini-3.6-flash',
+        'gemini-3.5-flash',
+        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
+      ])
+    );
 
-  const preferredModel = getStoredGeminiModel();
-  const fallbackOrder: GeminiModelChoice[] = Array.from(
-    new Set<GeminiModelChoice>([
-      preferredModel,
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3.8-flash',
-      'gemini-3.5-flash-lite',
-    ])
-  );
+    const systemContext = buildDomingoPortfolioContext(portfolioState, lastUpdatedTime);
+    const recentTurns = history
+      .filter((m) => m.id !== 'welcome-domingo')
+      .slice(-10)
+      .map((msg) => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      }));
 
-  const systemContext = buildDomingoPortfolioContext(portfolioState, lastUpdatedTime);
+    const contents = [
+      ...recentTurns,
+      {
+        role: 'user',
+        parts: [{ text: userMessage }],
+      },
+    ];
 
-  // Construimos historial conversacional reciente (últimos 10 turnos)
-  const recentTurns = history.slice(-10).map((msg) => ({
-    role: msg.role === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.content }],
-  }));
+    for (const model of fallbackOrder) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: systemContext }],
+              },
+              contents,
+              generationConfig: {
+                temperature: 0.4,
+                maxOutputTokens: 4096,
+              },
+            }),
+          }
+        );
 
-  const contents = [
-    ...recentTurns,
-    {
-      role: 'user',
-      parts: [{ text: userMessage }],
-    },
-  ];
-
-  for (const model of fallbackOrder) {
-    try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: systemContext }],
-            },
-            contents,
-            generationConfig: {
-              temperature: 0.35,
-              maxOutputTokens: 1200,
-            },
-          }),
+        if (!response.ok) {
+          if (response.status === 429 || response.status === 404 || response.status === 503) {
+            continue;
+          }
+          throw new Error(`HTTP ${response.status}`);
         }
-      );
 
-      if (!response.ok) {
-        // Si el modelo da cuota agotada o no existe, probamos el siguiente modelo gratuito
-        if (response.status === 429 || response.status === 404 || response.status === 503) {
-          continue;
-        }
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const text: string =
-        data?.candidates?.[0]?.content?.parts
-          ?.map((p: { text?: string }) => p.text || '')
+        const data = await response.json();
+        const parts: Array<{ text?: string; thought?: boolean }> =
+          data?.candidates?.[0]?.content?.parts || [];
+        const visibleParts = parts.filter((p) => !p.thought);
+        const text: string = (visibleParts.length > 0 ? visibleParts : parts)
+          .map((p) => p.text || '')
           .join('')
-          .trim() || '';
+          .trim();
 
-      if (text) {
-        return {
-          content: text,
-          spokenText: cleanTextForSpeech(text),
-          source: 'gemini',
-          modelUsed: model,
-        };
+        if (text) {
+          return {
+            content: text,
+            spokenText: cleanTextForSpeech(text),
+            source: 'gemini',
+            modelUsed: model,
+          };
+        }
+      } catch (err) {
+        console.warn(`Aviso al consultar ${model}, probando alternativa:`, err);
       }
-    } catch (err) {
-      console.warn(`Aviso al consultar ${model}, probando alternativa:`, err);
     }
   }
 
-  // Fallback seguro al analista local si se agota la cuota o falla internet
+  // Motor IA en la Nube Gratuito SIN CLAVE (responde a cualquier pregunta abierta sin configurar nada)
+  const cloudReply = await askZeroKeyCloudAI(userMessage, history, portfolioState);
+  if (cloudReply) {
+    return {
+      content: cloudReply,
+      spokenText: cleanTextForSpeech(cloudReply),
+      source: 'gemini',
+      modelUsed: 'IA en Nube Gratis (Sin Clave)',
+    };
+  }
+
+  // Último respaldo offline si el móvil no tiene internet
   const localFallback = answerWithLocalAnalyst(userMessage, portfolioState);
   return {
-    content: `${localFallback.content}\n\n*(Respondido con el motor local por límite temporal de conexión con Gemini)*`,
+    content: localFallback.content,
     spokenText: localFallback.spokenText,
     source: 'local',
-    modelUsed: 'Analista Local (Respaldo)',
+    modelUsed: 'Modo Sin Conexión',
   };
 }

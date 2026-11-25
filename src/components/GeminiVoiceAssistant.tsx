@@ -597,15 +597,11 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
                       onClick={() => setShowKeyModal((v) => !v)}
                       className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/12 hover:bg-white/20 border border-white/20 transition"
                     >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          apiKey ? 'bg-emerald-400' : 'bg-amber-300'
-                        }`}
-                      />
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       <span>
                         {apiKey
                           ? `Gemini Gratis Conectado (${selectedModel === 'gemini-3.8-flash' ? '3.8 Flash' : '3.6 Flash'})`
-                          : 'Modo Local · Toca para conectar tu Gemini Gratis'}
+                          : 'IA en Nube Activa Gratis · (Clave Gemini opcional)'}
                       </span>
                       <KeyRound className="w-2.5 h-2.5 text-amber-300 ml-0.5" />
                     </button>
