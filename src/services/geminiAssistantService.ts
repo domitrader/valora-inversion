@@ -15,7 +15,11 @@ export interface AssistantChatMessage {
   modelUsed?: string;
 }
 
-export type GeminiModelChoice = 'gemini-2.5-flash' | 'gemini-2.5-pro' | 'gemini-2.0-flash';
+export type GeminiModelChoice =
+  | 'gemini-3.6-flash'
+  | 'gemini-3.8-flash'
+  | 'gemini-3.5-flash'
+  | 'gemini-3.5-flash-lite';
 
 const STORAGE_KEY_API = 'valora_domingo_gemini_api_key';
 const STORAGE_KEY_MODEL = 'valora_domingo_gemini_model';
@@ -43,13 +47,18 @@ export function setStoredGeminiApiKey(key: string): void {
 export function getStoredGeminiModel(): GeminiModelChoice {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_MODEL) as GeminiModelChoice | null;
-    if (saved === 'gemini-2.5-flash' || saved === 'gemini-2.5-pro' || saved === 'gemini-2.0-flash') {
+    if (
+      saved === 'gemini-3.6-flash' ||
+      saved === 'gemini-3.8-flash' ||
+      saved === 'gemini-3.5-flash' ||
+      saved === 'gemini-3.5-flash-lite'
+    ) {
       return saved;
     }
   } catch {
     // ignore
   }
-  return 'gemini-2.5-flash';
+  return 'gemini-3.6-flash';
 }
 
 export function setStoredGeminiModel(model: GeminiModelChoice): void {
@@ -511,7 +520,13 @@ export async function askDomingoAssistant(params: {
 
   const preferredModel = getStoredGeminiModel();
   const fallbackOrder: GeminiModelChoice[] = Array.from(
-    new Set<GeminiModelChoice>([preferredModel, 'gemini-2.5-flash', 'gemini-2.0-flash'])
+    new Set<GeminiModelChoice>([
+      preferredModel,
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-3.8-flash',
+      'gemini-3.5-flash-lite',
+    ])
   );
 
   const systemContext = buildDomingoPortfolioContext(portfolioState, lastUpdatedTime);

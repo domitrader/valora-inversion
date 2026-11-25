@@ -626,7 +626,7 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
                       />
                       <span>
                         {apiKey
-                          ? `Gemini Gratis Activo (${selectedModel === 'gemini-2.5-pro' ? '2.5 Pro' : '2.5 Flash'})`
+                          ? `Gemini Gratis Conectado (${selectedModel === 'gemini-3.8-flash' ? '3.8 Flash' : '3.6 Flash'})`
                           : 'Modo Local · Toca para conectar tu Gemini Gratis'}
                       </span>
                       <KeyRound className="w-2.5 h-2.5 text-amber-300 ml-0.5" />
@@ -765,7 +765,7 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
                     type="password"
                     value={keyDraft}
                     onChange={(e) => setKeyDraft(e.target.value)}
-                    placeholder="2. Pega aquí tu clave gratuita (AIza...)"
+                    placeholder="2. Pega aquí tu clave de Google AI Studio"
                     className="flex-1 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                   <button
@@ -784,12 +784,12 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
                 </div>
 
                 {/* Selector de modelo gratuito */}
-                <div className="flex items-center gap-1.5 pt-0.5">
+                <div className="flex items-center gap-1.5 pt-0.5 flex-wrap">
                   <span className="text-[10px] font-bold text-slate-500">Modelo:</span>
                   {(
                     [
-                      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Rápido · Gratis)' },
-                      { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Profundo)' },
+                      { id: 'gemini-3.6-flash', label: 'Gemini 3.6 Flash (Rápido · Gratis)' },
+                      { id: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash (Última Gen)' },
                     ] as { id: GeminiModelChoice; label: string }[]
                   ).map((m) => (
                     <button
