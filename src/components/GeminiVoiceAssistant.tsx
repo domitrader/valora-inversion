@@ -575,28 +575,6 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
 
   return (
     <>
-      {/* BOTÓN FLOTANTE DE VOZ GEMINI (Exclusivo Domingo · encima del menú inferior) */}
-      {!isOpen && (
-        <div className="fixed bottom-[82px] left-0 right-0 z-40 pointer-events-none max-w-md mx-auto px-4 flex justify-end">
-          <button
-            id="domingo-voice-assistant-fab"
-            type="button"
-            onClick={() => setIsOpen(true)}
-            className="pointer-events-auto group flex items-center gap-2 pl-3 pr-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#081C3E] via-[#0F2952] to-[#0284C7] text-white shadow-[0_10px_26px_-6px_rgba(2,132,199,0.55)] border border-sky-300/60 active:scale-95 transition-all hover:brightness-110"
-            title="Hablar con tu Asistente Gemini por voz"
-          >
-            <span className="relative flex items-center justify-center w-7 h-7 rounded-full bg-white/15 border border-white/25">
-              <Mic className="w-4 h-4 text-amber-300" />
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-[#081C3E]" />
-            </span>
-            <div className="text-left leading-none">
-              <span className="block text-[11px] font-black tracking-tight">Voz Gemini</span>
-              <span className="block text-[9px] text-sky-200 font-bold mt-0.5">Hablar gratis</span>
-            </div>
-          </button>
-        </div>
-      )}
-
       {/* PANEL COMPLETO DEL ASISTENTE DE VOZ DE DOMINGO */}
       {isOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/65 backdrop-blur-xs flex items-end justify-center">
