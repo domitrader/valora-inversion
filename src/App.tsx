@@ -19,6 +19,7 @@ import { ProfileView } from './components/ProfileView';
 import { SearchModalView } from './components/SearchModalView';
 import { ImportPortfolioModal } from './components/ImportPortfolioModal';
 import { PinLockScreen } from './components/PinLockScreen';
+import { GeminiVoiceAssistant } from './components/GeminiVoiceAssistant';
 import { liveQuotesService } from './services/liveQuotesService';
 
 export const App: React.FC = () => {
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
   const [searchInitialCategory, setSearchInitialCategory] = useState<AssetType | undefined>(undefined);
   const [activeWatchlistListId, setActiveWatchlistListId] = useState<string>('default');
   const [isImportOpen, setIsImportOpen] = useState<boolean>(false);
+  const [isVoiceAssistantOpen, setIsVoiceAssistantOpen] = useState<boolean>(false);
 
   // Security PIN lock state
   const [pinCode, setPinCode] = useState<string>(() => {
@@ -559,6 +561,7 @@ export const App: React.FC = () => {
               onToggleHideFigures={handleToggleHideFigures}
               onSelectTimeRange={handleSelectTimeRange}
               onOpenSearch={() => handleOpenSearch()}
+              onOpenVoiceAssistant={() => setIsVoiceAssistantOpen(true)}
               onGoToProfile={() => handleTabChange('perfil')}
               onUpdateCash={handleUpdateCash}
               onUpdateGoalAmount={handleUpdateGoalAmount}
@@ -620,6 +623,16 @@ export const App: React.FC = () => {
             />
           )}
         </main>
+
+        {/* Asistente de Voz Gemini Exclusivo de Domingo (oculto si el PIN está bloqueado) */}
+        {!isLocked && !isSettingPin && (
+          <GeminiVoiceAssistant
+            portfolioState={portfolioState}
+            lastUpdatedTime={lastUpdatedTime}
+            externalOpen={isVoiceAssistantOpen}
+            onExternalOpenHandled={() => setIsVoiceAssistantOpen(false)}
+          />
+        )}
 
         {/* Fixed 4-tab bottom navigation */}
         <BottomNav

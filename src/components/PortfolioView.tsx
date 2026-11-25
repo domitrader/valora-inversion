@@ -64,6 +64,8 @@ import {
   Trophy,
   FileCheck2,
   Receipt,
+  Mic,
+  Sparkles,
 } from 'lucide-react';
 
 function getBrokerLogo(name: string, isDefault?: boolean): string | null {
@@ -93,6 +95,7 @@ interface PortfolioViewProps {
   onToggleHideFigures: () => void;
   onSelectTimeRange: (range: TimeRange) => void;
   onOpenSearch: () => void;
+  onOpenVoiceAssistant?: () => void;
   onGoToProfile: () => void;
   onUpdateCash: (newCash: number) => void;
   onUpdateGoalAmount?: (newGoal: number) => void;
@@ -121,6 +124,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
   onToggleHideFigures,
   onSelectTimeRange,
   onOpenSearch,
+  onOpenVoiceAssistant,
   onGoToProfile,
   onUpdateCash,
   onUpdateGoalAmount,
@@ -388,6 +392,16 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          {onOpenVoiceAssistant && (
+            <button
+              type="button"
+              onClick={onOpenVoiceAssistant}
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#081C3E] to-[#0284C7] text-amber-300 border border-sky-300/80 flex items-center justify-center shadow-[0_4px_14px_rgba(2,132,199,0.35)] hover:brightness-110 active:scale-95 transition-all"
+              title="Hablar con el Asistente de Voz Gemini"
+            >
+              <Mic className="w-4 h-4 stroke-[2.3]" />
+            </button>
+          )}
           <button
             onClick={onOpenSearch}
             className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-sky-200/90 dark:border-slate-700 flex items-center justify-center text-[#0F2952] dark:text-slate-200 shadow-[0_4px_14px_rgba(14,165,233,0.18)] hover:bg-white active:scale-95 transition-all"
@@ -500,6 +514,27 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   </button>
                 );
               })}
+
+              {onOpenVoiceAssistant && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHomeDrawerOpen(false);
+                    onOpenVoiceAssistant();
+                  }}
+                  className="w-full flex items-center gap-3 p-3 rounded-2xl text-left bg-gradient-to-r from-[#081C3E] to-[#0284C7] text-white shadow-sm hover:brightness-110 transition-all"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-extrabold truncate">Asistente Voz Gemini</div>
+                    <div className="text-[10px] text-sky-200 truncate">
+                      Háblale gratis y analiza todo
+                    </div>
+                  </div>
+                </button>
+              )}
 
               {/* SECCIÓN: MIS CARTERAS (CREAR, CAMBIAR, RENOMBRAR Y ELIMINAR) */}
               {portfolios.length > 0 && (
