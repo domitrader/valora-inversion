@@ -498,7 +498,7 @@ export async function askDomingoAssistant(params: {
   modelUsed: string;
 }> {
   const { userMessage, history, portfolioState, lastUpdatedTime } = params;
-  const apiKey = getStoredGeminiApiKey();
+  const apiKey = (portfolioState.geminiApiKey || getStoredGeminiApiKey()).trim();
 
   if (!apiKey) {
     const local = answerWithLocalAnalyst(userMessage, portfolioState);

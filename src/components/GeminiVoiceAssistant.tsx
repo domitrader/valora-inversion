@@ -34,6 +34,7 @@ interface GeminiVoiceAssistantProps {
   lastUpdatedTime?: string;
   externalOpen?: boolean;
   onExternalOpenHandled?: () => void;
+  onSaveGeminiKeyToCloud?: (key: string) => void;
 }
 
 // Tipado compatible con Web Speech API en Chrome / Android / Safari / Edge
@@ -175,15 +176,24 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
   lastUpdatedTime,
   externalOpen,
   onExternalOpenHandled,
+  onSaveGeminiKeyToCloud,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
 
-  const [apiKey, setApiKey] = useState<string>(() => getStoredGeminiApiKey());
-  const [keyDraft, setKeyDraft] = useState<string>(() => getStoredGeminiApiKey());
+  const [apiKey, setApiKey] = useState<string>(() => portfolioState.geminiApiKey || getStoredGeminiApiKey());
+  const [keyDraft, setKeyDraft] = useState<string>(() => portfolioState.geminiApiKey || getStoredGeminiApiKey());
   const [selectedModel, setSelectedModel] = useState<GeminiModelChoice>(() => getStoredGeminiModel());
   const [isValidatingKey, setIsValidatingKey] = useState(false);
   const [keyStatusMsg, setKeyStatusMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (portfolioState.geminiApiKey && portfolioState.geminiApiKey !== apiKey) {
+      setApiKey(portfolioState.geminiApiKey);
+      setKeyDraft(portfolioState.geminiApiKey);
+      setStoredGeminiApiKey(portfolioState.geminiApiKey);
+    }
+  }, [portfolioState.geminiApiKey, apiKey]);
 
   const [messages, setMessages] = useState<AssistantChatMessage[]>([
     {
@@ -530,6 +540,7 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
     if (!trimmed) {
       setStoredGeminiApiKey('');
       setApiKey('');
+      onSaveGeminiKeyToCloud?.('');
       setKeyStatusMsg({ type: 'ok', text: 'Clave borrada. Usando el Analista Local Gratuito.' });
       return;
     }
@@ -546,9 +557,10 @@ export const GeminiVoiceAssistant: React.FC<GeminiVoiceAssistantProps> = ({
 
     setStoredGeminiApiKey(trimmed);
     setApiKey(trimmed);
+    onSaveGeminiKeyToCloud?.(trimmed);
     setKeyStatusMsg({
       type: 'ok',
-      text: '¡Conectado con éxito a tu Gemini Gratis! Ya puedes preguntarle cualquier cosa por voz.',
+      text: '¡Conectado y sincronizado en todos tus dispositivos! Ya puedes hablar con tu Gemini Gratis.',
     });
     setTimeout(() => {
       setShowKeyModal(false);

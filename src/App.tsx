@@ -631,6 +631,12 @@ export const App: React.FC = () => {
             lastUpdatedTime={lastUpdatedTime}
             externalOpen={isVoiceAssistantOpen}
             onExternalOpenHandled={() => setIsVoiceAssistantOpen(false)}
+            onSaveGeminiKeyToCloud={(newKey) =>
+              setPortfolioState((prev) => ({
+                ...prev,
+                geminiApiKey: newKey || undefined,
+              }))
+            }
           />
         )}
 

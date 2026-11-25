@@ -66,6 +66,7 @@ import {
   Receipt,
   Mic,
   Sparkles,
+  Smartphone,
 } from 'lucide-react';
 
 function getBrokerLogo(name: string, isDefault?: boolean): string | null {
@@ -535,6 +536,42 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
                   </div>
                 </button>
               )}
+
+              {/* Botón directo de 1 toque para Instalar como App en el móvil / PC */}
+              <button
+                type="button"
+                onClick={async () => {
+                  setHomeDrawerOpen(false);
+                  const promptEvt = window.__deferredPwaPrompt;
+                  if (promptEvt) {
+                    await promptEvt.prompt();
+                    await promptEvt.userChoice;
+                    window.__deferredPwaPrompt = null;
+                  } else {
+                    const isStandalone =
+                      window.matchMedia('(display-mode: standalone)').matches ||
+                      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+                    if (isStandalone) {
+                      alert('✅ Ya tienes la App de Domingo instalada y actualizada en tu pantalla de inicio.');
+                    } else {
+                      alert(
+                        '📲 Para instalar tu App "Domingo" en la pantalla de inicio:\n\n• En Android (Chrome): toca los 3 puntos ⋮ arriba a la derecha → "Instalar aplicación" o "Añadir a pantalla de inicio".\n• En iPhone (Safari): toca el botón Compartir ↑ abajo → "Añadir a pantalla de inicio".'
+                      );
+                    }
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-2xl text-left bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/90 dark:border-emerald-800/70 text-emerald-950 dark:text-emerald-200 hover:bg-emerald-100/80 transition-all"
+              >
+                <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-extrabold truncate">Instalar App en el móvil</div>
+                  <div className="text-[10px] text-emerald-700 dark:text-emerald-400 truncate">
+                    Acceso directo sin navegador
+                  </div>
+                </div>
+              </button>
 
               {/* SECCIÓN: MIS CARTERAS (CREAR, CAMBIAR, RENOMBRAR Y ELIMINAR) */}
               {portfolios.length > 0 && (

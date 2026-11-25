@@ -193,6 +193,7 @@ export interface PortfolioState {
   events: FinancialEvent[];
   tradingAnalytics?: TradingAnalytics;
   historicalAssetStats?: HistoricalAssetStat[];
+  geminiApiKey?: string;
 }
 
 export interface DividendPaymentItem {
