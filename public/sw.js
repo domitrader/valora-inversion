@@ -1,4 +1,4 @@
-const CACHE_NAME = 'domingo-valora-pwa-v2';
+const CACHE_NAME = 'domingo-valora-pwa-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
