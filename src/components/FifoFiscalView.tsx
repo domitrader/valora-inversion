@@ -659,21 +659,84 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
           </div>
         </div>
 
+        {/* Neto FIFO real (antes de diferimientos Regla 2M) */}
+        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/80 dark:border-slate-700/70 px-3 py-2 flex items-center justify-between gap-2">
+          <div className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+            Neto FIFO real {fiscalYear}
+            <span className="block text-[9px] font-medium text-slate-500 dark:text-slate-400">
+              Plusvalías menos minusvalías cerradas
+            </span>
+          </div>
+          <span
+            className={`text-sm font-mono font-black ${
+              yearSummary.realizedNetEur > 0
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : yearSummary.realizedNetEur < 0
+                ? 'text-rose-600 dark:text-rose-400'
+                : 'text-slate-700 dark:text-slate-200'
+            }`}
+          >
+            {formatEur(yearSummary.realizedNetEur, true)}
+          </span>
+        </div>
+
         {/* Pérdidas diferidas por regla 2 meses (destacado en ámbar si > 0) */}
         {yearSummary.deferredLossesEur > 0 && (
           <div className="rounded-xl bg-amber-50 dark:bg-amber-950/35 border border-amber-300/80 dark:border-amber-700/60 p-2.5 flex items-start gap-2">
             <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="min-w-0 text-[11px]">
+            <div className="min-w-0 flex-1 text-[11px] space-y-1.5">
               <div className="font-extrabold text-amber-900 dark:text-amber-200 flex items-center justify-between gap-2">
-                <span>Pérdidas diferidas (Regla 2M)</span>
+                <span>+ Pérdidas diferidas (Regla 2M)</span>
                 <span className="font-mono font-black">
-                  {formatEur(yearSummary.deferredLossesEur)}
+                  +{formatEur(yearSummary.deferredLossesEur)}
                 </span>
               </div>
-              <p className="text-[10px] text-amber-800/90 dark:text-amber-300/90 leading-snug mt-0.5">
+              <p className="text-[10px] text-amber-800/90 dark:text-amber-300/90 leading-snug">
                 Bloqueadas temporalmente por compra del mismo ISIN en ±2 meses (Art. 33.5.f LIRPF).
-                No restan de tu base hasta que vendas los títulos recomprados.
+                Se suman al neto real ({formatEur(yearSummary.realizedNetEur, true)} +{' '}
+                {formatEur(yearSummary.deferredLossesEur)} ={' '}
+                <strong>{formatEur(yearSummary.computableNetEur, true)}</strong>) hasta que vendas
+                los títulos recomprados.
               </p>
+
+              {/* Desglose y fecha de desbloqueo por activo */}
+              <div className="space-y-1 pt-1 border-t border-amber-300/50 dark:border-amber-700/50">
+                {engineResult.assets
+                  .filter((a) => a.deferredLossesYearEur > 0)
+                  .map((a) => (
+                    <div
+                      key={a.groupKey}
+                      className="rounded-lg bg-white/75 dark:bg-slate-900/60 px-2 py-1.5 text-[10px] space-y-0.5"
+                    >
+                      <div className="flex items-center justify-between gap-2 font-bold text-slate-800 dark:text-slate-100">
+                        <span className="truncate">
+                          {a.ticker} ({a.isin})
+                        </span>
+                        <span className="font-mono text-amber-700 dark:text-amber-300 shrink-0">
+                          {formatEur(a.deferredLossesYearEur)}
+                        </span>
+                      </div>
+                      {a.washSale.status === 'bloqueada_ventana_anio' && a.washSale.unlockDate ? (
+                        <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 leading-snug">
+                          ✓ Ventana libre a partir del{' '}
+                          <span className="font-mono underline">
+                            {formatDateEs(a.washSale.unlockDate)}
+                          </span>{' '}
+                          (puedes compensar vendiendo {a.ticker} desde MIL o TDG sin recomprar en 2
+                          meses).
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-amber-800 dark:text-amber-300 leading-snug">
+                          Desbloqueo parcial:{' '}
+                          <span className="font-mono font-bold">
+                            {a.washSale.unlockDate ? formatDateEs(a.washSale.unlockDate) : '—'}
+                          </span>{' '}
+                          (o liquidando el 100% del ISIN sin recomprar en 2 meses).
+                        </div>
+                      )}
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
@@ -961,38 +1024,132 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
           </div>
         </div>
 
-        {/* Bloque 1: Ejecutable HOY */}
-        {activePlan.executableToday.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-700 dark:text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>🟢 Ejecutable HOY (libre de regla 2 meses)</span>
-            </div>
-            {activePlan.executableToday.map((s) => renderSuggestionCard(s, 'emerald'))}
-          </div>
-        )}
+        {/* Consejo claro destacado en verde: opción más factible para finales de año */}
+        {(() => {
+          const allCandidates = [
+            ...activePlan.executableInYearWindow,
+            ...activePlan.executableToday,
+          ];
+          const bestFeasible =
+            allCandidates.length > 0
+              ? allCandidates.reduce((best, curr) =>
+                  Math.abs(curr.estimatedGainLossEur) > Math.abs(best.estimatedGainLossEur)
+                    ? curr
+                    : best
+                )
+              : null;
 
-        {/* Bloque 2: Ventana libre antes del 31/12 */}
-        {activePlan.executableInYearWindow.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-black text-amber-700 dark:text-amber-400">
-              <Clock className="w-4 h-4" />
-              <span>🟡 Ventana libre antes del 31/12/{fiscalYear}</span>
-            </div>
-            {activePlan.executableInYearWindow.map((s) => renderSuggestionCard(s, 'amber'))}
-          </div>
-        )}
+          const isWindowPick =
+            bestFeasible != null &&
+            activePlan.executableInYearWindow.some((s) => s.groupKey === bestFeasible.groupKey);
 
-        {/* Bloque 3: Alternativa Liquidación Total (100% del ISIN hoy) */}
-        {activePlan.fullLiquidationAlternatives.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-black text-violet-700 dark:text-violet-400">
-              <Zap className="w-4 h-4" />
-              <span>⚡ Alternativa Liquidación Total (100% del ISIN hoy)</span>
-            </div>
-            {activePlan.fullLiquidationAlternatives.map((s) => renderSuggestionCard(s, 'violet'))}
-          </div>
-        )}
+          return (
+            <>
+              {bestFeasible && activePlan.taxBeforePlanEur > 0 && (
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white p-3.5 shadow-sm border border-emerald-400/50 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" />
+                      Consejo claro · Más factible fin de año {fiscalYear}
+                    </span>
+                    <span className="text-[10px] font-mono font-black bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                      Ahorro {formatEur(activePlan.estimatedTaxSavingsEur)}
+                    </span>
+                  </div>
+                  <p className="text-xs font-extrabold leading-snug">
+                    {isWindowPick ? (
+                      <>
+                        Espera a la ventana del{' '}
+                        <span className="underline decoration-emerald-200 font-mono">
+                          {formatDateEs(bestFeasible.recommendedExecutionDate)}
+                        </span>{' '}
+                        al <span className="font-mono">31/12/{fiscalYear}</span> y vende{' '}
+                        <span className="font-mono">
+                          {formatQty(bestFeasible.qtyToSell)} uds
+                        </span>{' '}
+                        de <span className="font-mono">{bestFeasible.ticker}</span> (
+                        {bestFeasible.isin}, desde MIL o TDG) para compensar{' '}
+                        <span className="font-mono">
+                          {formatEur(Math.abs(bestFeasible.estimatedGainLossEur))}
+                        </span>{' '}
+                        y dejar tu IRPF {fiscalYear} en{' '}
+                        <span className="font-mono">
+                          {formatEur(activePlan.projectedTaxAfterPlanEur)}
+                        </span>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        Vende{' '}
+                        <span className="font-mono">
+                          {formatQty(bestFeasible.qtyToSell)} uds
+                        </span>{' '}
+                        de <span className="font-mono">{bestFeasible.ticker}</span> (
+                        {bestFeasible.isin}) antes del{' '}
+                        <span className="font-mono">31/12/{fiscalYear}</span> para compensar{' '}
+                        <span className="font-mono">
+                          {formatEur(Math.abs(bestFeasible.estimatedGainLossEur))}
+                        </span>{' '}
+                        y dejar tu IRPF en{' '}
+                        <span className="font-mono">
+                          {formatEur(activePlan.projectedTaxAfterPlanEur)}
+                        </span>
+                        .
+                      </>
+                    )}
+                  </p>
+                  <p className="text-[10px] text-emerald-50/95 leading-snug">
+                    Recuerda no recomprar el mismo ISIN ({bestFeasible.isin}) durante los 2 meses
+                    posteriores a la venta. Si quieres seguir expuesto al mismo activo, puedes rotar
+                    a un ETF equivalente con distinto ISIN.
+                  </p>
+                </div>
+              )}
+
+              {/* Bloque 1: Ventana libre antes del 31/12 (marcada en VERDE si es la más factible para fin de año) */}
+              {activePlan.executableInYearWindow.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-1.5 text-[11px] font-black text-emerald-700 dark:text-emerald-400">
+                    <span className="inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>🟢 Recomendada fin de año (ventana libre antes del 31/12/{fiscalYear})</span>
+                    </span>
+                  </div>
+                  {activePlan.executableInYearWindow.map((s) =>
+                    renderSuggestionCard(
+                      s,
+                      bestFeasible && s.groupKey === bestFeasible.groupKey ? 'emerald' : 'amber'
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* Bloque 2: Ejecutable HOY */}
+              {activePlan.executableToday.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-black text-emerald-700 dark:text-emerald-400">
+                    <Clock className="w-4 h-4" />
+                    <span>🟢 Disponible HOY (libre de regla 2 meses)</span>
+                  </div>
+                  {activePlan.executableToday.map((s) => renderSuggestionCard(s, 'emerald'))}
+                </div>
+              )}
+
+              {/* Bloque 3: Alternativa Liquidación Total (100% del ISIN hoy) */}
+              {activePlan.fullLiquidationAlternatives.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-black text-violet-700 dark:text-violet-400">
+                    <Zap className="w-4 h-4" />
+                    <span>⚡ Alternativa Liquidación Total (100% del ISIN hoy)</span>
+                  </div>
+                  {activePlan.fullLiquidationAlternatives.map((s) =>
+                    renderSuggestionCard(s, 'violet')
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* Aviso legal post-venta */}
         <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 p-2.5 flex items-start gap-2 text-[10px] text-slate-600 dark:text-slate-300 leading-snug">
