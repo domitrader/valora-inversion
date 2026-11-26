@@ -587,6 +587,7 @@ export const App: React.FC = () => {
               onSelectCategory={(cat) => handleOpenSearch(cat)}
               onOpenSearch={() => handleOpenSearch()}
               onGoToProfile={() => handleTabChange('perfil')}
+              portfolioState={portfolioState}
             />
           )}
 

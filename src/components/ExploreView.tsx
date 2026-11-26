@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AssetType } from '../types/portfolio';
+import { AssetType, PortfolioState } from '../types/portfolio';
 import { MARKET_HOLIDAYS_2026_2027 } from '../data/marketHolidays';
+import { FifoFiscalView } from './FifoFiscalView';
 import {
   DIVIDEND_MARKETS,
   DividendMarketKey,
@@ -34,6 +35,7 @@ import {
   Sunrise,
   Moon,
   Clock,
+  Scale,
 } from 'lucide-react';
 
 export type ExploreSection =
@@ -42,12 +44,14 @@ export type ExploreSection =
   | 'earnings'
   | 'dividendos'
   | 'festivos'
-  | 'noticias';
+  | 'noticias'
+  | 'fifo';
 
 interface ExploreViewProps {
   onSelectCategory: (type: AssetType) => void;
   onOpenSearch: () => void;
   onGoToProfile: () => void;
+  portfolioState?: PortfolioState;
 }
 
 const SECTION_STORAGE_KEY = 'valora_explore_section_v1';
@@ -101,6 +105,13 @@ const MENU_ITEMS: {
     icon: Newspaper,
     color: 'text-indigo-500',
   },
+  {
+    id: 'fifo',
+    label: 'FIFO Fiscal',
+    subtitle: 'Optimizador fiscal y ventas sin IRPF',
+    icon: Scale,
+    color: 'text-violet-500',
+  },
 ];
 
 function formatSpanishDate(dateStr: string | null): string {
@@ -114,6 +125,7 @@ function formatSpanishDate(dateStr: string | null): string {
 export const ExploreView: React.FC<ExploreViewProps> = ({
   onOpenSearch,
   onGoToProfile,
+  portfolioState,
 }) => {
   const [activeSection, setActiveSection] = useState<ExploreSection>(() => {
     try {
@@ -168,7 +180,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
   };
 
   const loadSectionData = async () => {
-    if (activeSection === 'festivos') {
+    if (activeSection === 'festivos' || activeSection === 'fifo') {
       setErrorMsg(null);
       return;
     }
@@ -236,7 +248,11 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               {activeMeta.label}
             </h1>
             <p className="text-[11px] text-[#173A6A]/80 dark:text-slate-400 font-semibold truncate">
-              {lastUpdated ? `En vivo · ${lastUpdated}` : activeMeta.subtitle}
+              {activeSection === 'fifo' || activeSection === 'festivos'
+                ? activeMeta.subtitle
+                : lastUpdated
+                  ? `En vivo · ${lastUpdated}`
+                  : activeMeta.subtitle}
             </p>
           </div>
         </div>
@@ -250,7 +266,7 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
           >
             <Search className="w-4 h-4" />
           </button>
-          {activeSection !== 'festivos' && (
+          {activeSection !== 'festivos' && activeSection !== 'fifo' && (
             <button
               type="button"
               onClick={loadSectionData}
@@ -942,6 +958,37 @@ export const ExploreView: React.FC<ExploreViewProps> = ({
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ==================== 7. FIFO FISCAL (OPTIMIZADOR IRPF ESPAÑA) ==================== */}
+      {activeSection === 'fifo' && portfolioState && (
+        <FifoFiscalView portfolioState={portfolioState} />
+      )}
+
+      {/* Acceso rápido a FIFO Fiscal desde el resto de secciones de Explorar */}
+      {activeSection !== 'fifo' && portfolioState && (
+        <div className="mt-5">
+          <button
+            type="button"
+            onClick={() => handleSelectSection('fifo')}
+            className="w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-slate-900 text-white shadow-sm hover:opacity-95 active:scale-[0.99] transition-all text-left"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center shrink-0">
+                <Scale className="w-5 h-5 text-violet-100" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-black tracking-tight truncate">
+                  FIFO Fiscal · Optimizador IRPF
+                </div>
+                <div className="text-[10px] text-violet-100/90 font-medium truncate">
+                  Calcula ventas sin impuestos y regla de 2 meses
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-violet-200 shrink-0" />
+          </button>
         </div>
       )}
     </div>

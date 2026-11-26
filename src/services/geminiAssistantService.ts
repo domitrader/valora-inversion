@@ -4,6 +4,7 @@ import degiroChartsRaw from '../data/degiroChartsData.json';
 import degiroDividendsRaw from '../data/degiroDividendsData.json';
 import degiroPositionsRaw from '../data/degiroPositionsData.json';
 import degiroCoreEtfsRaw from '../data/degiroCoreEtfs.json';
+import { runFifoTaxEngine, buildFifoContextForDomingo } from '../utils/fifoTaxEngine';
 
 export interface AssistantChatMessage {
   id: string;
@@ -212,6 +213,20 @@ export function buildDomingoPortfolioContext(
           .join('; ')
       : 'Sin activos en seguimiento';
 
+  let fifoFiscalSection = '';
+  try {
+    const fifoResult = runFifoTaxEngine({
+      positions: portfolioState.positions,
+      selectedBrokers: ['DEGIRO'],
+      fiscalYear: new Date().getFullYear(),
+      consolidateByIsin: true,
+    });
+    fifoFiscalSection = buildFifoContextForDomingo(fifoResult);
+  } catch (err) {
+    console.warn('No se pudo calcular la auditoría fiscal FIFO para Domingo:', err);
+    fifoFiscalSection = 'Auditoría fiscal FIFO no disponible temporalmente.';
+  }
+
   return `
 ERES EL ASISTENTE FINANCIERO PERSONAL POR VOZ DE DOMINGO EN SU WEB "VALORA INVERSIÓN" (https://domitrader.github.io/valora-inversion/).
 Fecha y hora actual de cotizaciones: ${lastUpdatedTime || 'Tiempo real'}.
@@ -219,7 +234,7 @@ Fecha y hora actual de cotizaciones: ${lastUpdatedTime || 'Tiempo real'}.
 INSTRUCCIONES DE ESTILO Y COMPORTAMIENTO:
 1. Habla siempre en español de España, cercano, claro, directo y riguroso con los números exactos de Domingo. Llámale "Domingo" con naturalidad cuando encaje.
 2. Nunca inventes cifras: usa exclusivamente los datos reales detallados abajo.
-3. Si Domingo te pide analizar una cartera, activo, riesgo, diversificación, dividendos, comisiones, metas o comparativa entre brokers, dale conclusiones prácticas, porcentajes exactos y puntos accionables claros.
+3. Si Domingo te pide analizar una cartera, activo, riesgo, diversificación, dividendos, comisiones, metas, impuestos, IRPF, regla de los 2 meses o comparativa entre brokers, dale conclusiones prácticas, porcentajes exactos y puntos accionables claros.
 4. Sé ágil para lectura por voz: estructura tus respuestas con frases limpias y viñetas breves; evita tablas enormes difíciles de escuchar.
 
 === PATRIMONIO CONSOLIDADO GLOBAL DE DOMINGO (TODAS LAS CARTERAS) ===
@@ -248,6 +263,9 @@ ${winnersLines}
 
 Top Mayores Pérdidas Históricas DEGIRO:
 ${losersLines}
+
+=== AUDITORÍA FISCAL FIFO (IRPF ESPAÑA / HACIENDA) ===
+${fifoFiscalSection}
 
 === DIVIDENDOS AUDITADOS (2018–2026) ===
 - Total Neto Cobrado: ${dividendsData.totalHistoricalNet.toFixed(2)} € (Bruto: ${dividendsData.totalHistoricalGross.toFixed(2)} € | Retenciones fiscales: ${dividendsData.totalHistoricalTaxes.toFixed(2)} € en ${dividendsData.totalPaymentsCount} pagos)
@@ -330,6 +348,82 @@ export function answerWithLocalAnalyst(
   const totalCashGlobal = perPortfolio.reduce((s, p) => s + p.cash, 0);
   const totalDayGlobal = perPortfolio.reduce((s, p) => s + p.dayBp, 0);
   const activeStats = perPortfolio.find((p) => p.port.id === activePort?.id) || perPortfolio[0];
+
+  // 0. Consultas fiscales FIFO / IRPF / Hacienda / Regla de los 2 meses
+  const fiscalKeywords = [
+    'fifo',
+    'hacienda',
+    'irpf',
+    'impuesto',
+    'impuestos',
+    'fiscal',
+    'plusval',
+    'minusval',
+    'compensar',
+    'regla de los 2 meses',
+    'dos meses',
+    'vender sin pagar',
+    'la renta',
+  ];
+  if (fiscalKeywords.some((kw) => q.includes(kw))) {
+    try {
+      const fiscalYearMatch = q.match(/\b(2018|2019|2020|2021|2022|2023|2024|2025|2026)\b/);
+      const fiscalYear = fiscalYearMatch ? Number(fiscalYearMatch[1]) : new Date().getFullYear();
+      const fifoResult = runFifoTaxEngine({
+        positions: portfolioState.positions,
+        selectedBrokers: ['DEGIRO'],
+        fiscalYear,
+        consolidateByIsin: true,
+      });
+      const { yearSummary, optimizationPlan } = fifoResult;
+
+      const lines: string[] = [
+        `**Auditoría Fiscal FIFO ${fiscalYear} (IRPF España · Consolidado por ISIN):**`,
+        `- **Neto realizado ${fiscalYear}:** **${yearSummary.realizedNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.realizedNetEur)}** (Plusvalías: +${formatEUR(yearSummary.realizedGainsEur)} · Minusvalías: ${formatEUR(yearSummary.realizedLossesEur)})`,
+        yearSummary.deferredLossesEur > 0
+          ? `- **Pérdidas diferidas (Regla de los 2 meses):** **${formatEUR(yearSummary.deferredLossesEur)}** bloqueadas → Base imponible computable: **${yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.computableNetEur)}**`
+          : `- **Pérdidas diferidas (Regla de los 2 meses):** ${formatEUR(0)} (Base imponible computable: **${yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.computableNetEur)}**)`,
+        `- **Cuota IRPF estimada (Base del Ahorro):** **${formatEUR(yearSummary.taxEstimate.taxEur)}** (tipo efectivo ${(yearSummary.taxEstimate.effectiveRate * 100).toFixed(2)}%, marginal ${(yearSummary.taxEstimate.marginalRate * 100).toFixed(0)}%)`,
+        `- **Plan de compensación óptimo:** ${optimizationPlan.headline}`,
+      ];
+
+      if (optimizationPlan.executableToday.length > 0) {
+        const todayList = optimizationPlan.executableToday
+          .map(
+            (s) =>
+              `${s.name} (${s.ticker}): vender ${s.qtyToSell} uds (${formatEUR(s.estimatedGainLossEur)}, ahorro aprox. ${formatEUR(s.estimatedTaxSavingsEur)})`
+          )
+          .join('; ');
+        lines.push(`- **Ejecutable HOY sin bloqueo:** ${todayList}`);
+      }
+
+      if (optimizationPlan.executableInYearWindow.length > 0) {
+        const windowList = optimizationPlan.executableInYearWindow
+          .map(
+            (s) =>
+              `${s.name} (${s.ticker}): vender ${s.qtyToSell} uds desde ${s.recommendedExecutionDate} (${formatEUR(s.estimatedGainLossEur)})`
+          )
+          .join('; ');
+        lines.push(`- **En ventana libre antes del 31/12/${fiscalYear}:** ${windowList}`);
+      }
+
+      if (optimizationPlan.fullLiquidationAlternatives.length > 0) {
+        const fullList = optimizationPlan.fullLiquidationAlternatives
+          .map((s) => `${s.name} (${s.ticker}): liquidar el 100% (${s.totalOpenQty} uds → ${formatEUR(s.estimatedGainLossEur)})`)
+          .join('; ');
+        lines.push(`- **Alternativa liquidación 100% HOY (sin recomprar en 2 meses):** ${fullList}`);
+      }
+
+      if (optimizationPlan.postSaleWarning) {
+        lines.push(`- **Aviso Regla 2 meses:** ${optimizationPlan.postSaleWarning}`);
+      }
+
+      const content = lines.join('\n');
+      return { content, spokenText: cleanTextForSpeech(content) };
+    } catch (err) {
+      console.warn('Error ejecutando motor FIFO en modo local:', err);
+    }
+  }
 
   // 1. Consulta por un año concreto (2018 - 2026)
   const yearMatch = q.match(/\b(2018|2019|2020|2021|2022|2023|2024|2025|2026)\b/);
