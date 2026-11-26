@@ -196,15 +196,15 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({
 
   const baseAccountSummary = isDefaultDegiroPortfolio
     ? degiroData.accountSummary || {
-        cuentaCompleta: 17544.78,
+        cuentaCompleta: 18257.78,
         cartera: 17124.86,
-        efectivoEur: 419.92,
-        margenLibre: 954.81,
+        efectivoEur: 1132.92,
+        margenLibre: 1667.81,
         diaBp: 1939.91,
         diaBpPct: 12.43,
-        totalBpDegiro: 15493.45,
-        historicoCerradoPnl: 23915.65,
-        totalTrades: 0,
+        totalBpDegiro: 15506.45,
+        historicoCerradoPnl: 28160.97,
+        totalTrades: 2849,
       }
     : {
         cuentaCompleta: 0,

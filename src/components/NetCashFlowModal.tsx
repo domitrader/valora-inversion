@@ -33,19 +33,19 @@ export const NetCashFlowModal: React.FC<NetCashFlowModalProps> = ({
   const [allExpanded, setAllExpanded] = useState(false);
 
   const summary = (degiroDataRaw as any).accountSummary || {};
-  const netFlow = summary.totalRetiradoNeto || 31690.78;
-  const totalDeposited = summary.totalDeposited || 3651806.63;
+  const netFlow = summary.totalRetiradoNeto || 30990.78;
+  const totalDeposited = summary.totalDeposited || 3652506.63;
   const totalWithdrawn = summary.totalWithdrawn || 3683497.41;
-  const currentCash = summary.efectivoEur || 419.92;
-  const freeMargin = summary.margenLibre || 812.74;
+  const currentCash = summary.efectivoEur || 1132.92;
+  const freeMargin = summary.margenLibre || 1667.81;
 
   const annualFlows = [
     {
       year: '2026',
-      deposited: 123006.63,
+      deposited: 123706.63,
       withdrawn: 120047.41,
-      net: -2959.22,
-      opsEstimate: 312,
+      net: -3659.22,
+      opsEstimate: 314,
       coverage: '97,6 %',
       notes: 'Tesorería equilibrada y mantenimiento de liquidez para compras en caídas de mercado.',
     },

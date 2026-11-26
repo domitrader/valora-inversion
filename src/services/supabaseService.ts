@@ -117,8 +117,10 @@ export class SupabaseService {
           (pos.id === 'pos-nvda-ndq' && pos.avgPrice === 31.1) ||
           (pos.id === 'pos-wt-gold-3x-mil' && pos.avgPrice === 40) ||
           (pos.id === 'pos-wt-nasdaq-3x-mil' && pos.avgPrice === 116.98);
+        const staleTdgFlow =
+          pos.id === 'pos-wt-nasdaq-3x-tdg' && pos.historicalNetCashFlow === -1187.5;
 
-        if (missingFlow || missingPeak || staleAvg) {
+        if (missingFlow || missingPeak || staleAvg || staleTdgFlow) {
           patched = true;
           const totalValue = Number((pos.shares * pos.currentPrice).toFixed(2));
           const flow = audited.historicalNetCashFlow;
@@ -139,8 +141,22 @@ export class SupabaseService {
       return pos;
     });
 
-    if (!patched) return state;
-    return { ...state, positions: fixedPositions };
+    const isStaleNov20 =
+      state.tradingAnalytics?.endDate === '20-11-2026' ||
+      (typeof state.tradingAnalytics?.totalTrades === 'number' && state.tradingAnalytics.totalTrades === 2847);
+
+    if (!patched && !isStaleNov20) return state;
+
+    return {
+      ...state,
+      positions: fixedPositions,
+      ...(isStaleNov20
+        ? {
+            cash: state.cash === 419.92 ? INITIAL_PORTFOLIO_STATE.cash : state.cash,
+            tradingAnalytics: INITIAL_PORTFOLIO_STATE.tradingAnalytics,
+          }
+        : {}),
+    };
   }
 
   /**

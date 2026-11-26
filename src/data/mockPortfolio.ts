@@ -185,10 +185,10 @@ export const INITIAL_POSITIONS: PositionItem[] = [
     dailyChangePct: 21.09,
     dailyChangeValue: 187.04,
     totalValue: 1073.60,
-    historicalNetCashFlow: -1187.50,
+    historicalNetCashFlow: -1172.50,
     historicalPeakCapital: 1187.50,
-    unrealizedGainLoss: -113.90,
-    unrealizedGainLossPct: -9.59,
+    unrealizedGainLoss: -98.90,
+    unrealizedGainLossPct: -8.33,
     sparkline: [221.64, 232.0, 244.0, 268.40],
     dividendYield: 0,
     status: 'Abierta',
@@ -677,7 +677,7 @@ export const MOCK_NEWS: NewsItem[] = [
 ];
 
 export const INITIAL_PORTFOLIO_STATE: PortfolioState = {
-  cash: 419.92,
+  cash: 1132.92,
   goalAmount: 25000.00,
   currency: 'EUR',
   hideFigures: false,
@@ -693,17 +693,17 @@ export const INITIAL_PORTFOLIO_STATE: PortfolioState = {
   watchlist: INITIAL_WATCHLIST,
   events: INITIAL_EVENTS,
   tradingAnalytics: {
-    totalTrades: 2847,
-    totalFeesPaid: 3234.95,
-    totalRealizedPnl: 28145.97,
+    totalTrades: 2849,
+    totalFeesPaid: 3236.95,
+    totalRealizedPnl: 28160.97,
     startDate: '09-03-2018',
-    endDate: '20-11-2026',
+    endDate: '25-11-2026',
     tradedProductsCount: 123,
-    totalDeposited: 3651806.63,
+    totalDeposited: 3652506.63,
     totalWithdrawn: 3683497.41,
-    netCashFlow: 31690.78,
+    netCashFlow: 30990.78,
     totalDividendsReceived: 533.22,
-    currentCashBalance: 419.92,
+    currentCashBalance: 1132.92,
   },
 };
 
