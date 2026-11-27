@@ -10,6 +10,11 @@ import {
   simulateFifoSale,
 } from '../utils/fifoTaxEngine';
 import {
+  DOMINGO_FISCAL_PROFILE_2026,
+  DOMINGO_RENTAS_HISTORY,
+  calculatePersonalIrpf2026,
+} from '../data/domingoRentasHistory';
+import {
   Scale,
   Calculator,
   ShieldAlert,
@@ -26,6 +31,12 @@ import {
   Wallet,
   Receipt,
   AlertTriangle,
+  Calendar,
+  FileText,
+  Landmark,
+  RotateCcw,
+  ShieldCheck,
+  BookOpen,
 } from 'lucide-react';
 
 interface FifoFiscalViewProps {
@@ -33,6 +44,67 @@ interface FifoFiscalViewProps {
 }
 
 const CUSTOM_TXS_STORAGE_KEY = 'valora_fifo_custom_txs_v1';
+const RENTA_PROFILE_STORAGE_KEY = 'valora_fifo_renta_profile_v1';
+
+interface StoredRentaProfile {
+  usePersonalRentaProfile: boolean;
+  trabajoBrutoInput: string;
+  interesesBrutosInput: string;
+  otrasGananciasInput: string;
+}
+
+const DEFAULT_RENTA_PROFILE: StoredRentaProfile = {
+  usePersonalRentaProfile: true,
+  trabajoBrutoInput: String(DOMINGO_FISCAL_PROFILE_2026.subsidioBrutoAnualEur),
+  interesesBrutosInput: String(DOMINGO_FISCAL_PROFILE_2026.myInvestorInteresesBrutos2026Eur),
+  otrasGananciasInput: String(DOMINGO_FISCAL_PROFILE_2026.otrasGanancias2026Eur),
+};
+
+function parseDecimalInput(raw: string, fallback = 0): number {
+  const normalized = raw.replace(/\s+/g, '').replace(',', '.');
+  if (!normalized || normalized === '-' || normalized === '.') return fallback;
+  const val = parseFloat(normalized);
+  return Number.isFinite(val) ? val : fallback;
+}
+
+const DECEMBER_2026_CALENDAR = [
+  {
+    date: '22/12 (Mar)',
+    status: 'blocked' as const,
+    badge: 'Bloqueado',
+    detail: 'Último día dentro de la ventana de 2 meses (Art. 33.5.f) por compras de octubre.',
+  },
+  {
+    date: '23/12 (Mié)',
+    status: 'open' as const,
+    badge: '1.er día libre',
+    detail: 'Ventana fiscal libre. Milán (MIL) y Alemania (TDG) abiertos jornada completa.',
+  },
+  {
+    date: '24–27/12 (Jue–Dom)',
+    status: 'closed' as const,
+    badge: 'Cerrado',
+    detail: 'Nochebuena, Navidad, San Esteban y fin de semana (sin negociación).',
+  },
+  {
+    date: '28–29/12 (Lun–Mar)',
+    status: 'open' as const,
+    badge: 'Abiertos',
+    detail: 'Milán (MIL) y Alemania (TDG) operativos en horario habitual completo.',
+  },
+  {
+    date: '30/12 (Mié)',
+    status: 'half' as const,
+    badge: 'Último día hábil',
+    detail: 'MIL abierto normal · TDG (Tradegate) media sesión hasta ~14:00h.',
+  },
+  {
+    date: '31/12 (Jue)',
+    status: 'closed' as const,
+    badge: 'Cerrado',
+    detail: 'Nochevieja: bolsas europeas (MIL y TDG) cerradas.',
+  },
+];
 
 function formatEur(amount: number, showPlus = false): string {
   const safe = Number.isFinite(amount) ? amount : 0;
@@ -171,6 +243,53 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
     Record<string, { qty: number; price: string }>
   >({});
 
+  // Sub-vista principal: FIFO & Renta 2026 vs Mis Rentas (2021–2025)
+  const [activeSubView, setActiveSubView] = useState<'fifo2026' | 'rentasHistory'>('fifo2026');
+
+  // Perfil Renta Real 2026 (Art. 20 + Mínimo Personal + MyInvestor) persistido en localStorage
+  const [rentaProfile, setRentaProfile] = useState<StoredRentaProfile>(() => {
+    try {
+      const saved = localStorage.getItem(RENTA_PROFILE_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            usePersonalRentaProfile:
+              typeof parsed.usePersonalRentaProfile === 'boolean'
+                ? parsed.usePersonalRentaProfile
+                : DEFAULT_RENTA_PROFILE.usePersonalRentaProfile,
+            trabajoBrutoInput:
+              typeof parsed.trabajoBrutoInput === 'string'
+                ? parsed.trabajoBrutoInput
+                : DEFAULT_RENTA_PROFILE.trabajoBrutoInput,
+            interesesBrutosInput:
+              typeof parsed.interesesBrutosInput === 'string'
+                ? parsed.interesesBrutosInput
+                : DEFAULT_RENTA_PROFILE.interesesBrutosInput,
+            otrasGananciasInput:
+              typeof parsed.otrasGananciasInput === 'string'
+                ? parsed.otrasGananciasInput
+                : DEFAULT_RENTA_PROFILE.otrasGananciasInput,
+          };
+        }
+      }
+    } catch {
+      // ignore storage error
+    }
+    return DEFAULT_RENTA_PROFILE;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(RENTA_PROFILE_STORAGE_KEY, JSON.stringify(rentaProfile));
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [rentaProfile]);
+
+  // Acordeón calendario diciembre 2026 dentro del optimizador
+  const [showDecCalendar, setShowDecCalendar] = useState<boolean>(false);
+
   // Acordeón de ventas ya cerradas en el año
   const [showClosedSales, setShowClosedSales] = useState<boolean>(false);
 
@@ -256,6 +375,75 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
     }
     return generateTaxOptimizationPlan(engineResult, totalExtraGainEur, 0);
   }, [engineResult, optimizerTab, totalExtraGainEur, parsedTargetCash]);
+
+  // Cálculo del Perfil Renta Real 2026 (Art. 20 + Mínimo Personal + MyInvestor)
+  const parsedTrabajoBruto = Math.max(
+    0,
+    parseDecimalInput(rentaProfile.trabajoBrutoInput, 0)
+  );
+  const parsedInteresesBrutos = Math.max(
+    0,
+    parseDecimalInput(rentaProfile.interesesBrutosInput, 0)
+  );
+  const parsedOtrasGanancias = parseDecimalInput(rentaProfile.otrasGananciasInput, 0);
+
+  const personalIrpf = useMemo(
+    () =>
+      calculatePersonalIrpf2026({
+        degiroComputableEur: engineResult.yearSummary.computableNetEur,
+        trabajoBrutoEur: parsedTrabajoBruto,
+        interesesBrutosEur: parsedInteresesBrutos,
+        otrasGananciasEur: parsedOtrasGanancias,
+      }),
+    [
+      engineResult.yearSummary.computableNetEur,
+      parsedTrabajoBruto,
+      parsedInteresesBrutos,
+      parsedOtrasGanancias,
+    ]
+  );
+
+  const personalIrpfWithExtraGain = useMemo(
+    () =>
+      calculatePersonalIrpf2026({
+        degiroComputableEur: engineResult.yearSummary.computableNetEur,
+        trabajoBrutoEur: parsedTrabajoBruto,
+        interesesBrutosEur: parsedInteresesBrutos,
+        otrasGananciasEur: parsedOtrasGanancias + totalExtraGainEur,
+      }),
+    [
+      engineResult.yearSummary.computableNetEur,
+      parsedTrabajoBruto,
+      parsedInteresesBrutos,
+      parsedOtrasGanancias,
+      totalExtraGainEur,
+    ]
+  );
+
+  const isRentaProfileModified =
+    rentaProfile.trabajoBrutoInput !== DEFAULT_RENTA_PROFILE.trabajoBrutoInput ||
+    rentaProfile.interesesBrutosInput !== DEFAULT_RENTA_PROFILE.interesesBrutosInput ||
+    rentaProfile.otrasGananciasInput !== DEFAULT_RENTA_PROFILE.otrasGananciasInput;
+
+  const isZeroTaxInRealProfile =
+    rentaProfile.usePersonalRentaProfile &&
+    fiscalYear === 2026 &&
+    personalIrpfWithExtraGain.cuotaIntegraEur === 0;
+
+  // Historial ordenado del más reciente (2025) al más antiguo (2021)
+  const rentasHistoryDesc = useMemo(
+    () => [...DOMINGO_RENTAS_HISTORY].sort((a, b) => b.year - a.year),
+    []
+  );
+
+  const totalPaid2024And2025 = useMemo(
+    () =>
+      DOMINGO_RENTAS_HISTORY.filter((r) => r.year === 2024 || r.year === 2025).reduce(
+        (sum, r) => sum + Math.max(0, r.resultadoDeclaracionEur),
+        0
+      ),
+    []
+  );
 
   // Handlers de brókers
   const toggleBroker = (broker: string) => {
@@ -431,8 +619,410 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
 
   return (
     <div className="space-y-3">
-      {/* ==================== 1. PANEL DE BRÓKERS MODULAR + SUBIR CSV ==================== */}
-      <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+      {/* ==================== 0. SELECTOR SUPERIOR DE SUB-VISTAS ==================== */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-1.5 shadow-2xs grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={() => setActiveSubView('fifo2026')}
+          className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+            activeSubView === 'fifo2026'
+              ? 'bg-violet-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <Calculator className="w-3.5 h-3.5 shrink-0" />
+          <span>FIFO &amp; Renta 2026</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveSubView('rentasHistory')}
+          className={`py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+            activeSubView === 'rentasHistory'
+              ? 'bg-violet-600 text-white shadow-sm'
+              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5 shrink-0" />
+          <span>Mis Rentas (2021–2025)</span>
+        </button>
+      </div>
+
+      {activeSubView === 'rentasHistory' ? (
+        /* ==================== SUB-VISTA: MIS RENTAS (2021–2025) ==================== */
+        <div className="space-y-3">
+          {/* Cabecera KPIs resumen histórico */}
+          <section className="bg-gradient-to-br from-slate-900 via-[#12203B] to-violet-950 text-white rounded-2xl p-3.5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-300">
+                  Historial Modelo 100 · AEAT
+                </span>
+                <h2 className="text-sm font-black text-white">
+                  Resumen Fiscal 2021–2025 y Proyección 2026
+                </h2>
+              </div>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-violet-200">
+                5 ejercicios
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div className="rounded-xl bg-white/10 border border-white/10 p-2.5">
+                <div className="text-[10px] font-bold text-slate-300">
+                  Pérdidas pendientes previas
+                </div>
+                <div className="text-base font-mono font-black text-white mt-0.5">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.perdidasPendientesPreviasEur)}
+                </div>
+                <div className="text-[10px] text-slate-300/90 mt-0.5">
+                  Agotadas al 100% en Renta 2024
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-white/10 border border-white/10 p-2.5">
+                <div className="text-[10px] font-bold text-slate-300">
+                  Total pagado 2024 + 2025
+                </div>
+                <div className="text-base font-mono font-black text-amber-300 mt-0.5">
+                  {formatEur(totalPaid2024And2025)}
+                </div>
+                <div className="text-[10px] text-slate-300/90 mt-0.5">
+                  1.535,97 € (2024) + 1.618,47 € (2025)
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-emerald-500/20 border border-emerald-400/35 p-2.5">
+                <div className="text-[10px] font-bold text-emerald-200">
+                  Proyección Renta 2026
+                </div>
+                <div className="text-base font-mono font-black text-emerald-300 mt-0.5">
+                  {personalIrpf.resultadoFinalEur < 0
+                    ? `A devolver ~${formatEur(Math.abs(personalIrpf.resultadoFinalEur))}`
+                    : personalIrpf.resultadoFinalEur === 0
+                      ? '0,00 €'
+                      : `A ingresar ${formatEur(personalIrpf.resultadoFinalEur)}`}
+                </div>
+                <div className="text-[10px] text-emerald-100/90 mt-0.5">
+                  {personalIrpf.cuotaIntegraEur === 0
+                    ? 'IRPF 0 € · Recuperas retenciones MyInvestor'
+                    : `Cuota íntegra est. ${formatEur(personalIrpf.cuotaIntegraEur)}`}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tarjetas por ejercicio (2025 -> 2021) */}
+          <section className="space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-black text-slate-900 dark:text-white">
+                Declaraciones presentadas (2025 → 2021)
+              </h3>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                Cifras agregadas Modelo 100
+              </span>
+            </div>
+
+            {rentasHistoryDesc.map((rec) => {
+              const isPay = rec.resultadoDeclaracionEur > 0;
+              const isRefund = rec.resultadoDeclaracionEur < 0;
+              return (
+                <article
+                  key={rec.year}
+                  className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs space-y-2.5"
+                >
+                  {/* Cabecera del ejercicio */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-black px-2.5 py-0.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950">
+                        {rec.year}
+                      </span>
+                      <span
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                          rec.art20Applied
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                            : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
+                        }`}
+                      >
+                        {rec.art20Applied ? '✓ Art. 20 activo' : 'Sin Art. 20 (>6.500 €)'}
+                      </span>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        Resultado
+                      </div>
+                      <div
+                        className={`text-xs font-mono font-black ${
+                          isPay
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : isRefund
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-slate-700 dark:text-slate-200'
+                        }`}
+                      >
+                        {isPay
+                          ? `${formatEur(rec.resultadoDeclaracionEur)} a ingresar`
+                          : isRefund
+                            ? `${formatEur(Math.abs(rec.resultadoDeclaracionEur))} a devolver`
+                            : '0,00 €'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid de magnitudes fiscales */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        Trabajo bruto / neto red.
+                      </div>
+                      <div className="font-mono font-extrabold text-slate-900 dark:text-white">
+                        {formatEur(rec.trabajoBrutoEur)}
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                        Neto red.: {formatEur(rec.trabajoNetoReducidoEur)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        Capital mobiliario
+                      </div>
+                      <div className="font-mono font-extrabold text-slate-900 dark:text-white">
+                        {formatEur(rec.capitalMobiliarioEur)}
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                        Retenc.: {formatEur(rec.retencionesEur)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        DEGIRO neto
+                      </div>
+                      <div
+                        className={`font-mono font-extrabold ${
+                          rec.degiroNetoEur > 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : rec.degiroNetoEur < 0
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-slate-900 dark:text-white'
+                        }`}
+                      >
+                        {formatEur(rec.degiroNetoEur, true)}
+                      </div>
+                      {rec.perdidasAplicadasPreviasEur > 0 && (
+                        <div className="text-[10px] font-mono text-violet-600 dark:text-violet-400">
+                          Compens.: -{formatEur(rec.perdidasAplicadasPreviasEur)}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        Base del ahorro
+                      </div>
+                      <div className="font-mono font-extrabold text-slate-900 dark:text-white">
+                        {formatEur(rec.baseImponibleAhorroEur)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        Mínimo aplicado
+                      </div>
+                      <div className="font-mono font-extrabold text-slate-900 dark:text-white">
+                        {formatEur(rec.minimoPersonalAhorroEur)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-2 border border-slate-100 dark:border-slate-800">
+                      <div className="text-[9px] font-bold uppercase text-slate-400">
+                        Arrastre pendiente
+                      </div>
+                      <div
+                        className={`font-mono font-extrabold ${
+                          rec.perdidasPendientesFuturoEur > 0
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {formatEur(rec.perdidasPendientesFuturoEur)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {rec.nota && (
+                    <div className="rounded-xl bg-violet-50/70 dark:bg-violet-950/25 border border-violet-200/70 dark:border-violet-800/40 px-2.5 py-2 text-[10px] text-slate-700 dark:text-slate-300 leading-snug">
+                      <strong className="text-violet-700 dark:text-violet-300">Nota fiscal:</strong>{' '}
+                      {rec.nota}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+
+          {/* Desglose auditado MyInvestor 2026 */}
+          <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                  <Landmark className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-slate-950 dark:text-white">
+                    Desglose auditado MyInvestor 2026
+                  </h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    Rendimientos de capital mobiliario y retención 19%
+                  </p>
+                </div>
+              </div>
+              <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorInteresesBrutos2026Eur)}
+              </span>
+            </div>
+
+            <div className="divide-y divide-slate-100 dark:divide-slate-800 text-[11px]">
+              <div className="py-1.5 flex items-center justify-between gap-2">
+                <span className="text-slate-600 dark:text-slate-300">
+                  Cuenta promocional + Plan Amigo
+                </span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorBreakdown.cuentaPromoYAmigoBrutoEur)}
+                </span>
+              </div>
+              <div className="py-1.5 flex items-center justify-between gap-2">
+                <span className="text-slate-600 dark:text-slate-300">
+                  Intereses cuenta remunerada (períodos)
+                </span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorBreakdown.cuentaPeriodosBrutoEur)}
+                </span>
+              </div>
+              <div className="py-1.5 flex items-center justify-between gap-2">
+                <span className="text-slate-600 dark:text-slate-300">
+                  12 depósitos ya vencidos en 2026
+                </span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorBreakdown.depositosVencidos12BrutoEur)}
+                </span>
+              </div>
+              <div className="py-1.5 flex items-center justify-between gap-2">
+                <span className="text-slate-600 dark:text-slate-300">
+                  Depósito vencimiento 16/12/2026 (162,11 € netos)
+                </span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorBreakdown.deposito16DicBrutoEur)}
+                </span>
+              </div>
+              <div className="py-1.5 flex items-center justify-between gap-2">
+                <span className="text-slate-600 dark:text-slate-300">
+                  Estimación intereses cuenta Nov–Dic 2026
+                </span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorBreakdown.estimacionNovDicBrutoEur)}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700 p-2">
+                <div className="text-[9px] font-bold uppercase text-slate-400">
+                  Total bruto MyInvestor
+                </div>
+                <div className="text-sm font-mono font-black text-slate-950 dark:text-white">
+                  {formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorInteresesBrutos2026Eur)}
+                </div>
+              </div>
+              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/35 border border-emerald-200 dark:border-emerald-800/60 p-2">
+                <div className="text-[9px] font-bold uppercase text-emerald-700 dark:text-emerald-300">
+                  Retención 19% (a devolver)
+                </div>
+                <div className="text-sm font-mono font-black text-emerald-700 dark:text-emerald-300">
+                  ~{formatEur(DOMINGO_FISCAL_PROFILE_2026.myInvestorRetenciones2026Eur)}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Tarjeta educativa: Regla de Oro Anual + Plan de Pensiones + Aviso Gestor */}
+          <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-violet-100 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+                <BookOpen className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-slate-950 dark:text-white">
+                  Regla de Oro Anual (5.550 € / 6.500 €) y Plan de Pensiones
+                </h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  Claves prácticas para optimizar tu Renta cada año
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-[11px] leading-snug">
+              <div className="rounded-xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/80 dark:border-emerald-800/50 p-2.5">
+                <div className="font-black text-emerald-800 dark:text-emerald-300">
+                  🟢 Base del Ahorro ≤ 5.550 € → IRPF 0,00 €
+                </div>
+                <p className="text-[10px] text-emerald-900/90 dark:text-emerald-200/90 mt-0.5">
+                  Con tu subsidio (5.760 €) y el Art. 20 activo, tu base general queda en 0 € y el
+                  mínimo personal completo (5.550 €) se aplica a la base del ahorro. No pagas nada
+                  y Hacienda te devuelve el 100% de las retenciones bancarias.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-200/80 dark:border-amber-800/50 p-2.5">
+                <div className="font-black text-amber-800 dark:text-amber-300">
+                  ⚠️ Frontera crítica de 6.500 € (Art. 20 LIRPF)
+                </div>
+                <p className="text-[10px] text-amber-900/90 dark:text-amber-200/90 mt-0.5">
+                  Entre 5.550 € y 6.500 € solo tributas al 19% por el exceso. Pero si superas{' '}
+                  <strong>6.500 €</strong> de rentas del ahorro pierdes la reducción del Art. 20:
+                  tu base general pasa a 3.760 € y el mínimo libre para el ahorro cae de{' '}
+                  <strong>5.550 € a 1.790 €</strong> (salto fiscal de ~714 € extra de golpe).
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 p-2.5">
+                <div className="font-black text-slate-900 dark:text-white">
+                  🏦 Plan de Pensiones → 0,00 € de ahorro fiscal
+                </div>
+                <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-0.5">
+                  Las aportaciones a planes de pensiones solo reducen la <em>base general</em>{' '}
+                  (nunca la del ahorro). Al estar tu base general en 0 € (con Art. 20) o ya cubierta
+                  por el mínimo personal (3.760 € &lt; 5.550 €), aportar a un plan de pensiones{' '}
+                  <strong>no te ahorra 0 € en IRPF</strong> y bloquea tu liquidez.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/60 p-2.5 flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                <div className="text-[10px] text-rose-900 dark:text-rose-200 leading-snug">
+                  <strong className="block text-[11px] font-black text-rose-700 dark:text-rose-300 mb-0.5">
+                    Recordatorio importante para tu gestor (Renta 2026)
+                  </strong>
+                  Declara las compraventas de acciones, ETFs y ETCs de DEGIRO en las{' '}
+                  <strong className="font-mono">casillas 0326–0338</strong> (acciones y
+                  participaciones negociadas en mercados oficiales),{' '}
+                  <strong>NO en la casilla 1802</strong> (monedas virtuales, donde se metieron por
+                  error en Renta 2025).
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <footer className="rounded-2xl bg-slate-100/80 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 p-3 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed text-center">
+            Datos agregados de tus declaraciones Modelo 100 (2021–2025) sin información personal
+            identificable. Revisa siempre el borrador final con tu asesor fiscal.
+          </footer>
+        </div>
+      ) : (
+        <>
+          {/* ==================== 1. PANEL DE BRÓKERS MODULAR + SUBIR CSV ==================== */}
+          <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             <Layers className="w-4 h-4 text-violet-600 dark:text-violet-400" />
@@ -621,6 +1211,304 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
             </div>
           )}
         </div>
+      </section>
+
+      {/* ==================== 2B. PERFIL RENTA REAL 2026 (ART. 20 + MÍNIMO PERSONAL) ==================== */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-3.5 shadow-2xs space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-xs font-black text-slate-950 dark:text-white leading-tight">
+                Perfil Renta Real 2026 (Art. 20 + Mínimo Personal)
+              </h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                Cruza DEGIRO ({formatEur(yearSummary.computableNetEur, true)}) con tu IRPF real
+              </p>
+            </div>
+          </div>
+
+          {isRentaProfileModified && rentaProfile.usePersonalRentaProfile && (
+            <button
+              type="button"
+              onClick={() =>
+                setRentaProfile((prev) => ({
+                  ...DEFAULT_RENTA_PROFILE,
+                  usePersonalRentaProfile: prev.usePersonalRentaProfile,
+                }))
+              }
+              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 shrink-0"
+              title="Restaurar valores auditados 2026"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </button>
+          )}
+        </div>
+
+        {/* Toggle rápido: Mi Renta Real (Art. 20) vs Solo DEGIRO puro */}
+        <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+          <button
+            type="button"
+            onClick={() =>
+              setRentaProfile((prev) => ({ ...prev, usePersonalRentaProfile: true }))
+            }
+            className={`py-1.5 px-2 rounded-lg text-[11px] font-extrabold transition ${
+              rentaProfile.usePersonalRentaProfile
+                ? 'bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            ✓ Mi Renta Real (Art. 20)
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              setRentaProfile((prev) => ({ ...prev, usePersonalRentaProfile: false }))
+            }
+            className={`py-1.5 px-2 rounded-lg text-[11px] font-extrabold transition ${
+              !rentaProfile.usePersonalRentaProfile
+                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 shadow-xs'
+                : 'text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            Solo DEGIRO puro
+          </button>
+        </div>
+
+        {rentaProfile.usePersonalRentaProfile ? (
+          <div className="space-y-3">
+            {/* 3 campos compactos editables */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <div>
+                <label className="block text-[9px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
+                  Subsidio / Trabajo bruto (€)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={rentaProfile.trabajoBrutoInput}
+                  onChange={(e) =>
+                    setRentaProfile((prev) => ({ ...prev, trabajoBrutoInput: e.target.value }))
+                  }
+                  className="w-full font-mono text-xs font-black bg-slate-50 dark:bg-slate-800 text-slate-950 dark:text-white rounded-xl px-2.5 py-1.5 border border-slate-200 dark:border-slate-700"
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
+                  Intereses MyInvestor / bancos (€)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={rentaProfile.interesesBrutosInput}
+                  onChange={(e) =>
+                    setRentaProfile((prev) => ({ ...prev, interesesBrutosInput: e.target.value }))
+                  }
+                  className="w-full font-mono text-xs font-black bg-slate-50 dark:bg-slate-800 text-slate-950 dark:text-white rounded-xl px-2.5 py-1.5 border border-slate-200 dark:border-slate-700"
+                />
+              </div>
+              <div>
+                <label className="block text-[9px] font-extrabold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-1">
+                  Otras ganancias brókers (€)
+                </label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={rentaProfile.otrasGananciasInput}
+                  onChange={(e) =>
+                    setRentaProfile((prev) => ({ ...prev, otrasGananciasInput: e.target.value }))
+                  }
+                  className="w-full font-mono text-xs font-black bg-slate-50 dark:bg-slate-800 text-slate-950 dark:text-white rounded-xl px-2.5 py-1.5 border border-slate-200 dark:border-slate-700"
+                />
+              </div>
+            </div>
+
+            {/* Barra de progreso visual de Base del Ahorro frente a 5.550 € y 6.500 € */}
+            {(() => {
+              const scaleMax = Math.max(7500, personalIrpf.totalAhorroEur * 1.1);
+              const fillPct = Math.min(
+                100,
+                Math.max(0, (personalIrpf.totalAhorroEur / scaleMax) * 100)
+              );
+              const mark5550Pct = (5550 / scaleMax) * 100;
+              const mark6500Pct = (6500 / scaleMax) * 100;
+              const barColor =
+                personalIrpf.totalAhorroEur <= 5550
+                  ? 'bg-emerald-500'
+                  : personalIrpf.totalAhorroEur <= 6500
+                    ? 'bg-amber-500'
+                    : 'bg-rose-500';
+
+              return (
+                <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 p-2.5 space-y-2">
+                  <div className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="font-extrabold text-slate-700 dark:text-slate-200">
+                      Base del Ahorro total {fiscalYear}
+                    </span>
+                    <span className="font-mono font-black text-slate-950 dark:text-white">
+                      {formatEur(personalIrpf.totalAhorroEur)}
+                    </span>
+                  </div>
+
+                  {/* Track + markers */}
+                  <div className="relative pt-1 pb-4">
+                    <div className="h-3 w-full rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+                        style={{ width: `${fillPct}%` }}
+                      />
+                    </div>
+
+                    {/* Marcador 5.550 € */}
+                    <div
+                      className="absolute top-0 bottom-0 flex flex-col items-center -translate-x-1/2 pointer-events-none"
+                      style={{ left: `${mark5550Pct}%` }}
+                    >
+                      <div className="w-0.5 h-4 bg-emerald-700 dark:bg-emerald-400" />
+                      <span className="text-[9px] font-mono font-black text-emerald-700 dark:text-emerald-400 whitespace-nowrap mt-0.5">
+                        5.550 €
+                      </span>
+                    </div>
+
+                    {/* Marcador 6.500 € */}
+                    <div
+                      className="absolute top-0 bottom-0 flex flex-col items-center -translate-x-1/2 pointer-events-none"
+                      style={{ left: `${mark6500Pct}%` }}
+                    >
+                      <div className="w-0.5 h-4 bg-rose-600 dark:bg-rose-400" />
+                      <span className="text-[9px] font-mono font-black text-rose-600 dark:text-rose-400 whitespace-nowrap mt-0.5">
+                        6.500 €
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 dark:text-slate-400 flex-wrap">
+                    <span>
+                      Art. 20:{' '}
+                      <strong
+                        className={
+                          personalIrpf.art20Applied
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                        }
+                      >
+                        {personalIrpf.art20Applied ? 'Activo (Base general 0 €)' : 'Perdido (>6.500 €)'}
+                      </strong>
+                    </span>
+                    <span>
+                      Mínimo ahorro:{' '}
+                      <strong className="font-mono text-slate-800 dark:text-slate-200">
+                        {formatEur(personalIrpf.minimoPersonalAhorroEur)}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Resultado Real Renta 2026 */}
+            {personalIrpf.cuotaIntegraEur === 0 ? (
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white p-3.5 shadow-sm border border-emerald-400/50 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Resultado Real Renta {fiscalYear}
+                  </span>
+                  <span className="text-[10px] font-mono font-black bg-emerald-950/35 px-2 py-0.5 rounded-full">
+                    Margen 0% IRPF: +{formatEur(Math.max(0, personalIrpf.margenHastaCeroIrpfEur))}
+                  </span>
+                </div>
+
+                <div className="text-sm sm:text-base font-mono font-black leading-tight">
+                  Cuota IRPF: 0,00 € ·{' '}
+                  {personalIrpf.retencionesEur > 0
+                    ? `A DEVOLVER ~${formatEur(Math.abs(personalIrpf.resultadoFinalEur))}`
+                    : 'A PAGAR 0,00 €'}
+                </div>
+
+                <p className="text-[11px] font-bold text-emerald-50 leading-snug">
+                  NO te conviene vender pérdidas (3GOL) en {fiscalYear}: ya recuperas el 100% de las
+                  retenciones ({formatEur(personalIrpf.retencionesEur)}) y guardas tus{' '}
+                  <span className="font-mono underline decoration-emerald-200">
+                    {formatEur(
+                      yearSummary.deferredLossesEur > 0 ? yearSummary.deferredLossesEur : 2134.62
+                    )}
+                  </span>{' '}
+                  diferidos para futuros años.
+                </p>
+
+                <div className="flex items-center justify-between gap-2 text-[10px] text-emerald-100/95 pt-1 border-t border-white/15 flex-wrap">
+                  <span>
+                    Margen libre hasta 5.550 €:{' '}
+                    <strong className="font-mono text-white">
+                      {formatEur(Math.max(0, personalIrpf.margenHastaCeroIrpfEur))}
+                    </strong>
+                  </span>
+                  <span>
+                    Hasta umbral Art. 20 (6.500 €):{' '}
+                    <strong className="font-mono text-white">
+                      {formatEur(Math.max(0, personalIrpf.margenHastaUmbralArt20Eur))}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 text-white p-3.5 shadow-sm border border-amber-300/40 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                    <AlertTriangle className="w-3 h-3" />
+                    Resultado Real Renta {fiscalYear}
+                  </span>
+                  <span className="text-[10px] font-mono font-black bg-black/25 px-2 py-0.5 rounded-full">
+                    {personalIrpf.art20Applied ? 'Supera 5.550 €' : '¡Supera 6.500 € (sin Art. 20)!'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-1.5 text-center">
+                  <div className="rounded-xl bg-black/20 p-2">
+                    <div className="text-[9px] font-bold uppercase text-amber-100">
+                      Cuota íntegra
+                    </div>
+                    <div className="text-xs font-mono font-black text-white">
+                      {formatEur(personalIrpf.cuotaIntegraEur)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-black/20 p-2">
+                    <div className="text-[9px] font-bold uppercase text-amber-100">
+                      Retenciones
+                    </div>
+                    <div className="text-xs font-mono font-black text-emerald-200">
+                      -{formatEur(personalIrpf.retencionesEur)}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-black/25 p-2">
+                    <div className="text-[9px] font-bold uppercase text-amber-100">
+                      {personalIrpf.resultadoFinalEur >= 0 ? 'A ingresar' : 'A devolver'}
+                    </div>
+                    <div className="text-xs font-mono font-black text-white">
+                      {formatEur(Math.abs(personalIrpf.resultadoFinalEur))}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[10px] text-amber-50 leading-snug">
+                  {personalIrpf.art20Applied
+                    ? `Tu base del ahorro supera el mínimo personal (5.550 €) en ${formatEur(Math.abs(personalIrpf.margenHastaCeroIrpfEur))}. El optimizador de pérdidas (3GOL) de abajo sí te ayuda a reducir esta cuota a 0 €.`
+                    : `Al superar 6.500 € en la base del ahorro pierdes la reducción del Art. 20 (mínimo en ahorro baja a ${formatEur(personalIrpf.minimoPersonalAhorroEur)}). Usa el optimizador de 3GOL abajo para bajar de 6.500 € o 5.550 €.`}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 p-2.5 text-[10px] text-slate-600 dark:text-slate-300 leading-snug">
+            <strong>Modo Solo DEGIRO puro activo:</strong> se muestra la cuota teórica aislada de
+            las plusvalías de DEGIRO sin aplicar tu mínimo personal (5.550 €), la reducción del
+            Art. 20 ni los intereses de MyInvestor.
+          </div>
+        )}
       </section>
 
       {/* ==================== 3. RESUMEN FISCAL DEL AÑO EN CURSO ==================== */}
@@ -996,57 +1884,82 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
           </div>
         )}
 
-        {/* Resultado del Plan de Optimización */}
-        <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/35 border border-emerald-200 dark:border-emerald-800/60 p-3 space-y-2">
-          <p className="text-[11px] font-bold text-emerald-950 dark:text-emerald-100 leading-snug">
-            {activePlan.headline}
-          </p>
+        {/* Banner informativo cuando en Perfil Real 2026 la cuota ya es 0 € */}
+        {isZeroTaxInRealProfile && optimizerTab === 'compensar' && (
+          <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/35 border border-emerald-300 dark:border-emerald-700/70 p-3 flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+            <div className="text-[11px] text-emerald-950 dark:text-emerald-100 leading-snug space-y-1">
+              <div className="font-black">
+                Tu cuota IRPF Real 2026 ya es 0,00 € — No necesitas compensar pérdidas ahora
+              </div>
+              <p className="text-[10px] text-emerald-800 dark:text-emerald-200/90">
+                Con tu Perfil Renta Real (Art. 20), todavía tienes{' '}
+                <strong className="font-mono">
+                  {formatEur(Math.max(0, personalIrpfWithExtraGain.margenHastaCeroIrpfEur))}
+                </strong>{' '}
+                de margen libre antes de tributar. Solo necesitarás activar el plan de venta de{' '}
+                <strong>3GOL</strong> si realizas plusvalías adicionales que superen los{' '}
+                <strong className="font-mono">5.550 €</strong> (puedes simularlas arriba o activar
+                “Solo DEGIRO puro”).
+              </p>
+            </div>
+          </div>
+        )}
 
-          <div className="grid grid-cols-3 gap-1.5 text-center">
-            <div className="bg-white/90 dark:bg-slate-900/80 rounded-xl p-2 border border-emerald-200/70 dark:border-emerald-800/40">
-              <div className="text-[9px] font-bold uppercase text-slate-400">Ahorro IRPF</div>
-              <div className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">
-                {formatEur(activePlan.estimatedTaxSavingsEur)}
+        {/* Resultado del Plan de Optimización */}
+        {(!isZeroTaxInRealProfile || optimizerTab === 'liquidez') && (
+          <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/35 border border-emerald-200 dark:border-emerald-800/60 p-3 space-y-2">
+            <p className="text-[11px] font-bold text-emerald-950 dark:text-emerald-100 leading-snug">
+              {activePlan.headline}
+            </p>
+
+            <div className="grid grid-cols-3 gap-1.5 text-center">
+              <div className="bg-white/90 dark:bg-slate-900/80 rounded-xl p-2 border border-emerald-200/70 dark:border-emerald-800/40">
+                <div className="text-[9px] font-bold uppercase text-slate-400">Ahorro IRPF</div>
+                <div className="text-xs font-mono font-black text-emerald-600 dark:text-emerald-400">
+                  {formatEur(activePlan.estimatedTaxSavingsEur)}
+                </div>
               </div>
-            </div>
-            <div className="bg-white/90 dark:bg-slate-900/80 rounded-xl p-2 border border-emerald-200/70 dark:border-emerald-800/40">
-              <div className="text-[9px] font-bold uppercase text-slate-400">IRPF Antes</div>
-              <div className="text-xs font-mono font-black text-slate-700 dark:text-slate-300">
-                {formatEur(activePlan.taxBeforePlanEur)}
+              <div className="bg-white/90 dark:bg-slate-900/80 rounded-xl p-2 border border-emerald-200/70 dark:border-emerald-800/40">
+                <div className="text-[9px] font-bold uppercase text-slate-400">IRPF Antes</div>
+                <div className="text-xs font-mono font-black text-slate-700 dark:text-slate-300">
+                  {formatEur(activePlan.taxBeforePlanEur)}
+                </div>
               </div>
-            </div>
-            <div className="bg-white/90 dark:bg-slate-900/80 rounded-xl p-2 border border-emerald-200/70 dark:border-emerald-800/40">
-              <div className="text-[9px] font-bold uppercase text-slate-400">IRPF Final</div>
-              <div className="text-xs font-mono font-black text-emerald-700 dark:text-emerald-300">
-                {formatEur(activePlan.projectedTaxAfterPlanEur)}
+              <div className="bg-white/90 dark:bg-slate-900/80 rounded-xl p-2 border border-emerald-200/70 dark:border-emerald-800/40">
+                <div className="text-[9px] font-bold uppercase text-slate-400">IRPF Final</div>
+                <div className="text-xs font-mono font-black text-emerald-700 dark:text-emerald-300">
+                  {formatEur(activePlan.projectedTaxAfterPlanEur)}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Consejo claro destacado en verde: opción más factible para finales de año */}
-        {(() => {
-          const allCandidates = [
-            ...activePlan.executableInYearWindow,
-            ...activePlan.executableToday,
-          ];
-          const bestFeasible =
-            allCandidates.length > 0
-              ? allCandidates.reduce((best, curr) =>
-                  Math.abs(curr.estimatedGainLossEur) > Math.abs(best.estimatedGainLossEur)
-                    ? curr
-                    : best
-                )
-              : null;
+        {(!isZeroTaxInRealProfile || optimizerTab === 'liquidez') &&
+          (() => {
+            const allCandidates = [
+              ...activePlan.executableInYearWindow,
+              ...activePlan.executableToday,
+            ];
+            const bestFeasible =
+              allCandidates.length > 0
+                ? allCandidates.reduce((best, curr) =>
+                    Math.abs(curr.estimatedGainLossEur) > Math.abs(best.estimatedGainLossEur)
+                      ? curr
+                      : best
+                  )
+                : null;
 
-          const isWindowPick =
-            bestFeasible != null &&
-            activePlan.executableInYearWindow.some((s) => s.groupKey === bestFeasible.groupKey);
+            const isWindowPick =
+              bestFeasible != null &&
+              activePlan.executableInYearWindow.some((s) => s.groupKey === bestFeasible.groupKey);
 
-          return (
-            <>
-              {bestFeasible && activePlan.taxBeforePlanEur > 0 && (
-                <div className="rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white p-3.5 shadow-sm border border-emerald-400/50 space-y-2">
+            return (
+              <>
+                {bestFeasible && activePlan.taxBeforePlanEur > 0 && (
+                  <div className="rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white p-3.5 shadow-sm border border-emerald-400/50 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
                       <CheckCircle2 className="w-3 h-3" />
@@ -1150,6 +2063,61 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
             </>
           );
         })()}
+
+        {/* Acordeón compacto: Calendario Diciembre 2026 (Milán MIL · Alemania TDG) */}
+        <div className="rounded-xl border border-slate-200/90 dark:border-slate-700/80 overflow-hidden bg-slate-50/70 dark:bg-slate-800/40">
+          <button
+            type="button"
+            onClick={() => setShowDecCalendar((v) => !v)}
+            className="w-full px-3 py-2.5 flex items-center justify-between gap-2 text-left hover:bg-slate-100/70 dark:hover:bg-slate-800/70 transition"
+          >
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-slate-800 dark:text-slate-100">
+              <Calendar className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400 shrink-0" />
+              <span>📅 Calendario Diciembre 2026 (Milán MIL · Alemania TDG)</span>
+            </span>
+            {showDecCalendar ? (
+              <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+            )}
+          </button>
+
+          {showDecCalendar && (
+            <div className="px-3 pb-3 pt-1 border-t border-slate-200/70 dark:border-slate-700/70 space-y-1.5">
+              {DECEMBER_2026_CALENDAR.map((item) => {
+                const badgeCls =
+                  item.status === 'open'
+                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                    : item.status === 'half'
+                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
+                      : item.status === 'blocked'
+                        ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+
+                return (
+                  <div
+                    key={item.date}
+                    className="rounded-lg bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 px-2.5 py-1.5 flex items-start justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-[11px] font-mono font-black text-slate-900 dark:text-white">
+                        {item.date}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">
+                        {item.detail}
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${badgeCls}`}
+                    >
+                      {item.badge}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Aviso legal post-venta */}
         <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 p-2.5 flex items-start gap-2 text-[10px] text-slate-600 dark:text-slate-300 leading-snug">
@@ -1700,6 +2668,8 @@ export const FifoFiscalView: React.FC<FifoFiscalViewProps> = ({ portfolioState }
         asesoramiento fiscal vinculante; consulta con un asesor fiscal antes de presentar tu
         declaración de la Renta.
       </footer>
+        </>
+      )}
     </div>
   );
 };

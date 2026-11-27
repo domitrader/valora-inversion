@@ -5,6 +5,11 @@ import degiroDividendsRaw from '../data/degiroDividendsData.json';
 import degiroPositionsRaw from '../data/degiroPositionsData.json';
 import degiroCoreEtfsRaw from '../data/degiroCoreEtfs.json';
 import { runFifoTaxEngine, buildFifoContextForDomingo } from '../utils/fifoTaxEngine';
+import {
+  DOMINGO_RENTAS_HISTORY,
+  DOMINGO_FISCAL_PROFILE_2026,
+  calculatePersonalIrpf2026,
+} from '../data/domingoRentasHistory';
 
 export interface AssistantChatMessage {
   id: string;
@@ -214,18 +219,74 @@ export function buildDomingoPortfolioContext(
       : 'Sin activos en seguimiento';
 
   let fifoFiscalSection = '';
+  let degiroComputable2026Eur = 0;
+  let degiroDeferred2026Eur = 0;
   try {
+    const currentYear = new Date().getFullYear();
     const fifoResult = runFifoTaxEngine({
       positions: portfolioState.positions,
       selectedBrokers: ['DEGIRO'],
-      fiscalYear: new Date().getFullYear(),
+      fiscalYear: currentYear,
       consolidateByIsin: true,
     });
     fifoFiscalSection = buildFifoContextForDomingo(fifoResult);
+
+    const fifo2026 =
+      currentYear === 2026
+        ? fifoResult
+        : runFifoTaxEngine({
+            positions: portfolioState.positions,
+            selectedBrokers: ['DEGIRO'],
+            fiscalYear: 2026,
+            consolidateByIsin: true,
+          });
+    degiroComputable2026Eur = fifo2026.yearSummary.computableNetEur;
+    degiroDeferred2026Eur = fifo2026.yearSummary.deferredLossesEur;
   } catch (err) {
     console.warn('No se pudo calcular la auditoría fiscal FIFO para Domingo:', err);
     fifoFiscalSection = 'Auditoría fiscal FIFO no disponible temporalmente.';
   }
+
+  const profile2026 = DOMINGO_FISCAL_PROFILE_2026;
+  const personalIrpf2026 = calculatePersonalIrpf2026({
+    degiroComputableEur: degiroComputable2026Eur,
+    trabajoBrutoEur: profile2026.subsidioBrutoAnualEur,
+    interesesBrutosEur: profile2026.myInvestorInteresesBrutos2026Eur,
+    otrasGananciasEur: profile2026.otrasGanancias2026Eur,
+  });
+
+  const rentasHistoryLines = DOMINGO_RENTAS_HISTORY.map(
+    (r) =>
+      `  - Renta ${r.year}: Trabajo bruto ${r.trabajoBrutoEur.toFixed(2)} € (neto reducido ${r.trabajoNetoReducidoEur.toFixed(2)} €, Art. 20: ${r.art20Applied ? 'SÍ' : 'NO'}) | Cap. Mobiliario ${r.capitalMobiliarioEur.toFixed(2)} € | DEGIRO neto ${r.degiroNetoEur >= 0 ? '+' : ''}${r.degiroNetoEur.toFixed(2)} € | Pérdidas previas aplicadas ${r.perdidasAplicadasPreviasEur.toFixed(2)} € | Base Ahorro ${r.baseImponibleAhorroEur.toFixed(2)} € | Resultado ${r.resultadoDeclaracionEur > 0 ? `+${r.resultadoDeclaracionEur.toFixed(2)} € (a ingresar)` : r.resultadoDeclaracionEur < 0 ? `${r.resultadoDeclaracionEur.toFixed(2)} € (a devolver)` : '0,00 €'} | Pérdidas pendientes futuro ${r.perdidasPendientesFuturoEur.toFixed(2)} €${r.nota ? ` — ${r.nota}` : ''}`
+  ).join('\n');
+
+  const resultado2026Texto =
+    personalIrpf2026.resultadoFinalEur < 0
+      ? `A DEVOLVER ${Math.abs(personalIrpf2026.resultadoFinalEur).toFixed(2)} € por Hacienda`
+      : personalIrpf2026.resultadoFinalEur > 0
+        ? `A INGRESAR ${personalIrpf2026.resultadoFinalEur.toFixed(2)} €`
+        : '0,00 € (cuota cero)';
+
+  const deferredRefText =
+    degiroDeferred2026Eur > 0 ? `${degiroDeferred2026Eur.toFixed(2)} €` : '2.134,62 €';
+
+  const rentasAndPersonal2026Section = [
+    'Resumen oficial Modelo 100 (Rentas 2021–2025):',
+    rentasHistoryLines,
+    `- Pérdidas pendientes de años anteriores arrastrables a 2026: ${profile2026.perdidasPendientesPreviasEur.toFixed(2)} € (los arrastres de 2021 y 2022 se agotaron al 100% en 2024; 2024 resultó +1.535,97 € a ingresar y 2025 resultó +1.618,47 € a ingresar).`,
+    '',
+    'Proyección Renta Real 2026 de Domingo (combinando DEGIRO + MyInvestor + Subsidio):',
+    `- Subsidio mayores de 52 años: ${profile2026.subsidioBrutoAnualEur.toFixed(2)} € brutos/año (gastos deducibles trabajo ${profile2026.gastosDeduciblesTrabajoEur.toFixed(2)} €).`,
+    `- Intereses MyInvestor 2026: ${profile2026.myInvestorInteresesBrutos2026Eur.toFixed(2)} € brutos (retención 19% aprox. ${personalIrpf2026.retencionesEur.toFixed(2)} €).`,
+    `- DEGIRO 2026 computable FIFO: ${degiroComputable2026Eur >= 0 ? '+' : ''}${degiroComputable2026Eur.toFixed(2)} € | Otras ganancias: ${profile2026.otrasGanancias2026Eur.toFixed(2)} €.`,
+    `- Base Imponible del Ahorro total 2026: ${personalIrpf2026.totalAhorroEur.toFixed(2)} € | Base General tras Art. 20 LIRPF (${personalIrpf2026.art20Applied ? 'APLICADO por Ahorro <= 6.500 €' : 'NO aplicado por superar 6.500 €'}): ${personalIrpf2026.baseGeneralEur.toFixed(2)} €.`,
+    `- Mínimo personal aplicable a la Base del Ahorro: ${personalIrpf2026.minimoPersonalAhorroEur.toFixed(2)} € (frente al umbral Art. 20 de ${profile2026.art20UmbralAhorroEur.toFixed(2)} €).`,
+    `- Cuota íntegra IRPF 2026: ${personalIrpf2026.cuotaIntegraEur.toFixed(2)} € | Retenciones practicadas: ${personalIrpf2026.retencionesEur.toFixed(2)} € | Resultado estimado Renta 2026: ${resultado2026Texto}.`,
+    `- Margen libre de impuestos hasta ${personalIrpf2026.minimoPersonalAhorroEur.toFixed(2)} € (cuota 0 €): ${Math.max(0, personalIrpf2026.margenHastaCeroIrpfEur).toFixed(2)} € | Margen hasta umbral Art. 20 (${profile2026.art20UmbralAhorroEur.toFixed(2)} €): ${Math.max(0, personalIrpf2026.margenHastaUmbralArt20Eur).toFixed(2)} €.`,
+    `- Estrategia 3GOL en 2026: al estar la Base del Ahorro (${personalIrpf2026.totalAhorroEur.toFixed(2)} €) por debajo de 5.550,00 € (y de 6.500,00 € del Art. 20), la cuota IRPF 2026 ya es 0,00 € y Hacienda devuelve ~${personalIrpf2026.retencionesEur.toFixed(2)} €. Por tanto, NO conviene vender 3GOL en pérdidas en 2026: es mucho más rentable guardar los ${deferredRefText} de pérdidas diferidas para compensar beneficios en futuros ejercicios en los que sí haya cuota a pagar.`,
+    `- Plan de pensiones: NO desgrava en el perfil de Domingo (ahorro fiscal = 0,00 € porque su Base General ya queda en 0,00 €).`,
+    `- Aviso técnico para la declaración 2026: en 2025 DEGIRO se declaró en casilla 1802 (monedas virtuales); en 2026 conviene declarar DEGIRO correctamente en casillas 0326–0338 (acciones y ETFs negociados).`,
+  ].join('\n');
 
   return `
 ERES EL ASISTENTE FINANCIERO PERSONAL POR VOZ DE DOMINGO EN SU WEB "VALORA INVERSIÓN" (https://domitrader.github.io/valora-inversion/).
@@ -266,6 +327,9 @@ ${losersLines}
 
 === AUDITORÍA FISCAL FIFO (IRPF ESPAÑA / HACIENDA) ===
 ${fifoFiscalSection}
+
+=== HISTORIAL RENTAS 2021–2025 Y PROYECCIÓN RENTA REAL 2026 (ART. 20 LIRPF) ===
+${rentasAndPersonal2026Section}
 
 === DIVIDENDOS AUDITADOS (2018–2026) ===
 - Total Neto Cobrado: ${dividendsData.totalHistoricalNet.toFixed(2)} € (Bruto: ${dividendsData.totalHistoricalGross.toFixed(2)} € | Retenciones fiscales: ${dividendsData.totalHistoricalTaxes.toFixed(2)} € en ${dividendsData.totalPaymentsCount} pagos)
@@ -349,7 +413,7 @@ export function answerWithLocalAnalyst(
   const totalDayGlobal = perPortfolio.reduce((s, p) => s + p.dayBp, 0);
   const activeStats = perPortfolio.find((p) => p.port.id === activePort?.id) || perPortfolio[0];
 
-  // 0. Consultas fiscales FIFO / IRPF / Hacienda / Regla de los 2 meses
+  // 0. Consultas fiscales FIFO / IRPF / Hacienda / Regla de los 2 meses / Renta 2026
   const fiscalKeywords = [
     'fifo',
     'hacienda',
@@ -364,6 +428,15 @@ export function answerWithLocalAnalyst(
     'dos meses',
     'vender sin pagar',
     'la renta',
+    'renta 2026',
+    'rentas',
+    'art 20',
+    'articulo 20',
+    'subsidio',
+    'retencion',
+    'retenciones',
+    'devolucion',
+    'plan de pensiones',
   ];
   if (fiscalKeywords.some((kw) => q.includes(kw))) {
     try {
@@ -377,41 +450,80 @@ export function answerWithLocalAnalyst(
       });
       const { yearSummary, optimizationPlan } = fifoResult;
 
+      const fifo2026ForPersonal =
+        fiscalYear === 2026
+          ? fifoResult
+          : runFifoTaxEngine({
+              positions: portfolioState.positions,
+              selectedBrokers: ['DEGIRO'],
+              fiscalYear: 2026,
+              consolidateByIsin: true,
+            });
+      const profile2026 = DOMINGO_FISCAL_PROFILE_2026;
+      const personal2026 = calculatePersonalIrpf2026({
+        degiroComputableEur: fifo2026ForPersonal.yearSummary.computableNetEur,
+        trabajoBrutoEur: profile2026.subsidioBrutoAnualEur,
+        interesesBrutosEur: profile2026.myInvestorInteresesBrutos2026Eur,
+        otrasGananciasEur: profile2026.otrasGanancias2026Eur,
+      });
+
+      const historicalRenta = DOMINGO_RENTAS_HISTORY.find((r) => r.year === fiscalYear);
+      const deferred2026 = fifo2026ForPersonal.yearSummary.deferredLossesEur;
+
       const lines: string[] = [
         `**Auditoría Fiscal FIFO ${fiscalYear} (IRPF España · Consolidado por ISIN):**`,
-        `- **Neto realizado ${fiscalYear}:** **${yearSummary.realizedNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.realizedNetEur)}** (Plusvalías: +${formatEUR(yearSummary.realizedGainsEur)} · Minusvalías: ${formatEUR(yearSummary.realizedLossesEur)})`,
+        `- **Neto realizado DEGIRO ${fiscalYear}:** **${yearSummary.realizedNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.realizedNetEur)}** (Plusvalías: +${formatEUR(yearSummary.realizedGainsEur)} · Minusvalías: ${formatEUR(yearSummary.realizedLossesEur)})`,
         yearSummary.deferredLossesEur > 0
-          ? `- **Pérdidas diferidas (Regla de los 2 meses):** **${formatEUR(yearSummary.deferredLossesEur)}** bloqueadas → Base imponible computable: **${yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.computableNetEur)}**`
-          : `- **Pérdidas diferidas (Regla de los 2 meses):** ${formatEUR(0)} (Base imponible computable: **${yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.computableNetEur)}**)`,
-        `- **Cuota IRPF estimada (Base del Ahorro):** **${formatEUR(yearSummary.taxEstimate.taxEur)}** (tipo efectivo ${(yearSummary.taxEstimate.effectiveRate * 100).toFixed(2)}%, marginal ${(yearSummary.taxEstimate.marginalRate * 100).toFixed(0)}%)`,
-        `- **Plan de compensación óptimo:** ${optimizationPlan.headline}`,
+          ? `- **Pérdidas diferidas (Regla de los 2 meses):** **${formatEUR(yearSummary.deferredLossesEur)}** bloqueadas → Base imponible computable DEGIRO: **${yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.computableNetEur)}**`
+          : `- **Pérdidas diferidas (Regla de los 2 meses):** ${formatEUR(0)} (Base imponible computable DEGIRO: **${yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(yearSummary.computableNetEur)}**)`,
       ];
 
-      if (optimizationPlan.executableToday.length > 0) {
-        const todayList = optimizationPlan.executableToday
-          .map(
-            (s) =>
-              `${s.name} (${s.ticker}): vender ${s.qtyToSell} uds (${formatEUR(s.estimatedGainLossEur)}, ahorro aprox. ${formatEUR(s.estimatedTaxSavingsEur)})`
-          )
-          .join('; ');
-        lines.push(`- **Ejecutable HOY sin bloqueo:** ${todayList}`);
+      if (historicalRenta) {
+        lines.push(
+          `- **Modelo 100 oficial ${historicalRenta.year}:** Base Ahorro **${formatEUR(historicalRenta.baseImponibleAhorroEur)}** · Art. 20: ${historicalRenta.art20Applied ? 'Aplicado' : 'No aplicado'} · Resultado: **${historicalRenta.resultadoDeclaracionEur > 0 ? `+${formatEUR(historicalRenta.resultadoDeclaracionEur)} a ingresar` : formatEUR(historicalRenta.resultadoDeclaracionEur)}** · Pérdidas pendientes futuro: ${formatEUR(historicalRenta.perdidasPendientesFuturoEur)}`
+        );
       }
 
-      if (optimizationPlan.executableInYearWindow.length > 0) {
-        const windowList = optimizationPlan.executableInYearWindow
-          .map(
-            (s) =>
-              `${s.name} (${s.ticker}): vender ${s.qtyToSell} uds desde ${s.recommendedExecutionDate} (${formatEUR(s.estimatedGainLossEur)})`
-          )
-          .join('; ');
-        lines.push(`- **En ventana libre antes del 31/12/${fiscalYear}:** ${windowList}`);
-      }
+      lines.push(
+        '',
+        `**Proyección Renta Real 2026 (Perfil Domingo · Art. 20 LIRPF):**`,
+        `- **Base del Ahorro total 2026:** **${formatEUR(personal2026.totalAhorroEur)}** (DEGIRO computable ${fifo2026ForPersonal.yearSummary.computableNetEur >= 0 ? '+' : ''}${formatEUR(fifo2026ForPersonal.yearSummary.computableNetEur)} + MyInvestor ${formatEUR(profile2026.myInvestorInteresesBrutos2026Eur)} brutos; pérdidas pendientes de años anteriores: **${formatEUR(profile2026.perdidasPendientesPreviasEur)}**, agotadas en 2024)`,
+        `- **Subsidio (${formatEUR(profile2026.subsidioBrutoAnualEur)}) y Art. 20 LIRPF:** ${personal2026.art20Applied ? `Aplicado (Ahorro ≤ ${formatEUR(profile2026.art20UmbralAhorroEur)}) → Base General **${formatEUR(personal2026.baseGeneralEur)}** y mínimo personal disponible para el Ahorro: **${formatEUR(personal2026.minimoPersonalAhorroEur)}**` : `No aplicado (Ahorro > ${formatEUR(profile2026.art20UmbralAhorroEur)}) → Base General **${formatEUR(personal2026.baseGeneralEur)}** y mínimo sobrante para el Ahorro: **${formatEUR(personal2026.minimoPersonalAhorroEur)}**`}`,
+        `- **Cuota IRPF real 2026:** **${formatEUR(personal2026.cuotaIntegraEur)}** · Retenciones MyInvestor: **${formatEUR(personal2026.retencionesEur)}** → **${personal2026.resultadoFinalEur < 0 ? `Hacienda te devuelve ${formatEUR(Math.abs(personal2026.resultadoFinalEur))}` : `A ingresar ${formatEUR(personal2026.resultadoFinalEur)}`}**`,
+        `- **Margen libre sin pagar IRPF (hasta ${formatEUR(personal2026.minimoPersonalAhorroEur)}):** **${formatEUR(Math.max(0, personal2026.margenHastaCeroIrpfEur))}** (margen hasta umbral Art. 20 de ${formatEUR(profile2026.art20UmbralAhorroEur)}: ${formatEUR(Math.max(0, personal2026.margenHastaUmbralArt20Eur))})`,
+        personal2026.cuotaIntegraEur === 0
+          ? `- **¿Conviene vender 3GOL en pérdidas en 2026?** **NO hace falta**: tu Base del Ahorro (${formatEUR(personal2026.totalAhorroEur)}) está por debajo del mínimo personal de ${formatEUR(personal2026.minimoPersonalAhorroEur)}, tu cuota IRPF ya es **${formatEUR(0)}** y Hacienda te devuelve **${formatEUR(Math.abs(personal2026.resultadoFinalEur))}**. Mejor guardar los **${formatEUR(deferred2026 > 0 ? deferred2026 : 2134.62)}** diferidos para futuros años con cuota real.`
+          : `- **Plan de compensación óptimo:** ${optimizationPlan.headline}`,
+        `- **Notas clave 2026:** Un plan de pensiones aporta **${formatEUR(0)}** de ahorro fiscal en tu perfil; declara DEGIRO en casillas **0326–0338** (no en 1802 como en 2025).`
+      );
 
-      if (optimizationPlan.fullLiquidationAlternatives.length > 0) {
-        const fullList = optimizationPlan.fullLiquidationAlternatives
-          .map((s) => `${s.name} (${s.ticker}): liquidar el 100% (${s.totalOpenQty} uds → ${formatEUR(s.estimatedGainLossEur)})`)
-          .join('; ');
-        lines.push(`- **Alternativa liquidación 100% HOY (sin recomprar en 2 meses):** ${fullList}`);
+      if (personal2026.cuotaIntegraEur > 0) {
+        if (optimizationPlan.executableToday.length > 0) {
+          const todayList = optimizationPlan.executableToday
+            .map(
+              (s) =>
+                `${s.name} (${s.ticker}): vender ${s.qtyToSell} uds (${formatEUR(s.estimatedGainLossEur)}, ahorro aprox. ${formatEUR(s.estimatedTaxSavingsEur)})`
+            )
+            .join('; ');
+          lines.push(`- **Ejecutable HOY sin bloqueo:** ${todayList}`);
+        }
+
+        if (optimizationPlan.executableInYearWindow.length > 0) {
+          const windowList = optimizationPlan.executableInYearWindow
+            .map(
+              (s) =>
+                `${s.name} (${s.ticker}): vender ${s.qtyToSell} uds desde ${s.recommendedExecutionDate} (${formatEUR(s.estimatedGainLossEur)})`
+            )
+            .join('; ');
+          lines.push(`- **En ventana libre antes del 31/12/${fiscalYear}:** ${windowList}`);
+        }
+
+        if (optimizationPlan.fullLiquidationAlternatives.length > 0) {
+          const fullList = optimizationPlan.fullLiquidationAlternatives
+            .map((s) => `${s.name} (${s.ticker}): liquidar el 100% (${s.totalOpenQty} uds → ${formatEUR(s.estimatedGainLossEur)})`)
+            .join('; ');
+          lines.push(`- **Alternativa liquidación 100% HOY (sin recomprar en 2 meses):** ${fullList}`);
+        }
       }
 
       if (optimizationPlan.postSaleWarning) {
